@@ -2,11 +2,34 @@ import React, { useState, useRef } from 'react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const CustomerInfo = () => {
+const CustomerInfo = ({ onUpdate, initialData }) => {
     const [cameraActive, setCameraActive] = useState(false);
     const [capturedImage, setCapturedImage] = useState(null);
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
+
+    const [customerData, setCustomerData] = useState(initialData || {
+        photo: null,
+        customerId: "",
+        customerName: "",
+        fatherOrHusbandName: "",
+        address: "",
+        dateOfBirth: "",
+        mobileNo: "",
+        aadharOrPanNo: "",
+        gender: "",
+        emailId: "",
+        documentNo: ""
+    });
+
+    const handleInputChange = (field, value) => {
+        const updatedData = {
+            ...customerData,
+            [field]: value
+        };
+        setCustomerData(updatedData);
+        onUpdate(updatedData);
+    };
 
     const startCamera = async () => {
         try {
@@ -23,8 +46,8 @@ const CustomerInfo = () => {
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: 'user',
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
+                    width: { ideal: 880 },
+                    height: { ideal: 1040 },
                 },
             });
 
@@ -69,21 +92,37 @@ const CustomerInfo = () => {
             const canvas = canvasRef.current;
             const context = canvas.getContext('2d');
 
-            // Set canvas dimensions to match the video stream
-            if (context && video.videoWidth && video.videoHeight) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
+            // Set canvas dimensions to match the video element dimensions
+            canvas.width = 880;
+            canvas.height = 1040;
 
-                // Draw the current video frame onto the canvas
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // // Flip horizontally for mirror effect
+            // context.translate(canvas.width, 0);
+            // context.scale(-1, 1);
 
-                // Get the image data URL from the canvas
-                const imageDataUrl = canvas.toDataURL('image/png');
+            try {
+                // Draw the current video frame
+                context.drawImage(
+                    video,
+                    0, 0,
+                    canvas.width, canvas.height
+                );
+
+                context.setTransform(1, 0, 0, 1, 0, 0);
+
+                // Convert to data URL
+                const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
                 setCapturedImage(imageDataUrl);
+                toast.success('Image captured successfully');
 
-                // Stop the webcam
+                // Stop the camera after successful capture
                 stopCamera();
+            } catch (error) {
+                console.error('Error capturing image:', error);
+                toast.error('Failed to capture image');
             }
+        } else {
+            toast.error('Camera not initialized properly');
         }
     };
 
@@ -98,7 +137,7 @@ const CustomerInfo = () => {
             <div className="photo-webcam-card">
                 <div className="photo-upload-area">
                     <img
-                        src="src/assets/icons/dragprofile.png" // Replace with your drag and drop image path
+                        src="src/assets/icons/dragprofile.png"
                         alt="Upload Icon"
                         className="upload-icon"
                     />
@@ -128,27 +167,26 @@ const CustomerInfo = () => {
                         autoPlay
                         playsInline
                         muted
-                        style={{
-                            width: '100%',
-                            maxWidth: '400px',
-                            border: '2px solid #ccc',
-                            borderRadius: '10px',
-                            backgroundColor: '#000',
-                        }}
-                    ></video>
-                    <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
-                    <div
-                        style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            marginTop: '10px',
-                            marginBottom: '10px',
-                        }}
-                    >
-                        <button onClick={captureImage} style={{ marginRight: '10px' }}>
+                        className="camera-video"
+                    />
+                    <canvas
+                        ref={canvasRef}
+                        style={{ display: 'none' }}
+                    />
+
+                    <div className="camera-controls">
+                        <button
+                            onClick={captureImage}
+                            className="camera-button"
+                        >
                             Capture Image
                         </button>
-                        <button onClick={stopCamera}>Stop Camera</button>
+                        <button
+                            onClick={stopCamera}
+                            className="camera-button stop"
+                        >
+                            Stop Camera
+                        </button>
                     </div>
                 </div>
             )}
@@ -156,59 +194,104 @@ const CustomerInfo = () => {
             {capturedImage && (
                 <div className="captured-image-container">
                     <h3>Captured Image:</h3>
+
                     <img
                         src={capturedImage}
                         alt="Captured"
-                        style={{
-                            width: '100%',
-                            maxWidth: '400px',
-                            border: '1px solid #ccc',
-                            borderRadius: '10px',
-                        }}
+                        className="captured-image"
                     />
+
                     <button onClick={resetCapturedImage}>Reset</button>
                 </div>
             )}
 
             <div className="form-group">
                 <label>Customer ID</label>
-                <input type="text" placeholder="Enter customer id" />
+                <input
+                    type="text"
+                    value={customerData.customerId}
+                    onChange={(e) => handleInputChange('customerId', e.target.value)}
+                    placeholder="Enter customer id"
+                />
             </div>
             <div className="form-group">
                 <label>Customer Name</label>
-                <input type="text" placeholder="Enter customer name" />
+                <input
+                    type="text"
+                    value={customerData.customerName}
+                    onChange={(e) => handleInputChange('customerName', e.target.value)}
+                    placeholder="Enter customer name"
+                />
             </div>
             <div className="form-group">
                 <label>Father's / Husband's Name</label>
-                <input type="text" placeholder="Enter father/husband name" />
+                <input
+                    type="text"
+                    value={customerData.fatherOrHusbandName}
+                    onChange={(e) => handleInputChange('fatherOrHusbandName', e.target.value)}
+                    placeholder="Enter father/husband name"
+                />
             </div>
             <div className="form-group">
                 <label>Address</label>
-                <textarea placeholder="Enter address"></textarea>
+                <textarea
+                    value={customerData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    placeholder="Enter address"
+                ></textarea>
             </div>
             <div className="form-group">
                 <label>D.O.B</label>
-                <input type="date" />
+                <input
+                    type="date"
+                    value={customerData.dateOfBirth}
+                    onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                />
             </div>
             <div className="form-group">
                 <label>Mobile No</label>
-                <input type="text" placeholder="Enter primary mobile" />
+                <input
+                    type="text"
+                    value={customerData.mobileNo}
+                    onChange={(e) => handleInputChange('mobileNo', e.target.value)}
+                    placeholder="Enter primary mobile"
+                />
             </div>
             <div className="form-group">
                 <label>Aadhar/PAN No</label>
-                <input type="text" placeholder="Enter PAN no" />
+                <input
+                    type="text"
+                    value={customerData.aadharOrPanNo}
+                    onChange={(e) => handleInputChange('aadharOrPanNo', e.target.value)}
+                    placeholder="Enter PAN no"
+                />
             </div>
             <div className="form-group">
                 <label>Gender</label>
-                <input type="text" placeholder="Enter gender" />
+                <input
+                    type="text"
+                    value={customerData.gender}
+                    onChange={(e) => handleInputChange('gender', e.target.value)}
+                    placeholder="Enter gender"
+                />
             </div>
             <div className="form-group">
                 <label>Email ID</label>
-                <input type="email" placeholder="Enter email" />
+                <input
+                    type="email"
+                    value={customerData.emailId}
+                    onChange={(e) => handleInputChange('emailId', e.target.value)}
+                    placeholder="Enter email"
+                />
             </div>
             <div className="form-group">
                 <label>Document No</label>
-                <input type="text" placeholder="Enter Document No" />
+                <input
+                    type="text"
+                    value={customerData.documentNo}
+                    onChange={(e) => handleInputChange('documentNo', e.target.value)}
+                    placeholder="Enter Document No"
+                />
             </div>
         </div>
     );

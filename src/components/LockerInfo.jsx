@@ -2,10 +2,15 @@ import React, { useState } from 'react';
 import AssignLocker from './AssignLocker';
 import AddNominee from './AddNominee';
 
-const LockerInfo = () => {
+const LockerInfo = ({ onUpdate, initialData }) => {
+    const [lockerData, setLockerData] = useState(initialData || {
+        assignedLocker: "",
+        smartCardNumber: "",
+        userGroup: "",
+        remarks: ""
+    });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNomineeModalOpen, setIsNomineeModalOpen] = useState(false);
-    const [assignedLocker, setAssignedLocker] = useState(''); // State to store the assigned locker
     const [nominees, setNominees] = useState([]);
     const [uploadedFiles, setUploadedFiles] = useState({
         identityProof: false,
@@ -13,6 +18,15 @@ const LockerInfo = () => {
         contactDocument: false,
         otherDocument: false,
     });
+
+    const handleInputChange = (field, value) => {
+        const updatedData = {
+            ...lockerData,
+            [field]: value
+        };
+        setLockerData(updatedData);
+        onUpdate(updatedData);
+    };
 
     const openModal = () => {
         setIsModalOpen(true);
@@ -23,7 +37,7 @@ const LockerInfo = () => {
     };
 
     const handleLockerAssign = (locker) => {
-        setAssignedLocker(locker);
+        handleInputChange('assignedLocker', locker);
         closeModal();
     };
 
@@ -55,8 +69,9 @@ const LockerInfo = () => {
                 <div className="input-with-button">
                     <input
                         type="text"
+                        className="locker-input"
                         placeholder="Assign locker"
-                        value={assignedLocker} // Display the assigned locker
+                        value={lockerData.assignedLocker} // Display the assigned locker
                         readOnly
                     />
                     <button className="add-button" onClick={openModal}>
@@ -66,19 +81,32 @@ const LockerInfo = () => {
             </div>
             <div className="form-group">
                 <label>Smart Card Number</label>
-                <input type="text" placeholder="Enter smart card number" />
+                <input
+                    type="text"
+                    placeholder="Enter smart card number"
+                    value={lockerData.smartCardNumber}
+                    onChange={(e) => handleInputChange('smartCardNumber', e.target.value)}
+                />
             </div>
             <div className="form-group">
                 <label>Group</label>
-                <select>
-                    <option>User Group 1</option>
-                    <option>User Group 2</option>
-                    <option>User Group 3</option>
+                <select
+                    value={lockerData.userGroup}
+                    onChange={(e) => handleInputChange('userGroup', e.target.value)}
+                >
+                    <option value="">Select Group</option>
+                    <option value="User Group 1">User Group 1</option>
+                    <option value="User Group 2">User Group 2</option>
+                    <option value="User Group 3">User Group 3</option>
                 </select>
             </div>
             <div className="form-group">
                 <label>Remarks</label>
-                <textarea placeholder="Enter remarks"></textarea>
+                <textarea
+                    placeholder="Enter remarks"
+                    value={lockerData.remarks}
+                    onChange={(e) => handleInputChange('remarks', e.target.value)}
+                ></textarea>
             </div>
             <div className="nominee-button-container">
                 <button className="nominee-button" onClick={openNomineeModal}>
