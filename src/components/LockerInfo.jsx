@@ -1,23 +1,20 @@
 import React, { useState } from 'react';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import { API_URL } from '../assets/config';
 import AssignLocker from './AssignLocker';
 import AddNominee from './AddNominee';
+import Attachments from './Attachments';
 
-const LockerInfo = ({ onUpdate, initialData }) => {
+const LockerInfo = ({ onUpdate, initialData, holderType, centers, isLoadingCenters }) => {
     const [lockerData, setLockerData] = useState(initialData || {
         assignedLocker: "",
-        smartCardNumber: "",
-        userGroup: "",
+        center: "",
         remarks: ""
     });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNomineeModalOpen, setIsNomineeModalOpen] = useState(false);
     const [nominees, setNominees] = useState([]);
-    const [uploadedFiles, setUploadedFiles] = useState({
-        identityProof: false,
-        addressProof: false,
-        contactDocument: false,
-        otherDocument: false,
-    });
 
     const handleInputChange = (field, value) => {
         const updatedData = {
@@ -54,18 +51,38 @@ const LockerInfo = ({ onUpdate, initialData }) => {
         closeNomineeModal();
     };
 
-    const handleFileUpload = (type, event) => {
-        const file = event.target.files[0];
-        if (file) {
-            setUploadedFiles((prev) => ({ ...prev, [type]: true }));
-        }
+    const handleAttachmentsUpdate = (attachments) => {
+        const updatedData = {
+            ...lockerData,
+            attachments
+        };
+        setLockerData(updatedData);
+        onUpdate(updatedData);
     };
 
     return (
         <div className="form-section">
             <h2>Locker Information</h2>
+            <div className="form-group">
+                <label>Center *</label>
+                <select
+                    value={lockerData.center}
+                    onChange={(e) => handleInputChange('center', e.target.value)}
+                    required
+                    disabled={isLoadingCenters}
+                >
+                    <option value="">Select Center</option>
+                    {centers.map((center) => (
+                        <option key={center.id} value={center.id}>
+                            {center.name}
+                        </option>
+                    ))}
+                </select>
+                {isLoadingCenters && <span className="loading-indicator">Loading centers...</span>}
+            </div>
             <div className="form-group locker-group">
                 <label>Assign Locker</label>
+
                 <div className="input-with-button">
                     <input
                         type="text"
@@ -79,27 +96,7 @@ const LockerInfo = ({ onUpdate, initialData }) => {
                     </button>
                 </div>
             </div>
-            <div className="form-group">
-                <label>Smart Card Number</label>
-                <input
-                    type="text"
-                    placeholder="Enter smart card number"
-                    value={lockerData.smartCardNumber}
-                    onChange={(e) => handleInputChange('smartCardNumber', e.target.value)}
-                />
-            </div>
-            <div className="form-group">
-                <label>Group</label>
-                <select
-                    value={lockerData.userGroup}
-                    onChange={(e) => handleInputChange('userGroup', e.target.value)}
-                >
-                    <option value="">Select Group</option>
-                    <option value="User Group 1">User Group 1</option>
-                    <option value="User Group 2">User Group 2</option>
-                    <option value="User Group 3">User Group 3</option>
-                </select>
-            </div>
+
             <div className="form-group">
                 <label>Remarks</label>
                 <textarea
@@ -126,57 +123,10 @@ const LockerInfo = ({ onUpdate, initialData }) => {
             </div>
 
             {/* Attachments Section */}
-            <div className="attachments-section">
-                <h3>Attachments</h3>
-                <div className="attachment-item">
-                    <label>
-                        Select Identity Proof
-                        <input
-                            type="file"
-                            accept="image/*,application/pdf"
-                            onChange={(e) => handleFileUpload('identityProof', e)}
-                            style={{ display: 'none' }}
-                        />
-                    </label>
-                    {uploadedFiles.identityProof && <span className="tick-icon">✔</span>}
-                </div>
-                <div className="attachment-item">
-                    <label>
-                        Select Address Proof
-                        <input
-                            type="file"
-                            accept="image/*,application/pdf"
-                            onChange={(e) => handleFileUpload('addressProof', e)}
-                            style={{ display: 'none' }}
-                        />
-                    </label>
-                    {uploadedFiles.addressProof && <span className="tick-icon">✔</span>}
-                </div>
-                <div className="attachment-item">
-                    <label>
-                        Select Contact Document
-                        <input
-                            type="file"
-                            accept="image/*,application/pdf"
-                            onChange={(e) => handleFileUpload('contactDocument', e)}
-                            style={{ display: 'none' }}
-                        />
-                    </label>
-                    {uploadedFiles.contactDocument && <span className="tick-icon">✔</span>}
-                </div>
-                <div className="attachment-item">
-                    <label>
-                        Select Other Document
-                        <input
-                            type="file"
-                            accept="image/*,application/pdf"
-                            onChange={(e) => handleFileUpload('otherDocument', e)}
-                            style={{ display: 'none' }}
-                        />
-                    </label>
-                    {uploadedFiles.otherDocument && <span className="tick-icon">✔</span>}
-                </div>
-            </div>
+            <Attachments
+                holderType={holderType}
+                onUpdate={handleAttachmentsUpdate}
+            />
 
             {/* Assign Locker Modal */}
             <AssignLocker isOpen={isModalOpen} onLockerAssign={handleLockerAssign} onClose={closeModal} />

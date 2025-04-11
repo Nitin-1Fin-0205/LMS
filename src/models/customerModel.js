@@ -15,8 +15,7 @@ export const formDataStructure = {
         },
         lockerInfo: {
             assignedLocker: "",
-            smartCardNumber: "",
-            userGroup: "",
+            center: "",
             remarks: ""
         },
         nominee: {

@@ -12,7 +12,7 @@ const PrivateRoute = ({ children }) => {
     try {
         const isValidToken = token && token.length > 0;
         if (!isValidToken) {
-            // localStorage.removeItem('authToken');
+            localStorage.removeItem('authToken');
             return <Navigate to="/forbidden" replace />;
         }
     } catch (error) {

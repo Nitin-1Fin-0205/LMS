@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import CustomerInfo from './CustomerInfo';
@@ -7,109 +7,101 @@ import RentDetails from './RentDetails';
 import Attachments from './Attachments';
 import '../styles/AddCustomer.css';
 import { formDataStructure } from '../models/customerModel';
+import { API_URL } from '../assets/config';
 
+// Convert to regular component since memo isn't providing significant benefits here
+const TabContent = ({ holderType, currentData, updateHolderData, centers, isLoadingCenters }) => {
+    // Remove useMemo for these simple callbacks
+    const customerInfoCallback = (data) => updateHolderData('customerInfo', holderType, data);
+    const lockerInfoCallback = (data) => updateHolderData('lockerInfo', holderType, data);
+    const rentDetailsCallback = (data) => updateHolderData('rentDetails', holderType, data);
+
+    return (
+        <div className="form-sections animated-tab">
+            <CustomerInfo
+                onUpdate={customerInfoCallback}
+                initialData={currentData.customerInfo}
+                key={`customer-info-${holderType}`}
+            />
+            <LockerInfo
+                onUpdate={lockerInfoCallback}
+                initialData={currentData.lockerInfo}
+                holderType={holderType}
+                centers={centers}
+                isLoadingCenters={isLoadingCenters}
+                key={`locker-info-${holderType}`}
+            />
+            {holderType === 'primaryHolder' && (
+                <RentDetails
+                    onUpdate={rentDetailsCallback}
+                    initialData={currentData.rentDetails}
+                    key="rent-details"
+                />
+            )}
+        </div>
+    );
+};
+
+// Keep the main component memoized since it could be part of a larger app
 const AddCustomer = () => {
     const [activeTab, setActiveTab] = useState(0);
     const indicatorRef = useRef(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [formData, setFormData] = useState(formDataStructure);
+    const [centers, setCenters] = useState([]);
+    const [isLoadingCenters, setIsLoadingCenters] = useState(false);
 
-    const updateFormData = (section, holderType, data) => {
-        setFormData(prev => ({
+    // Create memoized state setters
+    const [holders, setHolders] = useState({
+        primaryHolder: formDataStructure.primaryHolder,
+        secondHolder: formDataStructure.secondHolder,
+        thirdHolder: formDataStructure.thirdHolder
+    });
+
+    // Memoize update function
+    const updateHolderData = useCallback((section, holderType, data) => {
+        setHolders(prev => ({
             ...prev,
             [holderType]: {
                 ...prev[holderType],
-                [section]: data
+                [section]: {
+                    ...prev[holderType][section],
+                    ...data
+                }
             }
         }));
+    }, []);
 
-        console.log('Updated formData:', {
-            ...formData,
-            [holderType]: {
-                ...formData[holderType],
-                [section]: data
-            }
-        });
-        console.log('Updated section:', section);
+    // Memoize tab change handler
+    const handleTabChange = useCallback((index) => {
+        setActiveTab(index);
+    }, []);
 
-    };
-
-    useEffect(() => {
-        const activeButton = document.querySelector(`.tabs button:nth-child(${activeTab + 1})`);
-        const indicator = indicatorRef.current;
-
-        if (activeButton && indicator) {
-            const { offsetLeft, offsetWidth } = activeButton;
-            indicator.style.width = `${offsetWidth}px`;
-            indicator.style.transform = `translateX(${offsetLeft}px)`;
-        }
-    }, [activeTab]);
-
-    const renderTabContent = () => {
-        const holderType = ['primaryHolder', 'secondHolder', 'thirdHolder'][activeTab];
-
-        switch (activeTab) {
-            case 0:
-                return (
-                    <div className="form-sections animated-tab">
-                        <CustomerInfo
-                            onUpdate={(data) => updateFormData('customerInfo', holderType, data)}
-                            initialData={formData[holderType]?.customerInfo}
-                        />
-                        <LockerInfo
-                            onUpdate={(data) => updateFormData('lockerInfo', holderType, data)}
-                            initialData={formData[holderType]?.lockerInfo}
-                        />
-                        <RentDetails
-                            onUpdate={(data) => updateFormData('rentDetails', holderType, data)}
-                            initialData={formData[holderType]?.rentDetails}
-                        />
-                    </div>
-                );
-            case 1:
-                return (
-                    <div className="form-sections animated-tab">
-                        <CustomerInfo
-                            onUpdate={(data) => updateFormData('customerInfo', holderType, data)}
-                            initialData={formData[holderType]?.customerInfo}
-                        />
-                        <LockerInfo
-                            onUpdate={(data) => updateFormData('lockerInfo', holderType, data)}
-                            initialData={formData[holderType]?.lockerInfo}
-                        />
-                    </div>
-                );
-            case 2:
-                return (
-                    <div className="form-sections animated-tab">
-                        <CustomerInfo
-                            onUpdate={(data) => updateFormData('customerInfo', holderType, data)}
-                            initialData={formData[holderType]?.customerInfo}
-                        />
-                        <LockerInfo
-                            onUpdate={(data) => updateFormData('lockerInfo', holderType, data)}
-                            initialData={formData[holderType]?.lockerInfo}
-                        />
-                    </div>
-                );
-            default:
-                return null;
-        }
-    };
-
-    const apiUrl = "https://webhook.site/61874c8a-d344-4317-81d1-bfd4ffd6d5a9";
-
-    const handleSubmit = async () => {
+    // Memoize submit handler
+    const handleSubmit = useCallback(async () => {
         try {
+            console.log('Submitting form with data:', holders);
+            const { primaryHolder, secondHolder, thirdHolder } = holders;
+
+
             setIsSubmitting(true);
-            const response = await axios.post(`${apiUrl}`, formData, {
+            const token = localStorage.getItem('authToken');
+
+            const response = await axios.post(`${API_URL}`, holders, {
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
                 }
             });
 
-            if (response.status === 201) {
+            if (response.status === 201 || response.status === 200) {
                 toast.success('Customer added successfully!');
+                setHolders({
+                    primaryHolder: formDataStructure.primaryHolder,
+                    secondHolder: formDataStructure.secondHolder,
+                    thirdHolder: formDataStructure.thirdHolder
+                });
+                setActiveTab(0);
             }
         } catch (error) {
             console.error('Error submitting form:', error);
@@ -117,7 +109,36 @@ const AddCustomer = () => {
         } finally {
             setIsSubmitting(false);
         }
+    }, [holders]);
+
+    const fetchCenters = async () => {
+        try {
+            setIsLoadingCenters(true);
+            const token = localStorage.getItem('authToken');
+            const response = await axios.get(`${API_URL}/api/centers`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.data && Array.isArray(response.data)) {
+                setCenters(response.data);
+            }
+        } catch (error) {
+            console.error('Error fetching centers:', error);
+        } finally {
+            setIsLoadingCenters(false);
+        }
     };
+
+    useEffect(() => {
+        fetchCenters();
+    }, []);
+
+    // Memoize current holder type and data
+    const currentHolderType = ['primaryHolder', 'secondHolder', 'thirdHolder'][activeTab];
+    const currentData = holders[currentHolderType];
 
     return (
         <div className="add-customer-container">
@@ -128,7 +149,7 @@ const AddCustomer = () => {
                         <button
                             key={index}
                             className={activeTab === index ? 'active' : ''}
-                            onClick={() => setActiveTab(index)}
+                            onClick={() => handleTabChange(index)}
                         >
                             {tab}
                         </button>
@@ -137,7 +158,13 @@ const AddCustomer = () => {
                 </div>
             </div>
             <div className="tab-content-container">
-                {renderTabContent()}
+                <TabContent
+                    holderType={currentHolderType}
+                    currentData={currentData}
+                    updateHolderData={updateHolderData}
+                    centers={centers}
+                    isLoadingCenters={isLoadingCenters}
+                />
             </div>
             <div className="form-submit-container">
                 <button
@@ -152,4 +179,5 @@ const AddCustomer = () => {
     );
 };
 
-export default AddCustomer;
+// Keep memo here since AddCustomer might be used in a parent component
+export default memo(AddCustomer);

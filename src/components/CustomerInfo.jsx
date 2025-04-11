@@ -1,12 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const CustomerInfo = ({ onUpdate, initialData }) => {
     const [cameraActive, setCameraActive] = useState(false);
-    const [capturedImage, setCapturedImage] = useState(null);
+    const [capturedImage, setCapturedImage] = useState(initialData?.photo || null);
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [isDragging, setIsDragging] = useState(false);
 
     const [customerData, setCustomerData] = useState(initialData || {
         photo: null,
@@ -22,6 +24,12 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         documentNo: ""
     });
 
+    useEffect(() => {
+        if (initialData?.photo) {
+            setCapturedImage(initialData.photo);
+        }
+    }, [initialData]);
+
     const handleInputChange = (field, value) => {
         const updatedData = {
             ...customerData,
@@ -29,6 +37,21 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         };
         setCustomerData(updatedData);
         onUpdate(updatedData);
+    };
+
+    const handleFetchPan = async () => {
+        try {
+            const response = await fetch(`${API_URL}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ panNo: customerData.aadharOrPanNo }),
+            });
+        } catch (error) {
+            console.error('Error fetching PAN details:', error);
+            toast.error('Failed to fetch PAN details');
+        }
     };
 
     const startCamera = async () => {
@@ -113,6 +136,8 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 // Convert to data URL
                 const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
                 setCapturedImage(imageDataUrl);
+                handleInputChange('photo', imageDataUrl); // Add this line to update parent state
+                setSelectedFile(null);
                 toast.success('Image captured successfully');
 
                 // Stop the camera after successful capture
@@ -129,13 +154,84 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
     // Reset the captured image
     const resetCapturedImage = () => {
         setCapturedImage(null);
+        handleInputChange('photo', null); // Add this line to update parent state
+    };
+
+    const handleFileUpload = async (event) => {
+        await stopCamera(); // Stop the camera if it's active
+        const file = event.target.files[0];
+        if (file) {
+            setSelectedFile(file);
+            setCapturedImage(null);
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                handleInputChange('photo', e.target.result);
+            };
+            reader.readAsDataURL(file);
+            toast.success('Image uploaded successfully');
+        }
+    };
+
+    const handleDragEnter = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            setSelectedFile(file);
+            setCapturedImage(null);
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                handleInputChange('photo', e.target.result);
+            };
+            reader.readAsDataURL(file);
+            toast.success('Image uploaded successfully');
+        } else {
+            toast.error('Please drop an image file');
+        }
+    };
+
+    // Add this validation function near your other handlers
+    const handleMobileInput = (e) => {
+        const value = e.target.value;
+        // Only allow numbers
+        if (value === '' || /^[0-9\b]+$/.test(value)) {
+            // Limit to 10 digits
+            if (value.length <= 10) {
+                handleInputChange('mobileNo', value);
+            }
+        }
     };
 
     return (
         <div className="form-section">
             <h2>Customer Information</h2>
             <div className="photo-webcam-card">
-                <div className="photo-upload-area">
+                <div
+                    className={`photo-upload-area ${isDragging ? 'dragging' : ''}`}
+                    onDragEnter={handleDragEnter}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                >
                     <img
                         src="src/assets/icons/dragprofile.png"
                         alt="Upload Icon"
@@ -148,10 +244,26 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                             <input
                                 type="file"
                                 accept="image/*"
+                                onChange={handleFileUpload}
                                 style={{ display: 'none' }}
                             />
                         </label>
                     </p>
+                    {selectedFile && (
+                        <div className="selected-file">
+                            <span>{selectedFile.name}</span>
+                            <button
+                                onClick={() => {
+                                    setSelectedFile(null);
+                                    setCapturedImage(null);
+                                    handleInputChange('photo', null);
+                                }}
+                                className="remove-file"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    )}
                 </div>
                 {!cameraActive && !capturedImage && (
                     <button onClick={startCamera} className="use-webcamera-button">
@@ -173,18 +285,11 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                         ref={canvasRef}
                         style={{ display: 'none' }}
                     />
-
                     <div className="camera-controls">
-                        <button
-                            onClick={captureImage}
-                            className="camera-button"
-                        >
+                        <button onClick={captureImage} className="camera-button">
                             Capture Image
                         </button>
-                        <button
-                            onClick={stopCamera}
-                            className="camera-button stop"
-                        >
+                        <button onClick={stopCamera} className="camera-button stop">
                             Stop Camera
                         </button>
                     </div>
@@ -194,103 +299,132 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
             {capturedImage && (
                 <div className="captured-image-container">
                     <h3>Captured Image:</h3>
-
                     <img
                         src={capturedImage}
                         alt="Captured"
                         className="captured-image"
                     />
-
                     <button onClick={resetCapturedImage}>Reset</button>
                 </div>
             )}
 
+            <div className="form-group pan-group">
+                <label>PAN No *</label>
+                <div className="input-button-group">
+                    <input
+                        type="text"
+                        value={customerData.aadharOrPanNo}
+                        onChange={(e) => handleInputChange('aadharOrPanNo', e.target.value)}
+                        placeholder="Enter PAN no"
+                        required
+                    />
+                    <button
+                        className="fetch-pan-button"
+                        onClick={handleFetchPan}
+                    >
+                        Fetch Details
+                    </button>
+                </div>
+            </div>
+
             <div className="form-group">
-                <label>Customer ID</label>
+                <label>Customer ID *</label>
                 <input
                     type="text"
                     value={customerData.customerId}
                     onChange={(e) => handleInputChange('customerId', e.target.value)}
                     placeholder="Enter customer id"
+                    required
                 />
             </div>
             <div className="form-group">
-                <label>Customer Name</label>
+                <label>Customer Name *</label>
                 <input
                     type="text"
                     value={customerData.customerName}
                     onChange={(e) => handleInputChange('customerName', e.target.value)}
                     placeholder="Enter customer name"
+                    required
                 />
             </div>
             <div className="form-group">
-                <label>Father's / Husband's Name</label>
+                <label>Father's / Husband's Name *</label>
                 <input
                     type="text"
                     value={customerData.fatherOrHusbandName}
                     onChange={(e) => handleInputChange('fatherOrHusbandName', e.target.value)}
                     placeholder="Enter father/husband name"
+                    required
                 />
             </div>
             <div className="form-group">
-                <label>Address</label>
+                <label>Address *</label>
                 <textarea
                     value={customerData.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
                     placeholder="Enter address"
+                    required
                 ></textarea>
             </div>
             <div className="form-group">
-                <label>D.O.B</label>
+                <label>D.O.B *</label>
                 <input
                     type="date"
                     value={customerData.dateOfBirth}
                     onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                    required
                 />
             </div>
             <div className="form-group">
-                <label>Mobile No</label>
+                <label>Mobile No *</label>
                 <input
-                    type="text"
+                    type="tel"
+                    pattern="[0-9]*"
+                    maxLength="10"
                     value={customerData.mobileNo}
-                    onChange={(e) => handleInputChange('mobileNo', e.target.value)}
+                    onChange={handleMobileInput}
                     placeholder="Enter primary mobile"
+                    required
+                    onKeyPress={(e) => {
+                        if (!/[0-9]/.test(e.key)) {
+                            e.preventDefault();
+                        }
+                    }}
                 />
             </div>
+
             <div className="form-group">
-                <label>Aadhar/PAN No</label>
-                <input
-                    type="text"
-                    value={customerData.aadharOrPanNo}
-                    onChange={(e) => handleInputChange('aadharOrPanNo', e.target.value)}
-                    placeholder="Enter PAN no"
-                />
-            </div>
-            <div className="form-group">
-                <label>Gender</label>
-                <input
-                    type="text"
+                <label>Gender *</label>
+                <select
                     value={customerData.gender}
                     onChange={(e) => handleInputChange('gender', e.target.value)}
-                    placeholder="Enter gender"
-                />
+                    className="gender-select"
+                    required
+                >
+                    <option value="">Select Gender</option>
+                    <option value="MALE">MALE</option>
+                    <option value="FEMALE">FEMALE</option>
+                    <option value="OTHER">OTHER</option>
+                </select>
             </div>
             <div className="form-group">
-                <label>Email ID</label>
+                <label>Email ID *</label>
                 <input
                     type="email"
                     value={customerData.emailId}
                     onChange={(e) => handleInputChange('emailId', e.target.value)}
                     placeholder="Enter email"
+                    required
                 />
             </div>
             <div className="form-group">
-                <label>Document No</label>
+                <label>Document No *</label>
                 <input
                     type="text"
                     value={customerData.documentNo}
                     onChange={(e) => handleInputChange('documentNo', e.target.value)}
                     placeholder="Enter Document No"
+                    required
                 />
             </div>
         </div>

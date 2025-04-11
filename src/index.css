@@ -1,18 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
 
-body {
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden; /* Prevent horizontal scrolling on the entire page */
+*{
+  box-sizing: border-box;
 }
 
-
+body {
+  font-family: 'Poppins', Arial, sans-serif;
+  font-size: 13px;
+  color: #333;
+  line-height: 1.5;
+  background: linear-gradient(135deg, #f0f8ff, #e6e6fa);
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; 
+}
 
 /* Headings */
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Roboto', Arial, sans-serif;
   font-weight: 700; /* Bold for headings */
   color: #000; /* Black color for headings */
+  margin-top: 0;
+  margin-bottom:10px;
 }
 
 /* Labels */

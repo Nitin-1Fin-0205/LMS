@@ -6,17 +6,12 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
     const [nominees, setNominees] = useState([
         { name: '', relation: '', dob: '' },
     ]);
-    const [shakeFields, setShakeFields] = useState([]); // Track which fields need to shake
 
     const handleInputChange = (index, field, value) => {
         const updatedNominees = [...nominees];
         updatedNominees[index][field] = value;
         setNominees(updatedNominees);
 
-        // Remove shake effect when the field is corrected
-        setShakeFields((prev) =>
-            prev.filter((item) => !(item.index === index && item.field === field))
-        );
     };
 
     const handleAddNominee = () => {
@@ -45,7 +40,6 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
         });
 
         if (missingFields.length > 0) {
-            setShakeFields(missingFields); // Trigger shake effect for missing fields
             toast.error('All nominee fields are required!');
             return;
         }
@@ -65,13 +59,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                     {nominees.map((nominee, index) => (
                         <div key={index} className="nominee-item">
                             <div
-                                className={`form-group ${shakeFields.some(
-                                    (item) => item.index === index && item.field === 'name'
-                                )
-                                    ? 'shake'
-                                    : ''
-                                    }`}
-                            >
+                                className={`form-group`}>
                                 <label>
                                     Nominee Name {index + 1} <span className="required">*</span>
                                 </label>
@@ -85,12 +73,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                                 />
                             </div>
                             <div
-                                className={`form-group ${shakeFields.some(
-                                    (item) => item.index === index && item.field === 'relation'
-                                )
-                                    ? 'shake'
-                                    : ''
-                                    }`}
+                                className={`form-group `}
                             >
                                 <label>
                                     Relation with Nominee {index + 1}{' '}
@@ -106,12 +89,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                                 />
                             </div>
                             <div
-                                className={`form-group ${shakeFields.some(
-                                    (item) => item.index === index && item.field === 'dob'
-                                )
-                                    ? 'shake'
-                                    : ''
-                                    }`}
+                                className={`form-group`}
                             >
                                 <label>
                                     DOB {index + 1} <span className="required">*</span>
@@ -150,7 +128,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
             </div>
             {/* Toast Container */}
             <ToastContainer />
-        </div>
+        </div >
     );
 };
 
