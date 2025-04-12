@@ -1,32 +1,26 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { CssBaseline, Box } from '@mui/material';
+import SideNav from './components/SideNav';
 import AddCustomer from './components/AddCustomer';
 import Forbidden from './components/pages/Forbidden';
-import PrivateRoute from './components/auth/PrivateRoute';
 import './styles/App.css';
-
-const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <div className="App">
+    <Router>
+      <CssBaseline />
+      <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+        <SideNav />
+        <Box sx={{ flexGrow: 1, paddingLeft: 5 }}>
           <Routes>
+            <Route path="/add-customer" element={<AddCustomer />} />
             <Route path="/forbidden" element={<Forbidden />} />
-
-            <Route path="/*" element={
-              <PrivateRoute>
-                <Routes>
-                  <Route path="/add-customer" element={<AddCustomer />} />
-                  <Route path="*" element={<Navigate to="/forbidden" replace />} />
-                </Routes>
-              </PrivateRoute>
-            } />
+            <Route path="*" element={<Forbidden />} />
           </Routes>
-        </div>
-      </Router>
-    </QueryClientProvider>
+        </Box>
+      </Box>
+    </Router>
   );
 }
 

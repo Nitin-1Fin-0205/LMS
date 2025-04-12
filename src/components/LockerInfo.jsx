@@ -34,7 +34,7 @@ const LockerInfo = ({ onUpdate, initialData, holderType, centers, isLoadingCente
     };
 
     const handleLockerAssign = (locker) => {
-        handleInputChange('assignedLocker', locker);
+        handleInputChange('assignedLocker', locker?.locker_number || "");
         closeModal();
     };
 

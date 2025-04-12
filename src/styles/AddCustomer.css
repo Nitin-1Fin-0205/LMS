@@ -1,4 +1,3 @@
-
 /* Add Customer Container */
 .add-customer-container {
   background: linear-gradient(145deg, #ffffff, #e6e6e6);
@@ -22,45 +21,45 @@
 .tabs-container {
   position: relative;
   display: flex;
-  justify-content: space-evenly; /* Distribute tabs equally across the row */
+  justify-content: space-evenly;
   align-items: center;
-  background: linear-gradient(90deg, #f0f0f0, #e6e6e6); /* Classic gradient background */
-  padding: 3px 0; /* Reduced padding */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for the container */
+  background: linear-gradient(90deg, #f0f0f0, #e6e6e6);
+  padding: 3px 3px 0 3px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Tabs Styling */
 .tabs {
   display: flex;
-  gap: 0; /* Remove gaps to align the roller with tabs */
-  width: 100%; /* Ensure tabs span the entire row */
-  overflow: hidden; /* Prevent overflow issues with the roller */
+  position: relative;
+  gap: 0;
+  width: 100%;
+  overflow: hidden;
 }
 
 .tabs button {
-  flex: 1; /* Equal width for all tabs */
-  padding: 10px 0; /* Reduced padding */
+  flex: 1;
+  padding: 10px 0;
   margin: 0;
   border: none;
-  background: transparent; /* Transparent background for inactive tabs */
-  color: #333; /* Darker color for better visibility */
-  font-size: 13px; /* Reduced font size */
+  background: transparent;
+  color: #333;
+  font-size: 13px;
   font-weight: bold;
   cursor: pointer;
   text-align: center;
   position: relative;
-  z-index: 2; /* Ensure text is above the roller */
   transition: color 0.3s ease;
 }
 
 .tabs button.active {
-  color: #007bff; /* Bright blue for the active tab */
+  color: #007bff;
   font-weight: bold;
-  background-color: #ffffff; /* White background for the active tab */
+  background-color: #ffffff;
 }
 
 .tabs button:hover {
-  color: #0056b3; /* Slightly darker blue on hover */
+  color: #0056b3;
 }
 
 /* Moving Roller */
@@ -68,12 +67,12 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 4px; /* Adjust height for better visibility */
-  background: linear-gradient(90deg, #007bff, #0056b3); /* Bright blue gradient for the roller */
-  border-radius: 2px; /* Rounded corners for the roller */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Shadow for the roller */
-  transition: transform 0.3s ease, width 0.3s ease; /* Smooth transition for movement */
-  z-index: 1; /* Ensure it stays above the container background */
+  height: 4px;
+  width: var(--tab-width, 100px);
+  background-color: #007bff;
+  transition: transform 0.3s ease;
+  transform: translateX(calc(var(--active-tab, 0) * var(--tab-width, 100px)));
+  z-index: 5; 
 }
 
 /* Active Tab Shadow */
@@ -117,7 +116,7 @@
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px); /* Slight slide-in effect */
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -129,7 +128,7 @@
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateX(-20px); /* Slide in from the left */
+    transform: translateX(-20px);
   }
   to {
     opacity: 1;
@@ -149,7 +148,6 @@
 
 .form-section {
   flex: 1;
-  /* border: 1px solid #b3b3b3;  */
   padding: 20px;
   border-radius: 10px;
   background-color: #ffffff;
@@ -161,25 +159,25 @@
 .form-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px; /* Reduced gap */
-  margin-bottom: 12px; /* Reduced margin */
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .form-group label {
-  flex: 1 1 30%; /* Labels take up 30% of the row */
+  flex: 1 1 30%;
   font-weight: bold;
-  font-size: 13px; /* Reduced font size */
+  font-size: 13px;
 }
 
 .form-group input,
 .form-group textarea,
 .form-group select {
-  flex: 1 1 65%; /* Inputs take up 65% of the row */
-  padding: 6px; /* Reduced padding */
+  flex: 1 1 65%;
+  padding: 6px;
   border: 1px solid #ccc;
   border-radius: 5px;
   box-sizing: border-box;
-  font-size: 13px; /* Reduced font size */
+  font-size: 13px;
 }
 
 /* Input focus styles */
@@ -204,7 +202,7 @@
 
 /* Adjustments for file inputs and buttons */
 .form-group input[type="file"] {
-  flex: 1 1 100%; /* File inputs take full width */
+  flex: 1 1 100%;
 }
 
 .attachments a {
@@ -219,8 +217,8 @@
 .photo-webcam-group {
   display: flex;
   align-items: center;
-  gap: 10px; /* Space between the elements */
-  margin-bottom: 15px; /* Add spacing below the group */
+  gap: 10px;
+  margin-bottom: 15px;
 }
 
 .photo-webcam-group label {
@@ -228,17 +226,17 @@
 }
 
 .photo-webcam-group input[type="file"] {
-  flex: 1; /* Allow the file input to take up available space */
+  flex: 1;
 }
 
 .photo-webcam-group .use-webcamera-button {
-  padding: 8px 16px; /* Reduced padding */
+  padding: 8px 16px;
   background-color: #000;
   color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 13px; /* Reduced font size */
+  font-size: 13px;
   transition: background-color 0.3s ease;
 }
 
@@ -248,13 +246,13 @@
 
 .use-webcamera-button {
   margin-top: 15px;
-  padding: 8px 16px; /* Reduced padding */
+  padding: 8px 16px;
   background-color: #000;
   color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 13px; /* Reduced font size */
+  font-size: 13px;
   transition: background-color 0.3s ease;
 }
 
@@ -324,13 +322,13 @@
 
 .camera-container button {
   margin-top: 10px;
-  padding: 8px 16px; /* Reduced padding */
+  padding: 8px 16px;
   background-color: #000;
   color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 13px; /* Reduced font size */
+  font-size: 13px;
   transition: background-color 0.3s ease;
 }
 
@@ -357,13 +355,13 @@
 
 .captured-image-container button {
   margin-top: 10px;
-  padding: 8px 16px; /* Reduced padding */
+  padding: 8px 16px;
   background-color: #000;
   color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 13px; /* Reduced font size */
+  font-size: 13px;
   transition: background-color 0.3s ease;
   margin-bottom: 10px; 
 }
@@ -416,13 +414,13 @@
 /* Add button styling */
 .add-button {
   margin-left: 10px;
-  padding: 8px 16px; /* Reduced padding */
+  padding: 8px 16px;
   background-color: #000;
   color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 13px; /* Reduced font size */
+  font-size: 13px;
 }
 
 .add-button:hover {
@@ -433,11 +431,11 @@
 .input-with-button {
   display: flex;
   align-items: center;
-  gap: 10px; /* Space between input and button */
+  gap: 10px;
 }
 
 .input-with-button input {
-  flex: 1; /* Allow the input to take up available space */
+  flex: 1;
 }
 
 .locker-input {
@@ -446,29 +444,29 @@
 }
 
 .input-with-button .add-button {
-  padding: 8px 16px; /* Reduced padding */
-  background-color: #000; /* Black color */
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 13px; /* Reduced font size */
-}
-
-.input-with-button .add-button:hover {
-  background-color: #444; /* Darker black on hover */
-}
-
-/* Nominee button styling */
-.nominee-button {
-  margin-top: 20px;
-  padding: 8px 16px; /* Reduced padding */
+  padding: 8px 16px;
   background-color: #000;
   color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 14px; /* Reduced font size */
+  font-size: 13px;
+}
+
+.input-with-button .add-button:hover {
+  background-color: #444;
+}
+
+/* Nominee button styling */
+.nominee-button {
+  margin-top: 20px;
+  padding: 8px 16px;
+  background-color: #000;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .nominee-button:hover {
@@ -483,28 +481,28 @@
 }
 
 .nominee-button {
-  padding: 8px 16px; /* Reduced padding */
-  background-color: #000; /* Black color */
+  padding: 8px 16px;
+  background-color: #000;
   color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 14px; /* Reduced font size */
+  font-size: 14px;
   transition: background-color 0.3s ease;
 }
 
 .nominee-button:hover {
-  background-color: #444; /* Darker black on hover */
+  background-color: #444;
 }
 
 /* Attachments section styling */
 .attachments-section {
   margin-top: 20px;
-  border: 2px solid #d0d0d0; /* Bright coral border */
+  border: 2px solid #d0d0d0;
   border-radius: 15px;
-  padding: 12px; /* Reduced padding */
-  background: linear-gradient(145deg, #ffffff, #f0f0f0); /* Subtle 3D effect */
-  box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.2), -8px -8px 15px rgba(255, 255, 255, 0.7); /* 3D shadow */
+  padding: 12px;
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.2), -8px -8px 15px rgba(255, 255, 255, 0.7);
 }
 
 .attachments-section h3 {
@@ -517,15 +515,15 @@
 .attachment-item {
   display: flex;
   align-items: center;
-  gap: 8px; /* Reduced gap */
-  margin-bottom: 8px; /* Reduced margin */
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .attachment-item label {
   color: #007bff;
   text-decoration: underline;
   cursor: pointer;
-  font-size: 13px; /* Reduced font size */
+  font-size: 13px;
 }
 
 .attachment-item label:hover {
@@ -548,34 +546,34 @@
 
 /* Style for Save Locker Details button */
 .save-button {
-  padding: 8px 16px; /* Reduced padding */
-  background-color: #000; /* Black color */
+  padding: 8px 16px;
+  background-color: #000;
   color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 13px; /* Reduced font size */
+  font-size: 13px;
   transition: background-color 0.3s ease;
 }
 
 .save-button:hover {
-  background-color: #444; /* Darker black on hover */
+  background-color: #444;
 }
 
 /* Style for View Detailed Rent button */
 .view-button {
-  padding: 8px 16px; /* Reduced padding */
-  background-color: #000; /* Black color */
+  padding: 8px 16px;
+  background-color: #000;
   color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 13px; /* Reduced font size */
+  font-size: 13px;
   transition: background-color 0.3s ease;
 }
 
 .view-button:hover {
-  background-color: #444; /* Darker black on hover */
+  background-color: #444;
 }
 
 /* Modal overlay */
@@ -626,147 +624,19 @@
 .save-button,
 .close-button,
 .delete-button {
-  padding: 8px 16px; /* Reduced padding */
+  padding: 8px 16px;
   background-color: #000;
   color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 13px; /* Reduced font size */
+  font-size: 13px;
 }
 
 .add-button:hover,
 .save-button:hover,
 .close-button:hover,
 .delete-button:hover {
-  background-color: #444;
-}
-
-/* Assign Locker Container */
-.assign-locker-container {
-  display: flex;
-  gap: 20px;
-}
-
-/* Left Side: Form */
-.assign-locker-form {
-  flex: 1;
-}
-
-.assign-locker-form .form-group {
-  margin-bottom: 15px;
-}
-
-.assign-locker-form .form-group label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-.assign-locker-form .form-group select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.assign-locker-form .form-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.assign-locker-form .save-button,
-.assign-locker-form .close-button {
-  padding: 8px 16px; /* Reduced padding */
-  background-color: #000;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 13px; /* Reduced font size */
-}
-
-.assign-locker-form .save-button:hover,
-.assign-locker-form .close-button:hover {
-  background-color: #444;
-}
-
-/* Right Side: Cabinet View */
-.cabinet-view {
-  flex: 1;
-  background-color: #f9f9f9;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  max-width: 50%;
-}
-
-.cabinet-view h4 {
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-/* Locker grid styling */
-.locker-grid {
-  max-height: 60vh;
-  display: flex;
-  flex-direction: column;
-  gap: 8px; /* Reduced gap */
-  align-items: center;
-  overflow: scroll;
-}
-
-.locker-row {
-  display: flex;
-  gap: 10px;
-}
-
-.locker-item {
-  width: 70px; /* Reduced size */
-  height: 70px; /* Reduced size */
-  background-size: cover;
-  background-position: center;
-  border-style: none;
-  /* border: 1px solid #ccc; */
-  border-radius: 5px;
-  text-align: center;
-  line-height: 70px; /* Adjusted line height */
-  font-size: 10px; /* Reduced font size */
-  font-weight: bold;
-  color: #333;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.locker-item.selected {
-  color: #fff;
-  border-color: #000;
-}
-
-.locker-item:hover {
-  transform: scale(1.05);
-}
-
-/* Form actions */
-.form-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-}
-
-.save-button,
-.close-button {
-  padding: 8px 16px; /* Reduced padding */
-  background-color: #000;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 13px; /* Reduced font size */
-}
-
-.save-button:hover,
-.close-button:hover {
   background-color: #444;
 }
 
@@ -783,19 +653,19 @@
   background-color: #f9f9f9;
   border: 1px dashed #ccc;
   border-radius: 10px;
-  padding: 12px; /* Reduced padding */
+  padding: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .nominee-card h4 {
   margin: 0 0 10px;
-  font-size: 12px; /* Reduced font size */
+  font-size: 12px;
   font-weight: bold;
 }
 
 .nominee-card p {
   margin: 5px 0;
-  font-size: 12px; /* Reduced font size */
+  font-size: 12px;
   color: #555;
 }
 
@@ -829,7 +699,7 @@
 }
 
 .submit-button:active {
-    transform: scale(0.98); /* Slightly reduce size on click */
+    transform: scale(0.98);
 }
 
 .submit-button:disabled {

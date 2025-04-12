@@ -74,14 +74,18 @@ const AddCustomer = () => {
     // Memoize tab change handler
     const handleTabChange = useCallback((index) => {
         setActiveTab(index);
+        const indicator = indicatorRef.current;
+        if (indicator) {
+            const tabWidth = indicator.parentElement.children[index].offsetWidth;
+            indicator.style.setProperty('--active-tab', index);
+            indicator.style.setProperty('--tab-width', `${tabWidth}px`);
+        }
     }, []);
 
     // Memoize submit handler
     const handleSubmit = useCallback(async () => {
         try {
             console.log('Submitting form with data:', holders);
-            const { primaryHolder, secondHolder, thirdHolder } = holders;
-
 
             setIsSubmitting(true);
             const token = localStorage.getItem('authToken');
@@ -114,17 +118,26 @@ const AddCustomer = () => {
     const fetchCenters = async () => {
         try {
             setIsLoadingCenters(true);
-            const token = localStorage.getItem('authToken');
-            const response = await axios.get(`${API_URL}/api/centers`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                }
-            });
+            // const token = localStorage.getItem('authToken');
+            // const response = await axios.get(`${API_URL}/api/centers`, {
+            //     headers: {
+            //         'Authorization': `Bearer ${token}`,
+            //         'Accept': 'application/json'
+            //     }
+            // });
 
-            if (response.data && Array.isArray(response.data)) {
-                setCenters(response.data);
-            }
+            // if (response.data && Array.isArray(response.data)) {
+            //     setCenters(response.data);
+            // }
+
+            // Mock data for Texting
+            const mockCenters = [
+                { id: 1, name: 'Center A' },
+                { id: 2, name: 'Center B' },
+                { id: 3, name: 'Center C' }
+            ];
+
+            setCenters(mockCenters);
         } catch (error) {
             console.error('Error fetching centers:', error);
         } finally {

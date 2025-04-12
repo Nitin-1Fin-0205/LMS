@@ -51,3 +51,146 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+  
+  /* Modal content */
+  .assign-locker-modal-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    width: 85vw;
+    max-width: 1400px;
+    margin: 0 auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  
+/* Assign Locker Container */
+.assign-locker-container {
+    display: grid;
+    grid-template-columns: minmax(250px, 1fr) minmax(300px, 2fr);
+    gap: 20px;
+    width: 100%;
+}
+
+.assign-locker-form {
+    min-width: 250px;
+    width: 100%;
+}
+
+.cabinet-view {
+    width: 100%;
+    min-width: 300px;
+    background-color: #f9f9f9;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.cabinet-view h4 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+/* Locker grid styling */
+.locker-grid {
+    max-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: center;
+    overflow: auto;
+    padding: 10px;
+}
+
+.locker-row {
+    display: flex;
+    gap: 5px;
+}
+
+.locker-item {
+    width: 150px;
+    height: 80px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.locker-item div {
+    width: 100%;
+    height: 100%;
+}
+
+.locker-item svg {
+    width: 100%;
+    height: 100%;
+}
+
+.locker-number {
+    position: absolute;
+    left: 35px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    font-weight: bold;
+    color: #464655;
+    text-shadow: 0 1px 1px rgba(255,255,255,0.5);
+    z-index: 1;
+}
+
+.locker-item.selected {
+    color: #fff;
+    border-color: #000;
+}
+
+.locker-item:hover {
+    transform: scale(1.05);
+}
+
+.locker-item.missing {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+}
+
+.locker-item[data-status]:hover::after {
+    content: attr(data-status);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(9px);
+    background: rgb(255, 255, 255);
+    color: tomato;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    white-space: nowrap;
+    font-weight: 700;
+    z-index: 10;
+}
+
+.locker-item[disabled] {
+    cursor: not-allowed;
+    opacity: 0.9;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+    .assign-locker-container {
+        grid-template-columns: 1fr;
+    }
+
+    .assign-locker-modal-content {
+        width: 95vw;
+        padding: 15px;
+    }
+
+    .cabinet-view {
+        min-width: 100%;
+    }
+}

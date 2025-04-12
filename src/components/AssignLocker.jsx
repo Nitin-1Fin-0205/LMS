@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import lockerLight from '../assets/icons/lockerLight.png';
 import lockerDark from '../assets/icons/lockerDark.png';
 import { API_URL } from '../assets/config';
+import '../styles/AssignLocker.css';
+import { LOCKER_STATUS, LOCKER_TYPES, LOCKER_SIZES } from '../constants/locker';
+import { LockerSvgs } from '../assets/lockerSvg';
 
 const AssignLocker = ({ isOpen, onClose, onLockerAssign }) => {
     const [selectedLocker, setSelectedLocker] = useState(null);
@@ -58,13 +61,12 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign }) => {
                         "cabinet_number": 1,
                         "location": "Floor 1",
                         "lockers": [
-                            // First row with a missing middle locker
                             {
                                 "locker_number": "101",
                                 "room_number": "A101",
                                 "row": 1,
                                 "column": 1,
-                                "type": "M",
+                                "type": "S",
                                 "size": "Medium",
                                 "status": "available"
                             },
@@ -86,21 +88,21 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign }) => {
                                 "column": ((index + 3) % 3) + 1,
                                 "type": "M",
                                 "size": "Medium",
-                                "status": "available"
+                                "status": "occupied"
                             }))
                         ]
                     },
                     {
                         "cabinet_number": 2,
                         "location": "Floor 1",
-                        "lockers": Array(12).fill(null).map((_, index) => ({
+                        "lockers": Array(100).fill(null).map((_, index) => ({
                             "locker_number": `20${index + 1}`,
                             "room_number": "A102",
-                            "row": Math.floor(index / 3) + 1,
-                            "column": (index % 3) + 1,
+                            "row": Math.floor(index / 5) + 1,
+                            "column": (index % 8) + 1,
                             "type": "L",
                             "size": "Large",
-                            "status": "available"
+                            "status": index % 2 === 0 ? index % 3 === 0 ? 'maintenance' : 'occupied' : 'available'
                         }))
                     },
                     {
@@ -126,7 +128,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign }) => {
                             "column": (index % 3) + 1,
                             "type": "L",
                             "size": "Large",
-                            "status": index % 2 === 0 ? 'occupied' : 'available'
+                            "status": index % 2 === 0 ? index % 3 === 0 ? 'maintenance' : 'occupied' : 'available'
                         }))
                     }
                 ],
@@ -307,12 +309,19 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign }) => {
     };
 
     const handleLockerClick = (locker) => {
-        setSelectedLocker(locker);
+        // Check if the locker is selected  and toggle selection
+        if (selectedLocker && selectedLocker.locker_number === locker.locker_number) {
+            setSelectedLocker(null);
+        }
+        else if (locker.status === LOCKER_STATUS.AVAILABLE) {
+            setSelectedLocker(locker);
+        }
     };
 
     const handleAssign = () => {
         if (selectedLocker) {
-            onLockerAssign(selectedLocker); // Pass the selected locker to the parent component
+            console.log('Assigning locker:', selectedLocker);
+            onLockerAssign(selectedLocker);
         }
     };
 
@@ -326,6 +335,23 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign }) => {
         setError({ message: null, code: null });
         setRetryCount(0);
         fetchLockerData();
+    };
+
+    const getLockerSvg = (locker, isSelected) => {
+        if (!locker) return null;
+        if (isSelected) return LockerSvgs.selected;
+        if (locker.status === 'occupied') return LockerSvgs.occupied;
+        if (locker.status === 'maintenance') return LockerSvgs.maintenance;
+        return LockerSvgs.available;
+    };
+
+    const getStatusText = (status) => {
+        if (status === LOCKER_STATUS.AVAILABLE) return null;
+        switch (status) {
+            case LOCKER_STATUS.OCCUPIED: return 'Occupied';
+            case LOCKER_STATUS.MAINTENANCE: return 'Under Maintenance';
+            default: return 'Not Available';
+        }
     };
 
     if (!isOpen) return null;
@@ -368,7 +394,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign }) => {
 
     return (
         <div className="modal-overlay">
-            <div className="modal-content">
+            <div className="assign-locker-modal-content">
                 <h3>Assign Lockers</h3>
                 <div className="assign-locker-container">
                     {renderForm()}
@@ -383,23 +409,15 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign }) => {
                                             <button
                                                 key={colIndex}
                                                 className={`locker-item ${selectedLocker?.locker_number === locker.locker_number ? 'selected' : ''
-                                                    } ${locker.status !== 'available' ? 'occupied' : ''}`}
+                                                    } ${locker.status !== LOCKER_STATUS.AVAILABLE ? 'occupied' : ''}`}
                                                 onClick={() => handleLockerClick(locker)}
-                                                disabled={locker.status !== 'available'}
-                                                style={{
-                                                    backgroundImage: `url(${locker.status === 'occupied'
-                                                        ? lockerDark
-                                                        : selectedLocker?.locker_number === locker.locker_number
-                                                            ? lockerDark
-                                                            : lockerLight
-                                                        })`,
-                                                    cursor: locker.status === 'available' ? 'pointer' : 'not-allowed',
-                                                    backgroundSize: 'cover',
-                                                    backgroundPosition: 'center',
-                                                    color: locker.status === 'available' ? '#000' : '#fff',
-                                                }}
+                                                disabled={locker.status !== LOCKER_STATUS.AVAILABLE}
+                                                {...(locker.status !== LOCKER_STATUS.AVAILABLE && { 'data-status': getStatusText(locker.status) })}
                                             >
-                                                {locker.locker_number}
+                                                <div dangerouslySetInnerHTML={{
+                                                    __html: getLockerSvg(locker, selectedLocker?.locker_number === locker.locker_number)
+                                                }} />
+                                                <span className="locker-number">{locker.locker_number}</span>
                                             </button>
                                         ) : (
                                             <div
