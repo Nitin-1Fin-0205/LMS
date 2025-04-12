@@ -71,14 +71,26 @@ const AddCustomer = () => {
         }));
     }, []);
 
+    // Add new useEffect for initial tab indicator setup
+    useEffect(() => {
+        const indicator = indicatorRef.current;
+        if (indicator && indicator.parentElement) {
+            const firstTab = indicator.parentElement.children[0];
+            const tabWidth = firstTab.offsetWidth;
+            indicator.style.setProperty('--tab-width', `${tabWidth}px`);
+            indicator.style.setProperty('--active-tab', '0');
+        }
+    }, []);
+
     // Memoize tab change handler
     const handleTabChange = useCallback((index) => {
         setActiveTab(index);
         const indicator = indicatorRef.current;
-        if (indicator) {
-            const tabWidth = indicator.parentElement.children[index].offsetWidth;
-            indicator.style.setProperty('--active-tab', index);
+        if (indicator && indicator.parentElement) {
+            const tab = indicator.parentElement.children[index];
+            const tabWidth = tab.offsetWidth;
             indicator.style.setProperty('--tab-width', `${tabWidth}px`);
+            indicator.style.setProperty('--active-tab', index);
         }
     }, []);
 
