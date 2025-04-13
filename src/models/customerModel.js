@@ -8,7 +8,7 @@ export const formDataStructure = {
             address: "",
             dateOfBirth: "",
             mobileNo: "",
-            aadharOrPanNo: "",
+            panNo: "",
             gender: "",
             emailId: "",
             documentNo: ""
@@ -50,7 +50,7 @@ export const formDataStructure = {
             address: "",
             dateOfBirth: "",
             mobileNo: "",
-            aadharOrPanNo: "",
+            panNo: "",
             gender: "",
             emailId: "",
             documentNo: ""
@@ -82,7 +82,7 @@ export const formDataStructure = {
             address: "",
             dateOfBirth: "",
             mobileNo: "",
-            aadharOrPanNo: "",
+            panNo: "",
             gender: "",
             emailId: "",
             documentNo: ""

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import axios from 'axios';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import CustomerInfo from './CustomerInfo';
 import LockerInfo from './LockerInfo';
 import RentDetails from './RentDetails';
@@ -42,6 +42,91 @@ const TabContent = ({ holderType, currentData, updateHolderData, centers, isLoad
     );
 };
 
+const validateHolder = (holderData, isSecondaryHolder = false) => {
+    const errors = [];
+
+    // Required fields for customer info
+    const customerInfoFields = {
+        customerId: 'Customer ID',
+        customerName: 'Customer Name',
+        fatherOrHusbandName: "Father's/Husband's Name",
+        address: 'Address',
+        dateOfBirth: 'Date of Birth',
+        mobileNo: 'Mobile Number',
+        gender: 'Gender',
+        emailId: 'Email ID',
+        documentNo: 'Document Number'
+    };
+
+    // Required fields for locker info
+    const lockerInfoFields = {
+        center: 'Center'
+    };
+
+    // Required fields for rent details (primary holder only)
+    const rentDetailsFields = {
+        lockerNo: 'Locker Number',
+        deposit: 'Deposit',
+        rent: 'Rent',
+        admissionFees: 'Admission Fees',
+        total: 'Total Amount',
+        lockerKeyNo: 'Locker Key Number'
+    };
+
+
+    // Validate customer info
+    Object.entries(customerInfoFields).forEach(([field, label]) => {
+        if (!holderData.customerInfo[field]) {
+            errors.push(`${label} is required`);
+        }
+    });
+
+    // Validate locker info
+    Object.entries(lockerInfoFields).forEach(([field, label]) => {
+        if (!holderData.lockerInfo[field]) {
+            errors.push(`${label} is required`);
+        }
+    });
+
+    // Only validate rent details for primary holder
+    if (!isSecondaryHolder) {
+        Object.entries(rentDetailsFields).forEach(([field, label]) => {
+            if (!holderData.rentDetails[field]) {
+                errors.push(`${label} is required`);
+            }
+        });
+    }
+
+    return errors;
+};
+
+const validateAllHolders = (holders, setActiveTab) => {
+    const holderTypes = [
+        { type: 'primaryHolder', isRequired: true, tabIndex: 0 },
+        { type: 'secondHolder', isRequired: false, tabIndex: 1 },
+        { type: 'thirdHolder', isRequired: false, tabIndex: 2 }
+    ];
+
+    for (const { type, isRequired, tabIndex } of holderTypes) {
+        const holder = holders[type];
+
+        // Skip validation for optional holders if they don't have a name
+        if (!isRequired && !holder.customerInfo.customerName) {
+            continue;
+        }
+
+        const errors = validateHolder(holder, !isRequired);
+        if (errors.length > 0) {
+            // Switch to the tab with the error
+            setActiveTab(tabIndex);
+            toast.error(`${type.charAt(0).toUpperCase() + type.slice(1)}: ${errors[0]}`);
+            return false;
+        }
+    }
+
+    return true;
+};
+
 // Keep the main component memoized since it could be part of a larger app
 const AddCustomer = () => {
     const [activeTab, setActiveTab] = useState(0);
@@ -59,6 +144,7 @@ const AddCustomer = () => {
 
     // Memoize update function
     const updateHolderData = useCallback((section, holderType, data) => {
+        console.log(`Updating ${holderType} data for section: ${section}`, data);
         setHolders(prev => ({
             ...prev,
             [holderType]: {
@@ -94,11 +180,14 @@ const AddCustomer = () => {
         }
     }, []);
 
-    // Memoize submit handler
+    // Update the handleSubmit function
     const handleSubmit = useCallback(async () => {
-        try {
-            console.log('Submitting form with data:', holders);
+        // Pass setActiveTab to the validation function
+        if (!validateAllHolders(holders, setActiveTab)) {
+            return;
+        }
 
+        try {
             setIsSubmitting(true);
             const token = localStorage.getItem('authToken');
 
@@ -125,7 +214,7 @@ const AddCustomer = () => {
         } finally {
             setIsSubmitting(false);
         }
-    }, [holders]);
+    }, [holders, setActiveTab]); // Add setActiveTab to dependencies
 
     const fetchCenters = async () => {
         try {
@@ -200,6 +289,7 @@ const AddCustomer = () => {
                     {isSubmitting ? 'Adding Customer...' : 'Add Customer'}
                 </button>
             </div>
+            <ToastContainer />
         </div>
     );
 };

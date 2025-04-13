@@ -1,24 +1,44 @@
-import React, { useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 
-const Attachments = ({ holderType, onUpdate }) => {
-    const [uploadedFiles, setUploadedFiles] = useState({
-        identityProof: false,
-        addressProof: false,
-        contactDocument: false,
-        otherDocument: false,
+const Attachments = ({ holderType, onUpdate, initialData }) => {
+    const [attachments, setAttachments] = useState({
+        identityProof: null,
+        addressProof: null,
+        contactDocument: null,
+        otherDocument: null
     });
+
+    const fileInputRefs = {
+        identityProof: useRef(),
+        addressProof: useRef(),
+        contactDocument: useRef(),
+        otherDocument: useRef()
+    };
+
+    useEffect(() => {
+        if (initialData) {
+            setAttachments(prevAttachments => ({
+                ...prevAttachments,
+                ...initialData
+            }));
+        }
+    }, [initialData]);
 
     const handleFileUpload = (type, event) => {
         const file = event.target.files[0];
         if (file) {
-            setUploadedFiles(prev => ({ ...prev, [type]: true }));
-            onUpdate({ ...uploadedFiles, [type]: file });
+            const newAttachments = {
+                ...attachments,
+                [type]: file
+            };
+            setAttachments(newAttachments);
+            onUpdate(newAttachments);
+            toast.success(`${type} uploaded successfully`);
         }
     };
 
-    // Render different attachments based on holder type
     const renderAttachments = () => {
-        // For primary holder, show all attachments
         if (holderType === 'primaryHolder') {
             return (
                 <>
@@ -27,54 +47,57 @@ const Attachments = ({ holderType, onUpdate }) => {
                             Select Identity Proof
                             <input
                                 type="file"
+                                ref={fileInputRefs.identityProof}
                                 accept="image/*,application/pdf"
                                 onChange={(e) => handleFileUpload('identityProof', e)}
                                 style={{ display: 'none' }}
                             />
                         </label>
-                        {uploadedFiles.identityProof && <span className="tick-icon">✔</span>}
+                        {attachments.identityProof && <span className="tick-icon">✔</span>}
                     </div>
                     <div className="attachment-item">
                         <label>
                             Select Address Proof
                             <input
                                 type="file"
+                                ref={fileInputRefs.addressProof}
                                 accept="image/*,application/pdf"
                                 onChange={(e) => handleFileUpload('addressProof', e)}
                                 style={{ display: 'none' }}
                             />
                         </label>
-                        {uploadedFiles.addressProof && <span className="tick-icon">✔</span>}
+                        {attachments.addressProof && <span className="tick-icon">✔</span>}
                     </div>
                     <div className="attachment-item">
                         <label>
                             Select Contact Document
                             <input
                                 type="file"
+                                ref={fileInputRefs.contactDocument}
                                 accept="image/*,application/pdf"
                                 onChange={(e) => handleFileUpload('contactDocument', e)}
                                 style={{ display: 'none' }}
                             />
                         </label>
-                        {uploadedFiles.contactDocument && <span className="tick-icon">✔</span>}
+                        {attachments.contactDocument && <span className="tick-icon">✔</span>}
                     </div>
                     <div className="attachment-item">
                         <label>
                             Select Other Document
                             <input
                                 type="file"
+                                ref={fileInputRefs.otherDocument}
                                 accept="image/*,application/pdf"
                                 onChange={(e) => handleFileUpload('otherDocument', e)}
                                 style={{ display: 'none' }}
                             />
                         </label>
-                        {uploadedFiles.otherDocument && <span className="tick-icon">✔</span>}
+                        {attachments.otherDocument && <span className="tick-icon">✔</span>}
                     </div>
                 </>
             );
         }
 
-        // For secondary and third holders, show only identity and address proof
         return (
             <>
                 <div className="attachment-item">
@@ -82,24 +105,26 @@ const Attachments = ({ holderType, onUpdate }) => {
                         Select Identity Proof
                         <input
                             type="file"
+                            ref={fileInputRefs.identityProof}
                             accept="image/*,application/pdf"
                             onChange={(e) => handleFileUpload('identityProof', e)}
                             style={{ display: 'none' }}
                         />
                     </label>
-                    {uploadedFiles.identityProof && <span className="tick-icon">✔</span>}
+                    {attachments.identityProof && <span className="tick-icon">✔</span>}
                 </div>
                 <div className="attachment-item">
                     <label>
                         Select Address Proof
                         <input
                             type="file"
+                            ref={fileInputRefs.addressProof}
                             accept="image/*,application/pdf"
                             onChange={(e) => handleFileUpload('addressProof', e)}
                             style={{ display: 'none' }}
                         />
                     </label>
-                    {uploadedFiles.addressProof && <span className="tick-icon">✔</span>}
+                    {attachments.addressProof && <span className="tick-icon">✔</span>}
                 </div>
             </>
         );

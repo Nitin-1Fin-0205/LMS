@@ -9,6 +9,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
     const canvasRef = useRef(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [isPanFetching, setIsPanFetching] = useState(false);
 
     const [customerData, setCustomerData] = useState(initialData || {
         photo: null,
@@ -18,7 +19,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         address: "",
         dateOfBirth: "",
         mobileNo: "",
-        aadharOrPanNo: "",
+        panNo: "",
         gender: "",
         emailId: "",
         documentNo: ""
@@ -41,16 +42,70 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
 
     const handleFetchPan = async () => {
         try {
-            const response = await fetch(`${API_URL}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ panNo: customerData.aadharOrPanNo }),
-            });
+            if (!customerData.panNo) {
+                toast.error('Please enter PAN number');
+                return;
+            }
+
+            setIsPanFetching(true);
+
+            // Mock API call to fetch PAN details
+            const response = {
+                ok: true,
+                status: 200,
+                json: async () => {
+                    // Simulate API delay
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    return {
+                        status: 'success',
+                        data: {
+                            customerId: '12345',
+                            customerName: 'John Doe',
+                            fatherOrHusbandName: 'Mr. Doe',
+                            address: '123 Main St, City, State, ZIP',
+                            dateOfBirth: '1990-01-01',
+                            mobileNo: '9876543210'
+                        }
+                    };
+                }
+            };
+
+            // const token = localStorage.getItem('authToken');
+            // const response = await fetch(`${API_URL}/api/pan-details`, {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //         'Authorization': `Bearer ${token}`,
+            //         'Accept': 'application/json'
+            //     },
+            //     body: JSON.stringify({ panNo: customerData.panNo })
+            // });
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                setCustomerData(prev => {
+                    const updatedData = {
+                        ...prev,
+                        customerId: data.data.customerId,
+                        customerName: data.data.customerName,
+                        fatherOrHusbandName: data.data.fatherOrHusbandName,
+                        address: data.data.address,
+                        dateOfBirth: data.data.dateOfBirth,
+                        mobileNo: data.data.mobileNo
+                    };
+                    onUpdate(updatedData);
+                    return updatedData;
+                });
+
+                toast.success('PAN details fetched successfully');
+            } else {
+                toast.error('PAN details not found');
+            }
         } catch (error) {
             console.error('Error fetching PAN details:', error);
             toast.error('Failed to fetch PAN details');
+        } finally {
+            setIsPanFetching(false); // Reset loading state
         }
     };
 
@@ -313,16 +368,17 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 <div className="input-button-group">
                     <input
                         type="text"
-                        value={customerData.aadharOrPanNo}
-                        onChange={(e) => handleInputChange('aadharOrPanNo', e.target.value)}
+                        value={customerData.panNo}
+                        onChange={(e) => handleInputChange('panNo', e.target.value)}
                         placeholder="Enter PAN no"
                         required
                     />
                     <button
                         className="fetch-pan-button"
                         onClick={handleFetchPan}
+                        disabled={isPanFetching} // Disable button when fetching
                     >
-                        Fetch Details
+                        {isPanFetching ? 'Fetching...' : 'Fetch Details'} {/* Show loading text */}
                     </button>
                 </div>
             </div>
