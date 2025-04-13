@@ -1,6 +1,8 @@
+import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import React, { useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 const AddNominee = ({ isOpen, onClose, onSave }) => {
     const [nominees, setNominees] = useState([
@@ -106,7 +108,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                                 className="delete-button"
                                 onClick={() => handleDeleteNominee(index)}
                             >
-                                Delete
+                                <FontAwesomeIcon icon={faTrashAlt} />
                             </button>
                         </div>
                     ))}
@@ -118,7 +120,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                     >
                         Add Nominee
                     </button>
-                    <button className="save-button" onClick={handleSave}>
+                    <button className="save-nominee-button" onClick={handleSave}>
                         Save
                     </button>
                     <button className="close-button" onClick={onClose}>
@@ -126,8 +128,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                     </button>
                 </div>
             </div>
-            {/* Toast Container */}
-            <ToastContainer />
+            {/* <ToastContainer /> */}
         </div >
     );
 };

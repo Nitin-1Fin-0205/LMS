@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+// import 'react-toastify/dist/ReactToastify.css';
 
 const CustomerInfo = ({ onUpdate, initialData }) => {
     const [cameraActive, setCameraActive] = useState(false);

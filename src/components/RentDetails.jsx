@@ -74,7 +74,7 @@ const RentDetails = ({ onUpdate, initialData }) => {
                 </button>
                 <button className="view-button">View Detailed Rent</button>
             </div>
-            <ToastContainer />
+            {/* <ToastContainer /> */}
         </div>
     );
 };

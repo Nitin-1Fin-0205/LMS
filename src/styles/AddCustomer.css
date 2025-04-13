@@ -1,3 +1,76 @@
+:root {
+  /* Primary Colors */
+  --primary-blue: #007bff;
+  --primary-dark: #000000;
+  --primary-hover: #444444;
+  
+  /* Background Colors */
+  --bg-gradient-light: linear-gradient(145deg, #ffffff, #e6e6e6);
+  --bg-gradient-dark: linear-gradient(135deg, #333, #555);
+  --bg-gradient-button: linear-gradient(145deg, #4a90e2, #357abd);
+  
+  /* Text Colors */
+  --text-primary: #333333;
+  --text-light: #ffffff;
+  
+  /* Border Colors */
+  --border-color: #cccccc;
+  
+  /* Success Colors */
+  --success-green: #4CAF50;
+  --success-hover: #45a049;
+  
+  /* Shadow Colors */
+  --shadow-dark: rgba(0, 0, 0, 0.2);
+  --shadow-light: rgba(255, 255, 255, 0.7);
+}
+
+
+/* General Styles */
+.form-section  button ,.submit-button {
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  position: relative;
+  transform-style: preserve-3d;
+  transform: translateZ(0);
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 
+      0 2px 0 lightslategray,  
+      0 4px 12px rgba(0, 0, 0, 0.3),  
+      inset 0 -2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 2px 8px rgba(255, 255, 255, 0.3);
+}
+
+.form-section button:hover,.submit-button:hover {
+  background: linear-gradient(145deg, #357abd, #4a90e2);
+  box-shadow: 
+      0 3px 0  lightslategray,
+      0 6px 16px rgba(0, 0, 0, 0.3),  
+      inset 0 -2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 2px 8px rgba(255, 255, 255, 0.3);
+}
+
+.form-section button:active ,.submit-button:active {
+  transform: translateY(2px) translateZ(0); 
+  box-shadow: 
+      0 1px 0 lightslategray,
+      0 4px 8px rgba(0, 0, 0, 0.3),
+      inset 0 -2px 8px rgba(0, 0, 0, 0.15),
+      inset 0 2px 8px rgba(255, 255, 255, 0.3);
+}
+
+.form-section button:disabled {
+  background: linear-gradient(145deg, #b8b8b8, #cccccc);
+  cursor: not-allowed;
+  box-shadow: 
+      0 3px 0 #999999,
+      0 8px 15px rgba(0, 0, 0, 0.1),
+      inset 0 -2px 10px rgba(0, 0, 0, 0.1),
+      inset 0 2px 10px rgba(255, 255, 255, 0.2);
+  transform: translateZ(0);
+}
+
 /* Add Customer Container */
 .add-customer-container {
   background: linear-gradient(145deg, #ffffff, #e6e6e6);
@@ -50,12 +123,14 @@
   text-align: center;
   position: relative;
   transition: color 0.3s ease;
+  box-shadow: none;
 }
 
 .tabs button.active {
   color: #007bff;
   font-weight: bold;
   background-color: #ffffff;
+  transform: none;
 }
 
 .tabs button:hover {
@@ -405,28 +480,88 @@
   margin: 0;
 }
 
+
+.pan-group .input-button-group {
+  display: flex;
+  gap: 10px;
+  flex: 1 1 65%;
+}
+
+.pan-group .input-button-group input {
+  flex: 1;
+}
+
+.fetch-pan-button {
+  padding: 6px 12px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 0.3s;
+}
+
+.fetch-pan-button:hover {
+  background-color: #45a049;
+}
+
+.fetch-pan-button:active {
+  background-color: #3e8e41;
+  transform: scale(0.98);
+} 
+
+.fetch-pan-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.selected-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 5px 10px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.selected-file span {
+  font-size: 13px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.remove-file {
+  background: none;
+  border: none;
+  color: #ff4444;
+  cursor: pointer;
+  padding: 0 5px;
+  font-size: 16px;
+}
+
+.remove-file:hover {
+  color: #cc0000;
+}
+
 .browse-link {
   color: #007bff;
+  cursor: pointer;
+}
+
+.browse-link:hover {
   text-decoration: underline;
-  cursor: pointer;
 }
 
-/* Add button styling */
-.add-button {
-  margin-left: 10px;
-  padding: 8px 16px;
-  background-color: #000;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 13px;
-}
 
-.add-button:hover {
-  background-color: #444;
-}
 
+/*  Locker Info Styling */
 /* Align input and button in the same line */
 .input-with-button {
   display: flex;
@@ -443,34 +578,36 @@
   cursor:not-allowed;
 }
 
-.input-with-button .add-button {
-  padding: 8px 16px;
-  background-color: #000;
+.input-with-button .add-center-button {
+  padding: 7px 12px;
+  background-color: var(--primary-dark);
   color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
 }
 
-.input-with-button .add-button:hover {
-  background-color: #444;
+.input-with-button .add-center-button:hover {
+  background-color: var(--primary-hover);
 }
 
 /* Nominee button styling */
 .nominee-button {
   margin-top: 20px;
   padding: 8px 16px;
-  background-color: #000;
-  color: #fff;
+  background-color: var(--primary-dark);
+  color: var(--text-light);
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
 }
 
 .nominee-button:hover {
-  background-color: #444;
+  background-color: var(--primary-hover);
 }
 
 /* Center the Add Nominee Details button */
@@ -478,21 +615,6 @@
   display: flex;
   justify-content: center;
   margin-top: 20px;
-}
-
-.nominee-button {
-  padding: 8px 16px;
-  background-color: #000;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s ease;
-}
-
-.nominee-button:hover {
-  background-color: #444;
 }
 
 /* Attachments section styling */
@@ -534,46 +656,6 @@
   color: green;
   font-size: 18px;
   font-weight: bold;
-}
-
-/* Center the buttons in RentDetails */
-.form-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-  gap : 5px;
-}
-
-/* Style for Save Locker Details button */
-.save-button {
-  padding: 8px 16px;
-  background-color: #000;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: background-color 0.3s ease;
-}
-
-.save-button:hover {
-  background-color: #444;
-}
-
-/* Style for View Detailed Rent button */
-.view-button {
-  padding: 8px 16px;
-  background-color: #000;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: background-color 0.3s ease;
-}
-
-.view-button:hover {
-  background-color: #444;
 }
 
 /* Modal overlay */
@@ -621,22 +703,45 @@
 }
 
 .add-button,
-.save-button,
+.save-nominee-button,
 .close-button,
 .delete-button {
-  padding: 8px 16px;
+  padding: 7px 12px;
   background-color: #000;
   color: #fff;
   border: none;
   border-radius: 5px;
+  font-size: 12px;
   cursor: pointer;
+  font-weight: 600;
 }
 
 .add-button:hover,
-.save-button:hover,
-.close-button:hover,
-.delete-button:hover {
+.close-button:hover {
   background-color: #444;
+}
+
+.add-button:active,
+.save-nominee-button:active,
+.close-button:active,
+.delete-button:active {
+  transform: scale(0.98);
+}
+
+.delete-button {
+  background-color: #f44336;
+}
+
+.delete-button:hover {
+  background-color: #d32f2f;
+}
+
+.save-nominee-button {
+  background-color: #4CAF50;
+}
+
+.save-nominee-button:hover {
+  background-color: #45a049;
 }
 
 /* Nominee Cards Section */
@@ -673,6 +778,48 @@
   margin-left:2px;
 }
 
+
+/* Style for Save Locker Details button */
+
+/* Center the buttons in RentDetails */
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  gap : 5px;
+}
+.save-button {
+  padding: 7px 13px;
+  background-color: #000;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.3s ease;
+}
+
+.save-button:hover {
+  background-color: #444;
+}
+
+.view-button {
+  padding: 8px 16px;
+  background-color: #000;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.3s ease;
+}
+
+.view-button:hover {
+  background-color: #444;
+}
+
+
+/* Style for the form submit button */
 .form-submit-container {
     display: flex;
     justify-content: center;
@@ -680,128 +827,12 @@
 }
 
 .submit-button {
-    padding: 8px 24px;  /* Reduced from 12px 28px */
-    background: linear-gradient(145deg, #4a90e2, #357abd);
+    padding: 8px 24px;  
+    background: var(--primary-dark);
     border: none;
     border-radius: 6px;  
     color: #fff;
     font-size: 14px;
     font-weight: bold;
     cursor: pointer;
-    position: relative;
-    transform-style: preserve-3d;
-    transform: translateZ(0);
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 
-        0 4px 0 #2a5f96,  
-        0 6px 12px rgba(0, 0, 0, 0.3),  
-        inset 0 -2px 8px rgba(0, 0, 0, 0.15),
-        inset 0 2px 8px rgba(255, 255, 255, 0.3);
-}
-
-.submit-button:hover {
-    background: linear-gradient(145deg, #357abd, #4a90e2);
-    box-shadow: 
-        0 4px 0 #2a5f96, 
-        0 6px 16px rgba(0, 0, 0, 0.3),  
-        inset 0 -2px 8px rgba(0, 0, 0, 0.15),
-        inset 0 2px 8px rgba(255, 255, 255, 0.3);
-}
-
-.submit-button:active {
-    transform: translateY(2px) translateZ(0);  /* Reduced from 4px */
-    box-shadow: 
-        0 2px 0 #2a5f96,
-        0 4px 8px rgba(0, 0, 0, 0.3),
-        inset 0 -2px 8px rgba(0, 0, 0, 0.15),
-        inset 0 2px 8px rgba(255, 255, 255, 0.3);
-}
-
-.submit-button:disabled {
-    background: linear-gradient(145deg, #b8b8b8, #cccccc);
-    cursor: not-allowed;
-    box-shadow: 
-        0 6px 0 #999999,
-        0 8px 15px rgba(0, 0, 0, 0.1),
-        inset 0 -2px 10px rgba(0, 0, 0, 0.1),
-        inset 0 2px 10px rgba(255, 255, 255, 0.2);
-    transform: translateZ(0);
-}
-
-.pan-group .input-button-group {
-    display: flex;
-    gap: 10px;
-    flex: 1 1 65%;
-}
-
-.pan-group .input-button-group input {
-    flex: 1;
-}
-
-.fetch-pan-button {
-    padding: 6px 12px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
-    transition: background-color 0.3s;
-}
-
-.fetch-pan-button:hover {
-    background-color: #45a049;
-}
-
-.fetch-pan-button:active {
-    background-color: #3e8e41;
-    transform: scale(0.98);
-} 
-
-.fetch-pan-button:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-}
-
-.selected-file {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 10px;
-    padding: 5px 10px;
-    background-color: #f5f5f5;
-    border-radius: 4px;
-}
-
-.selected-file span {
-    font-size: 13px;
-    color: #333;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 200px;
-}
-
-.remove-file {
-    background: none;
-    border: none;
-    color: #ff4444;
-    cursor: pointer;
-    padding: 0 5px;
-    font-size: 16px;
-}
-
-.remove-file:hover {
-    color: #cc0000;
-}
-
-.browse-link {
-    color: #007bff;
-    cursor: pointer;
-}
-
-.browse-link:hover {
-    text-decoration: underline;
 }

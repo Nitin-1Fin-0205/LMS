@@ -120,6 +120,7 @@
     border: none;
     cursor: pointer;
     transition: all 0.2s ease;
+    border-radius: 5px;
 }
 
 .locker-item div {
