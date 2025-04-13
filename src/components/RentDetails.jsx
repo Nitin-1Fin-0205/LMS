@@ -33,39 +33,39 @@ const RentDetails = ({ onUpdate, initialData }) => {
         <div className="form-section">
             <h2>Rent Details</h2>
             <div className="form-group">
-                <label>Locker No</label>
+                <label>Locker No<span className='required'>*</span></label>
                 <input type="text" placeholder="Enter locker no" value={rentData.lockerNo} onChange={(e) => handleInputChange('lockerNo', e.target.value)} />
             </div>
             <div className="form-group">
-                <label>Deposit</label>
+                <label>Deposit<span className='required'>*</span></label>
                 <input type="text" placeholder="Enter deposit" value={rentData.deposit} onChange={(e) => handleInputChange('deposit', e.target.value)} />
             </div>
             <div className="form-group">
-                <label>Rent</label>
+                <label>Rent<span className='required'>*</span></label>
                 <input type="text" placeholder="Enter rent" value={rentData.rent} onChange={(e) => handleInputChange('rent', e.target.value)} />
             </div>
             <div className="form-group">
-                <label>Admission Fees</label>
+                <label>Admission Fees<span className='required'>*</span></label>
                 <input type="text" placeholder="Enter admission fees" value={rentData.admissionFees} onChange={(e) => handleInputChange('admissionFees', e.target.value)} />
             </div>
             <div className="form-group">
-                <label>Total</label>
+                <label>Total<span className='required'>*</span></label>
                 <input type="text" placeholder="Enter total" value={rentData.total} onChange={(e) => handleInputChange('total', e.target.value)} />
             </div>
             <div className="form-group">
-                <label>Locker Key No</label>
+                <label>Locker Key No<span className='required'>*</span></label>
                 <input type="text" placeholder="Enter locker key no" value={rentData.lockerKeyNo} onChange={(e) => handleInputChange('lockerKeyNo', e.target.value)} />
             </div>
             <div className="form-group">
-                <label>Contact Number</label>
+                <label>Contact Number<span className='required'>*</span></label>
                 <input type="text" placeholder="Enter contact no" value={rentData.contactNumber} onChange={(e) => handleInputChange('contactNumber', e.target.value)} />
             </div>
             <div className="form-group">
-                <label>Move In Date</label>
+                <label>Move In Date<span className='required'>*</span></label>
                 <input type="date" placeholder="dd-mm-yyyy" value={rentData.moveInDate} onChange={(e) => handleInputChange('moveInDate', e.target.value)} />
             </div>
             <div className="form-group">
-                <label>Anticipated Move Out Date</label>
+                <label>Anticipated Move Out Date<span className='required'>*</span></label>
                 <input type="date" placeholder="dd-mm-yyyy" value={rentData.anticipatedMoveOutDate} onChange={(e) => handleInputChange('anticipatedMoveOutDate', e.target.value)} />
             </div>
             <div className="form-actions">

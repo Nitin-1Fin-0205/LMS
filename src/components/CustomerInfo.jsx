@@ -359,12 +359,12 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                         alt="Captured"
                         className="captured-image"
                     />
-                    <button onClick={resetCapturedImage}>Reset</button>
+                    <button onClick={resetCapturedImage} className="camera-button">Reset</button>
                 </div>
             )}
 
             <div className="form-group pan-group">
-                <label>PAN No *</label>
+                <label>PAN No<span className='required'>*</span></label>
                 <div className="input-button-group">
                     <input
                         type="text"
@@ -384,7 +384,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
             </div>
 
             <div className="form-group">
-                <label>Customer ID *</label>
+                <label>Customer ID<span className='required'>*</span></label>
                 <input
                     type="text"
                     value={customerData.customerId}
@@ -394,7 +394,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 />
             </div>
             <div className="form-group">
-                <label>Customer Name *</label>
+                <label>Customer Name<span className='required'>*</span></label>
                 <input
                     type="text"
                     value={customerData.customerName}
@@ -404,7 +404,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 />
             </div>
             <div className="form-group">
-                <label>Father's / Husband's Name *</label>
+                <label>Father's / Husband's Name<span className='required'>*</span></label>
                 <input
                     type="text"
                     value={customerData.fatherOrHusbandName}
@@ -414,7 +414,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 />
             </div>
             <div className="form-group">
-                <label>Address *</label>
+                <label>Address<span className='required'>*</span></label>
                 <textarea
                     value={customerData.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
@@ -423,7 +423,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 ></textarea>
             </div>
             <div className="form-group">
-                <label>D.O.B *</label>
+                <label>D.O.B<span className='required'>*</span></label>
                 <input
                     type="date"
                     value={customerData.dateOfBirth}
@@ -432,7 +432,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 />
             </div>
             <div className="form-group">
-                <label>Mobile No *</label>
+                <label>Mobile No<span className='required'>*</span></label>
                 <input
                     type="tel"
                     pattern="[0-9]*"
@@ -450,7 +450,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
             </div>
 
             <div className="form-group">
-                <label>Gender *</label>
+                <label>Gender<span className='required'>*</span></label>
                 <select
                     value={customerData.gender}
                     onChange={(e) => handleInputChange('gender', e.target.value)}
@@ -464,7 +464,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 </select>
             </div>
             <div className="form-group">
-                <label>Email ID *</label>
+                <label>Email ID<span className='required'>*</span></label>
                 <input
                     type="email"
                     value={customerData.emailId}
@@ -474,7 +474,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 />
             </div>
             <div className="form-group">
-                <label>Document No *</label>
+                <label>Document No<span className='required'>*</span></label>
                 <input
                     type="text"
                     value={customerData.documentNo}

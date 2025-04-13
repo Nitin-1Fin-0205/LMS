@@ -630,7 +630,6 @@
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 13px;
 }
 
 .add-button:hover,
@@ -671,7 +670,7 @@
 
 .required {
   color: red;
-  margin-left: 5px;
+  margin-left:2px;
 }
 
 .form-submit-container {
@@ -681,30 +680,52 @@
 }
 
 .submit-button {
-    padding: 10px 24px;
-    background: linear-gradient(145deg, #9ec1ff, #5c70a5); 
-    box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.2), -8px -8px 15px rgba(255, 255, 255, 0.7); 
+    padding: 8px 24px;  /* Reduced from 12px 28px */
+    background: linear-gradient(145deg, #4a90e2, #357abd);
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;  
     color: #fff;
-    font-size: 14px; 
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.3s ease;
+    position: relative;
+    transform-style: preserve-3d;
+    transform: translateZ(0);
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 
+        0 4px 0 #2a5f96,  
+        0 6px 12px rgba(0, 0, 0, 0.3),  
+        inset 0 -2px 8px rgba(0, 0, 0, 0.15),
+        inset 0 2px 8px rgba(255, 255, 255, 0.3);
 }
 
 .submit-button:hover {
-    background : linear-gradient(145deg, #5c70a5, #9ec1ff);
-    color : #fff; 
+    background: linear-gradient(145deg, #357abd, #4a90e2);
+    box-shadow: 
+        0 4px 0 #2a5f96, 
+        0 6px 16px rgba(0, 0, 0, 0.3),  
+        inset 0 -2px 8px rgba(0, 0, 0, 0.15),
+        inset 0 2px 8px rgba(255, 255, 255, 0.3);
 }
 
 .submit-button:active {
-    transform: scale(0.98);
+    transform: translateY(2px) translateZ(0);  /* Reduced from 4px */
+    box-shadow: 
+        0 2px 0 #2a5f96,
+        0 4px 8px rgba(0, 0, 0, 0.3),
+        inset 0 -2px 8px rgba(0, 0, 0, 0.15),
+        inset 0 2px 8px rgba(255, 255, 255, 0.3);
 }
 
 .submit-button:disabled {
-    background-color: #cccccc;
+    background: linear-gradient(145deg, #b8b8b8, #cccccc);
     cursor: not-allowed;
+    box-shadow: 
+        0 6px 0 #999999,
+        0 8px 15px rgba(0, 0, 0, 0.1),
+        inset 0 -2px 10px rgba(0, 0, 0, 0.1),
+        inset 0 2px 10px rgba(255, 255, 255, 0.2);
+    transform: translateZ(0);
 }
 
 .pan-group .input-button-group {
@@ -724,7 +745,8 @@
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
+    font-weight: 600;
     white-space: nowrap;
     transition: background-color 0.3s;
 }
@@ -732,6 +754,11 @@
 .fetch-pan-button:hover {
     background-color: #45a049;
 }
+
+.fetch-pan-button:active {
+    background-color: #3e8e41;
+    transform: scale(0.98);
+} 
 
 .fetch-pan-button:disabled {
     background-color: #cccccc;

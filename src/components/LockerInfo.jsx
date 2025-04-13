@@ -5,6 +5,8 @@ import { API_URL } from '../assets/config';
 import AssignLocker from './AssignLocker';
 import AddNominee from './AddNominee';
 import Attachments from './Attachments';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
 
 const LockerInfo = ({ onUpdate, initialData, holderType, centers, isLoadingCenters }) => {
     const [lockerData, setLockerData] = useState(initialData || {
@@ -64,7 +66,7 @@ const LockerInfo = ({ onUpdate, initialData, holderType, centers, isLoadingCente
         <div className="form-section">
             <h2>Locker Information</h2>
             <div className="form-group">
-                <label>Center *</label>
+                <label>Center<span className='required'>*</span></label>
                 <select
                     value={lockerData.center}
                     onChange={(e) => handleInputChange('center', e.target.value)}
@@ -81,18 +83,16 @@ const LockerInfo = ({ onUpdate, initialData, holderType, centers, isLoadingCente
                 {isLoadingCenters && <span className="loading-indicator">Loading centers...</span>}
             </div>
             <div className="form-group locker-group">
-                <label>Assign Locker</label>
+                <label>Assign Locker<span className='required'>*</span></label>
 
                 <div className="input-with-button">
                     <input
                         type="text"
                         className="locker-input"
                         placeholder="Assign locker"
-                        value={lockerData.assignedLocker} // Display the assigned locker
-                        readOnly
-                    />
-                    <button className="add-button" onClick={openModal}>
-                        +
+                        readOnly />
+                    <button className="add-center-button" onClick={openModal}>
+                        <FontAwesomeIcon icon={faPlus} className="add-icon" />
                     </button>
                 </div>
             </div>

@@ -196,7 +196,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign }) => {
         return (
             <div className="assign-locker-form">
                 <div className="form-group">
-                    <label>Room</label>
+                    <label>Room<span className='required'>*</span></label>
                     <select
                         value={selectedRoom}
                         onChange={(e) => setSelectedRoom(e.target.value)}
@@ -209,7 +209,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign }) => {
                     </select>
                 </div>
                 <div className="form-group">
-                    <label>Type</label>
+                    <label>Type<span className='required'>*</span></label>
                     <select
                         value={selectedType}
                         onChange={(e) => setSelectedType(e.target.value)}
@@ -222,7 +222,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign }) => {
                     </select>
                 </div>
                 <div className="form-group">
-                    <label>Size</label>
+                    <label>Size<span className='required'>*</span></label>
                     <select
                         value={selectedSize}
                         onChange={(e) => setSelectedSize(e.target.value)}
@@ -235,7 +235,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign }) => {
                     </select>
                 </div>
                 <div className="form-group">
-                    <label>Cabinet Number</label>
+                    <label>Cabinet Number<span className='required'>*</span></label>
                     <select value={selectedCabinet} onChange={handleCabinetChange}>
                         {lockerData.cabinets.map((cabinet) => (
                             <option key={cabinet.cabinet_number} value={cabinet.cabinet_number}>
