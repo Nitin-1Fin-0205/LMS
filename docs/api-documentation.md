@@ -9,6 +9,7 @@
 - **Response:**
 ```json
 {
+  "userId" :"adeaf0b1-4c3d-4a2e-8b5c-7f3e9a6d1f2b",
   "valid": true,
   "role": "customer_executive"
 }
@@ -180,31 +181,38 @@
 }
 ```
 
-### Assign Locker
-- **Endpoint:** `${API_URL}/api/lockers/assign`
-- **Method:** POST  
+### Get Locker Rent Details
+- **Endpoint:** `${API_URL}/api/lockers/{lockerId}/rent`
+- **Method:** GET
 - **Headers:**
-  - Content-Type: application/json
   - Authorization: Bearer {token}
-- **Request Body:**
-```json
-{
-  "customerId": "string",
-  "lockerId": "string",
-  "cabinetId": "number",
-  "startDate": "string",
-  "endDate": "string"
-}
-```
+  - Accept: application/json
+- **Query Parameters:**
+  - centerId: string (optional)
+  - lockerType: string (optional)
+  - lockerSize: string (optional)
 - **Response:**
 ```json
 {
   "status": "success",
   "data": {
-    "assignmentId": "string",
-    "lockerNumber": "string",
-    "cabinetNumber": "number",
-    "assignedAt": "string"
+    "rentDetails": {
+      "baseRent": "number",
+      "deposit": "number",
+      "admissionFees": "number",
+      "taxRate": "number",
+      "totalTax": "number",
+      "totalAmount": "number",
+      "validFrom": "string (YYYY-MM-DD)",
+      "validTo": "string (YYYY-MM-DD)"
+    },
+    "lockerInfo": {
+      "lockerId": "string",
+      "lockerNumber": "string",
+      "type": "string",
+      "size": "string",
+      "center": "string"
+    }
   }
 }
 ```
