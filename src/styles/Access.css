@@ -1,0 +1,21 @@
+.MuiTableRow-root:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+.MuiChip-root {
+    font-weight: 500;
+}
+
+.MuiSelect-select {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stats-card {
+    transition: transform 0.2s;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+}

@@ -1,8 +1,10 @@
+import { ROUTES } from "../../constants/routes";
+
 const Forbidden = () => {
 
     const addToken = () => {
         localStorage.setItem("authToken", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c");
-        window.location.href = "/add-customer";
+        window.location.href = ROUTES.ADD_CUSTOMER;
 
 
     }
