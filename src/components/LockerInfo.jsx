@@ -27,7 +27,12 @@ const LockerInfo = ({ onUpdate, initialData, holderType, centers, isLoadingCente
         onUpdate(updatedData);
     };
 
+    // Update the openModal function to check for center selection
     const openModal = () => {
+        if (!lockerData.center) {
+            toast.error('Please select a center first');
+            return;
+        }
         setIsModalOpen(true);
     };
 
@@ -85,13 +90,20 @@ const LockerInfo = ({ onUpdate, initialData, holderType, centers, isLoadingCente
             <div className="form-group locker-group">
                 <label>Assign Locker<span className='required'>*</span></label>
 
+                {/* Update the input display to show the selected locker */}
                 <div className="input-with-button">
                     <input
                         type="text"
                         className="locker-input"
-                        placeholder="Assign locker"
-                        readOnly />
-                    <button className="add-center-button" onClick={openModal}>
+                        placeholder="Select center first to assign locker"
+                        value={lockerData.assignedLocker || ''}
+                        readOnly
+                    />
+                    <button
+                        className="add-center-button"
+                        onClick={openModal}
+                        disabled={!lockerData.center} // Disable button if no center selected
+                    >
                         <FontAwesomeIcon icon={faPlus} className="add-icon" />
                     </button>
                 </div>
@@ -129,7 +141,12 @@ const LockerInfo = ({ onUpdate, initialData, holderType, centers, isLoadingCente
             />
 
             {/* Assign Locker Modal */}
-            <AssignLocker isOpen={isModalOpen} onLockerAssign={handleLockerAssign} onClose={closeModal} />
+            <AssignLocker
+                isOpen={isModalOpen}
+                onLockerAssign={handleLockerAssign}
+                onClose={closeModal}
+                cabinetId={lockerData.center} // Pass the selected center ID
+            />
 
             {/* Add Nominee Modal */}
             <AddNominee

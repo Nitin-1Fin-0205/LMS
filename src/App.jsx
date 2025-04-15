@@ -10,6 +10,8 @@ import './styles/App.css';
 import { ROUTES } from './constants/routes';
 import { ROLES } from './constants/roles';
 import Access from './components/Access';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   // Helper function to determine required roles
@@ -49,6 +51,18 @@ function App() {
             </Routes>
           </Box>
         </Box>
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
       </Router>
     </AuthProvider>
   );

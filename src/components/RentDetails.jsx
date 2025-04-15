@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { API_URL } from '../assets/config'
 
 const RentDetails = ({ onUpdate, initialData }) => {
     const [rentData, setRentData] = useState(initialData || {
@@ -11,9 +12,11 @@ const RentDetails = ({ onUpdate, initialData }) => {
         total: "",
         lockerKeyNo: "",
         contactNumber: "",
-        moveInDate: "",
-        anticipatedMoveOutDate: ""
+        selectedPlan: ""
     });
+
+    const [isLockerFetching, setIsLockerFetching] = useState(false);
+    const [lockerPlans, setLockerPlans] = useState([]);
 
     const handleInputChange = (field, value) => {
         const updatedData = {
@@ -22,6 +25,60 @@ const RentDetails = ({ onUpdate, initialData }) => {
         };
         setRentData(updatedData);
         onUpdate(updatedData);
+    };
+
+    const handlePlanChange = (planId) => {
+        const selectedPlan = lockerPlans.find(plan => plan.planId === planId);
+        if (selectedPlan) {
+            const updatedData = {
+                ...rentData,
+                selectedPlan: planId,
+                deposit: selectedPlan.deposit,
+                rent: selectedPlan.baseRent,
+                admissionFees: selectedPlan.admissionFees,
+                total: selectedPlan.grandTotalAmount
+            };
+            setRentData(updatedData);
+            onUpdate(updatedData);
+        }
+    };
+
+    const handleFetchLockerDetails = async () => {
+        try {
+            if (!rentData.lockerNo) {
+                toast.error('Please enter locker number to fetch details');
+                return;
+            }
+
+            setIsLockerFetching(true);
+
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${API_URL}/lockers/lockers/rent?lockerId=${rentData.lockerNo}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                setLockerPlans(data.plans || []);
+                setRentData(prev => ({
+                    ...prev,
+                    lockerKeyNo: ''
+                }));
+                toast.success('Locker details fetched successfully');
+            } else {
+                toast.error(`Failed to fetch locker details: ${data.message || 'Unknown error'}`);
+            }
+        } catch (error) {
+            console.error('Error fetching locker details:', error);
+            toast.error('Failed to fetch locker details');
+        } finally {
+            setIsLockerFetching(false);
+        }
     };
 
     const handleSaveLockerDetails = () => {
@@ -34,23 +91,80 @@ const RentDetails = ({ onUpdate, initialData }) => {
             <h2>Rent Details</h2>
             <div className="form-group">
                 <label>Locker No<span className='required'>*</span></label>
-                <input type="text" placeholder="Enter locker no" value={rentData.lockerNo} onChange={(e) => handleInputChange('lockerNo', e.target.value)} />
+                <div className="input-button-group">
+                    <input
+                        type="text"
+                        placeholder="Enter locker no"
+                        value={rentData.lockerNo}
+                        onChange={(e) => handleInputChange('lockerNo', e.target.value)}
+                    />
+                    <button
+                        className="fetch-details-button"
+                        onClick={handleFetchLockerDetails}
+                        disabled={isLockerFetching}
+                    >
+                        {isLockerFetching ? 'Fetching...' : 'Fetch Details'}
+                    </button>
+                </div>
             </div>
+
+            {lockerPlans.length > 0 && (
+                <div className="form-group">
+                    <label>Select Plan<span className='required'>*</span></label>
+                    <select
+                        value={rentData.selectedPlan}
+                        onChange={(e) => handlePlanChange(e.target.value)}
+                        className="plan-select"
+                    >
+                        <option value="">Select a plan</option>
+                        {lockerPlans.map(plan => (
+                            <option key={plan.planId} value={plan.planId}>
+                                {plan.name} - ₹{plan.grandTotalAmount}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
+
             <div className="form-group">
                 <label>Deposit<span className='required'>*</span></label>
-                <input type="text" placeholder="Enter deposit" value={rentData.deposit} onChange={(e) => handleInputChange('deposit', e.target.value)} />
+                <input
+                    type="text"
+                    placeholder="Enter deposit"
+                    value={rentData.deposit}
+                    onChange={(e) => handleInputChange('deposit', e.target.value)}
+                    readOnly
+                />
             </div>
             <div className="form-group">
                 <label>Rent<span className='required'>*</span></label>
-                <input type="text" placeholder="Enter rent" value={rentData.rent} onChange={(e) => handleInputChange('rent', e.target.value)} />
+                <input
+                    type="text"
+                    placeholder="Enter rent"
+                    value={rentData.rent}
+                    onChange={(e) => handleInputChange('rent', e.target.value)}
+                    readOnly
+                />
             </div>
             <div className="form-group">
                 <label>Admission Fees<span className='required'>*</span></label>
-                <input type="text" placeholder="Enter admission fees" value={rentData.admissionFees} onChange={(e) => handleInputChange('admissionFees', e.target.value)} />
+                <input
+                    type="text"
+                    placeholder="Enter admission fees"
+                    value={rentData.admissionFees}
+                    onChange={(e) => handleInputChange('admissionFees', e.target.value)}
+                    readOnly
+                />
             </div>
             <div className="form-group">
                 <label>Total<span className='required'>*</span></label>
-                <input type="text" placeholder="Enter total" value={rentData.total} onChange={(e) => handleInputChange('total', e.target.value)} />
+                <input
+                    type="text"
+                    placeholder="Enter total"
+                    value={rentData.total}
+                    onChange={(e) => handleInputChange('total', e.target.value)}
+                    readOnly
+                />
             </div>
             <div className="form-group">
                 <label>Locker Key No<span className='required'>*</span></label>
@@ -60,21 +174,12 @@ const RentDetails = ({ onUpdate, initialData }) => {
                 <label>Contact Number<span className='required'>*</span></label>
                 <input type="text" placeholder="Enter contact no" value={rentData.contactNumber} onChange={(e) => handleInputChange('contactNumber', e.target.value)} />
             </div>
-            <div className="form-group">
-                <label>Move In Date<span className='required'>*</span></label>
-                <input type="date" placeholder="dd-mm-yyyy" value={rentData.moveInDate} onChange={(e) => handleInputChange('moveInDate', e.target.value)} />
-            </div>
-            <div className="form-group">
-                <label>Anticipated Move Out Date<span className='required'>*</span></label>
-                <input type="date" placeholder="dd-mm-yyyy" value={rentData.anticipatedMoveOutDate} onChange={(e) => handleInputChange('anticipatedMoveOutDate', e.target.value)} />
-            </div>
             <div className="form-actions">
                 <button className="save-button" onClick={handleSaveLockerDetails}>
                     Save Locker Details
                 </button>
                 <button className="view-button">View Detailed Rent</button>
             </div>
-            {/* <ToastContainer /> */}
         </div>
     );
 };

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { API_URL } from '../assets/config';
 // import 'react-toastify/dist/ReactToastify.css';
 
 const CustomerInfo = ({ onUpdate, initialData }) => {
@@ -42,64 +43,62 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
 
     const handleFetchPan = async () => {
         try {
-            if (!customerData.panNo) {
-                toast.error('Please enter PAN number');
+            if (!customerData.panNo && !customerData.dateOfBirth) {
+                toast.error('Please enter PAN No and D.O.B to fetch details');
                 return;
             }
 
             setIsPanFetching(true);
 
-            // Mock API call to fetch PAN details
-            const response = {
-                ok: true,
-                status: 200,
-                json: async () => {
-                    // Simulate API delay
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    return {
-                        status: 'success',
-                        data: {
-                            customerId: '12345',
-                            customerName: 'John Doe',
-                            fatherOrHusbandName: 'Mr. Doe',
-                            address: '123 Main St, City, State, ZIP',
-                            dateOfBirth: '1990-01-01',
-                            mobileNo: '9876543210'
-                        }
-                    };
-                }
-            };
+            // // Mock API call to fetch PAN details
+            // const response = {
+            //     ok: true,
+            //     status: 200,
+            //     json: async () => {
+            //         // Simulate API delay
+            //         await new Promise(resolve => setTimeout(resolve, 1000));
+            //         return {
+            //             status: 'success',
+            //             data: {
+            //                 customerId: '12345',
+            //                 customerName: 'John Doe',
+            //                 fatherOrHusbandName: 'Mr. Doe',
+            //                 address: '123 Main St, City, State, ZIP',
+            //                 dateOfBirth: '1990-01-01',
+            //                 mobileNo: '9876543210'
+            //             }
+            //         };
+            //     }
+            // };
 
-            // const token = localStorage.getItem('authToken');
-            // const response = await fetch(`${API_URL}/api/pan-details`, {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //         'Authorization': `Bearer ${token}`,
-            //         'Accept': 'application/json'
-            //     },
-            //     body: JSON.stringify({ panNo: customerData.panNo })
-            // });
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${API_URL}/customers/pan-details`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ panNo: customerData.panNo, dob: customerData?.dateOfBirth?.toString() || '' })
+            });
 
             const data = await response.json();
-            if (data.status === 'success') {
+            if (response?.status === 201) {
                 setCustomerData(prev => {
                     const updatedData = {
                         ...prev,
-                        customerId: data.data.customerId,
-                        customerName: data.data.customerName,
-                        fatherOrHusbandName: data.data.fatherOrHusbandName,
-                        address: data.data.address,
-                        dateOfBirth: data.data.dateOfBirth,
-                        mobileNo: data.data.mobileNo
+                        customerId: data?.customerId || '',
+                        customerName: data?.customerName || '',
+                        address: data?.address || '',
+                        dateOfBirth: data?.dateOfBirth || '',
+                        mobileNo: data?.mobileNo || ''
                     };
                     onUpdate(updatedData);
                     return updatedData;
                 });
-
                 toast.success('PAN details fetched successfully');
             } else {
-                toast.error('PAN details not found');
+                toast.error(`PAN details not found`);
             }
         } catch (error) {
             console.error('Error fetching PAN details:', error);
@@ -384,6 +383,16 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
             </div>
 
             <div className="form-group">
+                <label>D.O.B<span className='required'>*</span></label>
+                <input
+                    type="date"
+                    value={customerData.dateOfBirth}
+                    onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                    required
+                />
+            </div>
+
+            <div className="form-group">
                 <label>Customer ID<span className='required'>*</span></label>
                 <input
                     type="text"
@@ -422,15 +431,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                     required
                 ></textarea>
             </div>
-            <div className="form-group">
-                <label>D.O.B<span className='required'>*</span></label>
-                <input
-                    type="date"
-                    value={customerData.dateOfBirth}
-                    onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                    required
-                />
-            </div>
+
             <div className="form-group">
                 <label>Mobile No<span className='required'>*</span></label>
                 <input

@@ -145,76 +145,85 @@
 
 ## Locker Management APIs (Mocked)
 ### Get Locker Data
-- **Endpoint:** `${API_URL}/api/lockers`
+- **Endpoint:** `${API_URL}/lockers/locker-master/{cabinetId}`
 - **Method:** GET
 - **Headers:**
+  - Content-Type: application/json
   - Authorization: Bearer {token}
 - **Response:**
 ```json
 {
-  "cabinets": [
+  "rooms": [
     {
-      "cabinet_number": "number",
-      "location": "string",
-      "lockers": [
+      "room_number": "string",
+      "cabinets": [
         {
-          "locker_number": "string",
-          "room_number": "string",
-          "row": "number",
-          "column": "number",
-          "type": "string",
-          "size": "string",
-          "status": "available|occupied|maintenance"
+          "cabinet_number": "string",
+          "lockers": [
+            {
+              "locker_number": "string",
+              "size": "string",
+              "status": "available|occupied|maintenance",
+            }
+          ]
         }
       ]
     }
   ],
   "metadata": {
     "rooms": ["string"],
-    "types": [
-      {
-        "code": "string",  
-        "name": "string"
-      }
-    ]
+    "types": ["string"]
   }
 }
 ```
 
+Notes:
+- Status values can be: "available", "occupied", or "maintenance"
+- Row and column values are used for grid layout
+- Cabinet numbers and locker numbers are strings
+- The response structure supports multiple rooms, each containing multiple cabinets
+- Types in metadata represent available locker sizes
+
 ### Get Locker Rent Details
-- **Endpoint:** `${API_URL}/api/lockers/{lockerId}/rent`
-- **Method:** GET
+- **Endpoint:** `${API_URL}/lockers/lockers/rent`
+- **Method:** POST
 - **Headers:**
+  - Content-Type: application/json
   - Authorization: Bearer {token}
   - Accept: application/json
 - **Query Parameters:**
-  - centerId: string (optional)
-  - lockerType: string (optional)
-  - lockerSize: string (optional)
+  - lockerId: string (required)
 - **Response:**
 ```json
 {
-  "status": "success",
-  "data": {
-    "rentDetails": {
-      "baseRent": "number",
-      "deposit": "number",
-      "admissionFees": "number",
-      "taxRate": "number",
-      "totalTax": "number",
-      "totalAmount": "number",
-      "validFrom": "string (YYYY-MM-DD)",
-      "validTo": "string (YYYY-MM-DD)"
-    },
-    "lockerInfo": {
-      "lockerId": "string",
-      "lockerNumber": "string",
-      "type": "string",
-      "size": "string",
-      "center": "string"
+  "lockerId": "number",
+  "lockerNumber": "string",
+  "type": "string",
+  "center": "string",
+  "plans": [
+    {
+      "planId": "string",
+      "name": "string",
+      "deposit": "string",
+      "baseRent": "string",
+      "admissionFees": "string",
+      "totalAmount": "string",
+      "grandTotalAmount": "string",
+      "roundAmount": "string",
+      "cgst": "string",
+      "igst": "string",
+      "sgst": "string",
+      "grandTotalAmountInWords": "string"
     }
-  }
+  ]
 }
+```
+
+Note: 
+- The API now returns multiple plans for a locker
+- Each plan includes tax details (CGST, IGST, SGST)
+- Amount fields are returned as strings to handle currency values
+- The response includes the total amount in words
 ```
 
 Note: All these APIs are currently mocked in the codebase and will need to be implemented on the backend. The actual API endpoints and response formats may need to be adjusted based on the backend implementation.

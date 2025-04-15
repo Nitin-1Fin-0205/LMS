@@ -836,3 +836,63 @@
     font-weight: bold;
     cursor: pointer;
 }
+
+/* Fetch Locker Details Button Styling */
+.fetch-details-button {
+  padding: 6px 12px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 0.3s;
+}
+
+.fetch-details-button:hover {
+  background-color: #45a049;
+}
+
+.fetch-details-button:active {
+  background-color: #3e8e41;
+  transform: scale(0.98);
+}
+
+.fetch-details-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+/* Input Button Group for Locker Input */
+.input-button-group {
+  display: flex;
+  gap: 10px;
+  flex: 1 1 65%;
+}
+
+.input-button-group input {
+  flex: 1;
+}
+
+/* Plan select styling */
+.plan-select {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 13px;
+}
+
+.plan-select:focus {
+    outline: none;
+    border: 1px solid #5998f7;
+    box-shadow: 0 0 5px rgba(211, 211, 211, 0.5);
+}
+
+/* Read-only input styling */
+.form-group input[readonly] {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}

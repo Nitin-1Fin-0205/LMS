@@ -289,19 +289,6 @@ const AddCustomer = () => {
                     {isSubmitting ? 'Adding Customer...' : 'Add Customer'}
                 </button>
             </div>
-            <ToastContainer
-                position="top-right"
-                autoClose={3000}
-                hideProgressBar={false}
-                newestOnTop
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss={false}
-                draggable
-                pauseOnHover={false}
-                theme="light"
-                limit={3}
-            />
         </div>
     );
 };
