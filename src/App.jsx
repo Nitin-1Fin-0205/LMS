@@ -64,7 +64,7 @@ function App() {
           theme="light"
         />
       </Router>
-    </AuthProvider>
+    </AuthProvider >
   );
 }
 

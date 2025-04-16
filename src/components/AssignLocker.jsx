@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchLockerMaster, clearLockerData } from '../store/slices/lockerSlice';
 
 import { API_URL } from '../assets/config';
 import '../styles/AssignLocker.css';
@@ -10,10 +12,10 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
     const [selectedCabinet, setSelectedCabinet] = useState(null);
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [selectedSize, setSelectedSize] = useState(null);
-    const [lockerData, setLockerData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState({ message: null, code: null });
     const [retryCount, setRetryCount] = useState(0);
+
+    const dispatch = useDispatch();
+    const { lockerData, loading, error } = useSelector(state => state.locker);
 
     const fetchLockerData = useCallback(async () => {
         try {
@@ -25,45 +27,20 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
                 throw new Error('Cabinet ID is required');
             }
 
-            setLoading(true);
-
-            // Validate API URL
-            if (!API_URL) {
-                throw new Error('API URL is not configured');
-            }
-
-            const response = await fetch(`${API_URL}/lockers/locker-master?lockerCenterId=${centerId}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                include: '*',
-                mode: 'cors',
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            setLockerData(data);
-
-            // Set initial room selection from metadata
-            if (data.metadata?.rooms?.length > 0) {
-                setSelectedRoom(data.metadata.rooms[0]);
-            }
-
-            setError({ message: null, code: null });
-            setLoading(false);
+            await dispatch(fetchLockerMaster(centerId)).unwrap();
         } catch (err) {
             console.error('Error in fetchLockerData:', err);
-            setError({
-                message: err.message || 'Failed to fetch locker data',
-                code: err.response?.status || 'NETWORK_ERROR'
-            });
-            setLoading(false);
         }
-    }, [centerId]);
+    }, [centerId, dispatch]);
+
+    useEffect(() => {
+        if (isOpen && centerId) {
+            fetchLockerData();
+        }
+        return () => {
+            dispatch(clearLockerData());
+        };
+    }, [isOpen, centerId, dispatch]);
 
     // Reset retry count when component mounts
     useEffect(() => {
@@ -230,20 +207,6 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
         );
     };
 
-    useEffect(() => {
-        console.log('Modal opened, fetching locker data...', centerId);
-        if (isOpen && centerId) {
-            fetchLockerData();
-        }
-        return () => {
-            // Cleanup when modal closes
-            setLockerData(null);
-            setSelectedLocker(null);
-            setError({ message: null, code: null });
-            setRetryCount(0);
-        };
-    }, [isOpen, centerId]); // Only re-run if modal opens or centerId changes
-
     // Update getCabinetView function
     const getCabinetView = (cabinetNumber) => {
         if (!lockerData?.master?.[0]?.rooms || !selectedRoom || !selectedSize) return [];
@@ -254,8 +217,8 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
         const sizeData = room.cabinates[0].size.find(s => s.size === selectedSize);
         if (!sizeData?.lockers) return [];
 
-        // Sort lockers by name and create grid
-        const filteredLockers = sizeData.lockers
+        // Create a new array before sorting
+        const filteredLockers = [...sizeData.lockers]
             .sort((a, b) => a.locker_name.localeCompare(b.locker_name))
             .map(locker => ({
                 locker_number: locker.locker_name,
@@ -264,7 +227,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
                 locker_id: locker.locker_id
             }));
 
-        // Create grid with 5 columns
+        // Rest of the function remains the same
         const COLUMNS = 5;
         const lockerGrid = [];
         let currentRow = [];
@@ -340,17 +303,14 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
         </div>
     );
 
-    if (error.message) return (
+    if (error) return (
         <div className="modal-overlay">
             <div className="error-container">
                 <h4>Error Loading Lockers</h4>
-                <p>{error.message}</p>
+                <p>{error}</p>
                 <button
                     className="retry-button"
-                    onClick={() => {
-                        setError({ message: null, code: null });
-                        fetchLockerData();
-                    }}
+                    onClick={fetchLockerData}
                 >
                     Retry
                 </button>

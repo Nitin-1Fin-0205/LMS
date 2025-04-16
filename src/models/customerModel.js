@@ -1,108 +1,60 @@
+const emptyCustomerInfo = {
+    photo: null,
+    customerId: "",
+    customerName: "",
+    fatherOrHusbandName: "",
+    address: "",
+    dateOfBirth: "",
+    mobileNo: "",
+    panNo: "",
+    gender: "",
+    emailId: "",
+    documentNo: ""
+};
+
+const emptyLockerInfo = {
+    lockerId: null,
+    assignedLocker: "",
+    center: "",
+    remarks: "",
+    lockerId: null,
+    lockerSize: ""
+};
+
+const emptyRentDetails = {
+    lockerNo: "",
+    lockerId: null,
+    deposit: "",
+    rent: "",
+    admissionFees: "",
+    total: "",
+    lockerKeyNo: "",
+    contactNumber: "",
+    selectedPlan: ""
+};
+
+const emptyAttachments = {
+    identityProof: null,
+    addressProof: null,
+    contactDocument: null,
+    otherDocument: null
+};
+
 export const formDataStructure = {
     primaryHolder: {
-        customerInfo: {
-            photo: null, // for uploaded/captured photo
-            customerId: "",
-            customerName: "",
-            fatherOrHusbandName: "",
-            address: "",
-            dateOfBirth: "",
-            mobileNo: "",
-            panNo: "",
-            gender: "",
-            emailId: "",
-            documentNo: ""
-        },
-        lockerInfo: {
-            assignedLocker: "",
-            center: "",
-            remarks: ""
-        },
-        nominee: {
-            nomineeName: "",
-            relationWithNominee: "",
-            nomineeDob: ""
-        },
-        attachments: {
-            identityProof: null,
-            addressProof: null,
-            contactDocument: null,
-            otherDocument: null
-        },
-        rentDetails: {
-            lockerNo: "",
-            deposit: "",
-            rent: "",
-            admissionFees: "",
-            total: "",
-            lockerKeyNo: "",
-            contactNumber: "",
-            moveInDate: "",
-            anticipatedMoveOutDate: ""
-        }
+        customerInfo: { ...emptyCustomerInfo },
+        lockerInfo: { ...emptyLockerInfo },
+        rentDetails: { ...emptyRentDetails },
+        attachments: { ...emptyAttachments }
     },
     secondHolder: {
-        customerInfo: {
-            photo: null,
-            customerId: "",
-            customerName: "",
-            fatherOrHusbandName: "",
-            address: "",
-            dateOfBirth: "",
-            mobileNo: "",
-            panNo: "",
-            gender: "",
-            emailId: "",
-            documentNo: ""
-        },
-        lockerInfo: {
-            assignedLocker: "",
-            smartCardNumber: "",
-            userGroup: "",
-            remarks: ""
-        },
-        nominee: {
-            nomineeName: "",
-            relationWithNominee: "",
-            nomineeDob: ""
-        },
-        attachments: {
-            identityProof: null,
-            addressProof: null,
-            contactDocument: null,
-            otherDocument: null
-        }
+        customerInfo: { ...emptyCustomerInfo },
+        lockerInfo: { ...emptyLockerInfo },
+        attachments: { ...emptyAttachments }
     },
     thirdHolder: {
-        customerInfo: {
-            photo: null,
-            customerId: "",
-            customerName: "",
-            fatherOrHusbandName: "",
-            address: "",
-            dateOfBirth: "",
-            mobileNo: "",
-            panNo: "",
-            gender: "",
-            emailId: "",
-            documentNo: ""
-        },
-        lockerInfo: {
-            assignedLocker: "",
-            smartCardNumber: "",
-            userGroup: "",
-            remarks: ""
-        },
-        nominee: {
-            nomineeName: "",
-            relationWithNominee: "",
-            nomineeDob: ""
-        },
-        attachments: {
-            identityProof: null,
-            addressProof: null,
-            contactDocument: null,
-            otherDocument: null
-        }
+        customerInfo: { ...emptyCustomerInfo },
+        lockerInfo: { ...emptyLockerInfo },
+        attachments: { ...emptyAttachments }
     }
 };

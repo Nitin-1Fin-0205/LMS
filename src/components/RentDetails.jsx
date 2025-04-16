@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { API_URL } from '../assets/config'
@@ -18,7 +18,20 @@ const RentDetails = ({ onUpdate, initialData }) => {
     const [isLockerFetching, setIsLockerFetching] = useState(false);
     const [lockerPlans, setLockerPlans] = useState([]);
 
+    // Add effect to sync with initialData changes
+    useEffect(() => {
+        if (initialData) {
+            setRentData(prev => ({
+                ...prev,
+                ...initialData
+            }));
+        }
+    }, [initialData]);
+
     const handleInputChange = (field, value) => {
+        // Prevent changes to lockerNo
+        if (field === 'lockerNo') return;
+
         const updatedData = {
             ...rentData,
             [field]: value
@@ -45,15 +58,14 @@ const RentDetails = ({ onUpdate, initialData }) => {
 
     const handleFetchLockerDetails = async () => {
         try {
-            if (!rentData.lockerNo) {
-                toast.error('Please enter locker number to fetch details');
+            if (!rentData.lockerId) {
+                toast.error('Failed to Fetch the Locker details');
                 return;
             }
 
             setIsLockerFetching(true);
-
             const token = localStorage.getItem('authToken');
-            const response = await fetch(`${API_URL}/lockers/lockers/rent?lockerId=${rentData.lockerNo}`, {
+            const response = await fetch(`${API_URL}/lockers/lockers/rent?lockerId=${rentData.lockerId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -94,14 +106,15 @@ const RentDetails = ({ onUpdate, initialData }) => {
                 <div className="input-button-group">
                     <input
                         type="text"
-                        placeholder="Enter locker no"
-                        value={rentData.lockerNo}
-                        onChange={(e) => handleInputChange('lockerNo', e.target.value)}
+                        value={rentData.lockerNo || ''}
+                        readOnly
+                        className="form-control readonly-input"
+                        style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
                     />
                     <button
                         className="fetch-details-button"
                         onClick={handleFetchLockerDetails}
-                        disabled={isLockerFetching}
+                        disabled={isLockerFetching || !rentData.lockerNo}
                     >
                         {isLockerFetching ? 'Fetching Plans...' : 'Get Locker Plans'}
                     </button>

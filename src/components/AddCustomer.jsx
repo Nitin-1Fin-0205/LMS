@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import CustomerInfo from './CustomerInfo';
@@ -8,6 +9,7 @@ import Attachments from './Attachments';
 import '../styles/AddCustomer.css';
 import { formDataStructure } from '../models/customerModel';
 import { API_URL } from '../assets/config';
+import { updateFormData, resetForm, addCustomer } from '../store/slices/customerSlice';
 
 // Convert to regular component since memo isn't providing significant benefits here
 const TabContent = ({ holderType, currentData, updateHolderData, centers, isLoadingCenters }) => {
@@ -129,33 +131,25 @@ const validateAllHolders = (holders, setActiveTab) => {
 
 // Keep the main component memoized since it could be part of a larger app
 const AddCustomer = () => {
+    const dispatch = useDispatch();
+    const { formData: data, isSubmitting } = useSelector(state => state.customer);
     const [activeTab, setActiveTab] = useState(0);
     const indicatorRef = useRef(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [centers, setCenters] = useState([]);
     const [isLoadingCenters, setIsLoadingCenters] = useState(false);
 
-    // Create memoized state setters
-    const [holders, setHolders] = useState({
-        primaryHolder: formDataStructure.primaryHolder,
-        secondHolder: formDataStructure.secondHolder,
-        thirdHolder: formDataStructure.thirdHolder
-    });
-
-    // Memoize update function
-    const updateHolderData = useCallback((section, holderType, data) => {
-        console.log(`Updating ${holderType} data for section: ${section}`, data);
-        setHolders(prev => ({
-            ...prev,
-            [holderType]: {
-                ...prev[holderType],
-                [section]: {
-                    ...prev[holderType][section],
-                    ...data
-                }
+    const updateHolderData = useCallback((section, holderType, updateData) => {
+        try {
+            if (!section || !holderType || !updateData) {
+                console.error('Invalid update parameters:', { section, holderType, updateData });
+                return;
             }
-        }));
-    }, []);
+            dispatch(updateFormData({ holderType, section, data: updateData }));
+        } catch (error) {
+            console.error('Error updating holder data:', error);
+            toast.error('Failed to update form data');
+        }
+    }, [dispatch]);
 
     // Add new useEffect for initial tab indicator setup
     useEffect(() => {
@@ -183,62 +177,40 @@ const AddCustomer = () => {
     // Update the handleSubmit function
     const handleSubmit = useCallback(async () => {
         // Pass setActiveTab to the validation function
-        if (!validateAllHolders(holders, setActiveTab)) {
+        if (!validateAllHolders(data, setActiveTab)) {
             return;
         }
 
         try {
-            setIsSubmitting(true);
-            const token = localStorage.getItem('authToken');
+            const result = await dispatch(addCustomer(data)).unwrap();
+            if (result) {
+                toast.success('Customer added successfully!');
+                dispatch(resetForm());
+                setActiveTab(0);
+            }
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            toast.error(error?.message || 'Failed to add customer');
+        }
+    }, [data, dispatch, setActiveTab]); // Add setActiveTab to dependencies
 
-            const response = await axios.post(`${API_URL}`, holders, {
+    const fetchCenters = async () => {
+        try {
+            setIsLoadingCenters(true);
+            const token = localStorage.getItem('authToken');
+            const response = await axios.get(`${API_URL}/lockers/locker-centers`, {
                 headers: {
-                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/json'
                 }
             });
 
-            if (response.status === 201 || response.status === 200) {
-                toast.success('Customer added successfully!');
-                setHolders({
-                    primaryHolder: formDataStructure.primaryHolder,
-                    secondHolder: formDataStructure.secondHolder,
-                    thirdHolder: formDataStructure.thirdHolder
-                });
-                setActiveTab(0);
+            if (response.status === 200) {
+                setCenters(response.data);
+            } else {
+                toast.error('Failed to fetch centers');
             }
-        } catch (error) {
-            console.error('Error submitting form:', error);
-            toast.error(error.response?.data?.message || 'Failed to add customer');
-        } finally {
-            setIsSubmitting(false);
-        }
-    }, [holders, setActiveTab]); // Add setActiveTab to dependencies
 
-    const fetchCenters = async () => {
-        try {
-            setIsLoadingCenters(true);
-            // const token = localStorage.getItem('authToken');
-            // const response = await axios.get(`${API_URL}/api/centers`, {
-            //     headers: {
-            //         'Authorization': `Bearer ${token}`,
-            //         'Accept': 'application/json'
-            //     }
-            // });
-
-            // if (response.data && Array.isArray(response.data)) {
-            //     setCenters(response.data);
-            // }
-
-            // Mock data for Texting
-            const mockCenters = [
-                { id: 1, name: 'Center A' },
-                { id: 2, name: 'Center B' },
-                { id: 3, name: 'Center C' }
-            ];
-
-            setCenters(mockCenters);
         } catch (error) {
             console.error('Error fetching centers:', error);
         } finally {
@@ -250,35 +222,47 @@ const AddCustomer = () => {
         fetchCenters();
     }, []);
 
-    // Add this after other useEffects
+    // This effect syncs locker info across holders
     useEffect(() => {
-        const primaryLockerInfo = holders.primaryHolder.lockerInfo;
-        if (primaryLockerInfo.center || primaryLockerInfo.assignedLocker) {
-            setHolders(prev => ({
-                ...prev,
-                secondHolder: {
-                    ...prev.secondHolder,
-                    lockerInfo: {
-                        ...prev.secondHolder.lockerInfo,
-                        center: primaryLockerInfo.center,
-                        assignedLocker: primaryLockerInfo.assignedLocker
+        try {
+            const primaryLockerInfo = data?.primaryHolder?.lockerInfo;
+            if (primaryLockerInfo?.assignedLocker) {
+                const lockerNumber = primaryLockerInfo.assignedLocker;
+                const lockerId = primaryLockerInfo.lockerId;
+
+                // Update rent details with the new locker number and ID
+                const currentRentDetails = data.primaryHolder.rentDetails || {};
+                dispatch(updateFormData({
+                    holderType: 'primaryHolder',
+                    section: 'rentDetails',
+                    data: {
+                        ...currentRentDetails,
+                        lockerNo: lockerNumber,
+                        lockerId: lockerId
                     }
-                },
-                thirdHolder: {
-                    ...prev.thirdHolder,
-                    lockerInfo: {
-                        ...prev.thirdHolder.lockerInfo,
-                        center: primaryLockerInfo.center,
-                        assignedLocker: primaryLockerInfo.assignedLocker
-                    }
-                }
-            }));
+                }));
+
+                // Update other holders' info
+                ['secondHolder', 'thirdHolder'].forEach(holder => {
+                    dispatch(updateFormData({
+                        holderType: holder,
+                        section: 'lockerInfo',
+                        data: {
+                            center: primaryLockerInfo.center,
+                            assignedLocker: primaryLockerInfo.assignedLocker,
+                            lockerId: primaryLockerInfo.lockerId
+                        }
+                    }));
+                });
+            }
+        } catch (error) {
+            console.error('Error syncing locker info:', error);
         }
-    }, [holders.primaryHolder.lockerInfo]);
+    }, [data?.primaryHolder?.lockerInfo, dispatch]);
 
     // Memoize current holder type and data
     const currentHolderType = ['primaryHolder', 'secondHolder', 'thirdHolder'][activeTab];
-    const currentData = holders[currentHolderType];
+    const currentData = data[currentHolderType];
 
     return (
         <div className="add-customer-container">
