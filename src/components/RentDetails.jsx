@@ -103,7 +103,7 @@ const RentDetails = ({ onUpdate, initialData }) => {
                         onClick={handleFetchLockerDetails}
                         disabled={isLockerFetching}
                     >
-                        {isLockerFetching ? 'Fetching...' : 'Fetch Details'}
+                        {isLockerFetching ? 'Fetching Plans...' : 'Get Locker Plans'}
                     </button>
                 </div>
             </div>

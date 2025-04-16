@@ -1,7 +1,8 @@
 export const LOCKER_STATUS = {
     AVAILABLE: 'available',
     OCCUPIED: 'occupied',
-    MAINTENANCE: 'maintenance'
+    MAINTENANCE: 'maintenance',
+    RESERVED: 'reserved'
 };
 
 export const LOCKER_TYPES = {

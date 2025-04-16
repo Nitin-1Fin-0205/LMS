@@ -19,7 +19,6 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
     const handleAddNominee = () => {
         if (nominees.length < 2) {
             setNominees([...nominees, { name: '', relation: '', dob: '' }]);
-            toast.success('Nominee added successfully!');
         } else {
             toast.error('You can only add up to 2 nominees.');
         }
@@ -117,6 +116,8 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                     <button
                         className="add-button"
                         onClick={handleAddNominee}
+                        disabled={nominees.length >= 2}
+                        title={nominees.length >= 2 ? 'Maximum 2 nominees allowed' : ''}
                     >
                         Add Nominee
                     </button>

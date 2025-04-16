@@ -25,10 +25,10 @@ export const AuthProvider = ({ children }) => {
             const mockResponse = {
                 data: {
                     valid: true,
-                    role: ROLES.CUSTOMER_EXECUTIVE
+                    role: ROLES.ADMIN
                 }
             };
-            const response = mockResponse; // Replace with actual API call when available
+            const response = mockResponse;
 
             // const response = await axios.get(`${API_URL}/api/auth/validate`, {
             //     headers: {

@@ -250,6 +250,32 @@ const AddCustomer = () => {
         fetchCenters();
     }, []);
 
+    // Add this after other useEffects
+    useEffect(() => {
+        const primaryLockerInfo = holders.primaryHolder.lockerInfo;
+        if (primaryLockerInfo.center || primaryLockerInfo.assignedLocker) {
+            setHolders(prev => ({
+                ...prev,
+                secondHolder: {
+                    ...prev.secondHolder,
+                    lockerInfo: {
+                        ...prev.secondHolder.lockerInfo,
+                        center: primaryLockerInfo.center,
+                        assignedLocker: primaryLockerInfo.assignedLocker
+                    }
+                },
+                thirdHolder: {
+                    ...prev.thirdHolder,
+                    lockerInfo: {
+                        ...prev.thirdHolder.lockerInfo,
+                        center: primaryLockerInfo.center,
+                        assignedLocker: primaryLockerInfo.assignedLocker
+                    }
+                }
+            }));
+        }
+    }, [holders.primaryHolder.lockerInfo]);
+
     // Memoize current holder type and data
     const currentHolderType = ['primaryHolder', 'secondHolder', 'thirdHolder'][activeTab];
     const currentData = holders[currentHolderType];

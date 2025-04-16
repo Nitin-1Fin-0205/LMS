@@ -180,6 +180,49 @@
     opacity: 0.9;
 }
 
+/* Reserved Lockers Section */
+.reserved-lockers-section {
+    border-top: 1px solid #ddd;
+    padding-top: 1rem;
+    margin-top: 1rem;
+}
+
+.reserved-lockers-section h4 {
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.reserved-lockers-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.reserved-locker-button {
+    padding: 0.5rem 1rem;
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+    color: #856404;
+}
+
+.reserved-locker-button:hover {
+    background-color: #ffeeba;
+    transform: translateY(-1px);
+}
+
+.reserved-locker-button.selected {
+    background-color: #ffc107;
+    color: #000;
+    border-color: #d39e00;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 /* Responsive adjustments */
 @media screen and (max-width: 768px) {
     .assign-locker-container {
@@ -193,5 +236,14 @@
 
     .cabinet-view {
         min-width: 100%;
+    }
+
+    .reserved-lockers-list {
+        justify-content: center;
+    }
+    
+    .reserved-locker-button {
+        min-width: 120px;
+        text-align: center;
     }
 }

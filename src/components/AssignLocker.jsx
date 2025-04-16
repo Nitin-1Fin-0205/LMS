@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import lockerLight from '../assets/icons/lockerLight.png';
-import lockerDark from '../assets/icons/lockerDark.png';
+
 import { API_URL } from '../assets/config';
 import '../styles/AssignLocker.css';
 import { LOCKER_STATUS, LOCKER_TYPES, LOCKER_SIZES } from '../constants/locker';
 import { LockerSvgs } from '../assets/lockerSvg';
 
-const AssignLocker = ({ isOpen, onClose, onLockerAssign, cabinetId }) => {
+const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
     const [selectedLocker, setSelectedLocker] = useState(null);
-    const [selectedCabinet, setSelectedCabinet] = useState(1);
+    const [selectedCabinet, setSelectedCabinet] = useState(null);
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [selectedSize, setSelectedSize] = useState(null);
     const [lockerData, setLockerData] = useState(null);
@@ -16,14 +15,13 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, cabinetId }) => {
     const [error, setError] = useState({ message: null, code: null });
     const [retryCount, setRetryCount] = useState(0);
 
-    // Update fetchLockerData function
     const fetchLockerData = useCallback(async () => {
         try {
             if (!navigator.onLine) {
                 throw new Error('No internet connection');
             }
 
-            if (!cabinetId) {
+            if (!centerId) {
                 throw new Error('Cabinet ID is required');
             }
 
@@ -34,15 +32,13 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, cabinetId }) => {
                 throw new Error('API URL is not configured');
             }
 
-            const response = await fetch(`${API_URL}/lockers/locker-master/${cabinetId}`, {
+            const response = await fetch(`${API_URL}/lockers/locker-master?lockerCenterId=${centerId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    // Add any authentication headers if needed
-                    // 'Authorization': `Bearer ${token}`,
                 },
                 include: '*',
-                mode: 'cors', // Enable CORS
+                mode: 'cors',
             });
 
             if (!response.ok) {
@@ -50,49 +46,65 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, cabinetId }) => {
             }
 
             const data = await response.json();
-            // Store the full data structure
             setLockerData(data);
-            console.log('Locker data fetched successfully:', data);
 
-            // Set initial room selection
+            // Set initial room selection from metadata
             if (data.metadata?.rooms?.length > 0) {
                 setSelectedRoom(data.metadata.rooms[0]);
-            }
-            // Set initial size selection
-            if (data.metadata?.types?.length > 0) {
-                setSelectedSize(data.metadata.types[0]);
             }
 
             setError({ message: null, code: null });
             setLoading(false);
         } catch (err) {
             console.error('Error in fetchLockerData:', err);
-            const errorMessage = err.message || 'Failed to fetch locker data';
-            const errorCode = err.response?.status || 'NETWORK_ERROR';
-
             setError({
-                message: errorMessage,
-                code: errorCode
+                message: err.message || 'Failed to fetch locker data',
+                code: err.response?.status || 'NETWORK_ERROR'
             });
             setLoading(false);
         }
-    }, [cabinetId]);
+    }, [centerId]);
 
     // Reset retry count when component mounts
     useEffect(() => {
         setRetryCount(0);
     }, []);
 
-    // Update getFilteredOptions function
+    // Helper function to get unique rooms
+    const getRoomsList = useCallback((data) => {
+        if (!data?.master?.length) return [];
+        return data.master[0]?.rooms.map(room => room.room_id.toString()) || [];
+    }, []);
+
+    // Helper function to get cabinets for selected room
+    const getCabinetList = useCallback((data, roomId) => {
+        if (!data?.master?.length || !roomId) return [];
+        const room = data.master[0]?.rooms.find(r => r.room_id.toString() === roomId);
+        // Get unique cabinet numbers from the room
+        const cabinetNumbers = new Set(room?.cabinates?.map((_, index) => (index + 1).toString()) || []);
+        return Array.from(cabinetNumbers).sort((a, b) => Number(a) - Number(b));
+    }, []);
+
+    // Helper function to get locker sizes
+    const getSizesList = useCallback((data, roomId, cabinetNumber) => {
+        if (!data?.master?.length || !roomId || !cabinetNumber) return [];
+        const room = data.master[0]?.rooms.find(r => r.room_id.toString() === roomId);
+        if (!room?.cabinates?.[Number(cabinetNumber) - 1]) return [];
+        const sizes = room.cabinates[Number(cabinetNumber) - 1]?.size.map(s => s.size) || [];
+        return [...new Set(sizes)];
+    }, []);
+
     const getFilteredOptions = () => {
-        if (!lockerData) return {
+        if (!lockerData?.master?.length) return {
             rooms: [],
+            cabinets: [],
             sizes: []
         };
 
         return {
-            rooms: lockerData.metadata?.rooms || [],
-            sizes: lockerData.metadata?.types || []
+            rooms: getRoomsList(lockerData),
+            cabinets: getCabinetList(lockerData, selectedRoom),
+            sizes: getSizesList(lockerData, selectedRoom, selectedCabinet)
         };
     };
 
@@ -100,17 +112,25 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, cabinetId }) => {
     const handleRoomChange = (e) => {
         const newRoom = e.target.value;
         setSelectedRoom(newRoom);
+        setSelectedCabinet(null);
+        setSelectedSize(null);
         setSelectedLocker(null);
+    };
 
-        // Find the room data
-        const selectedRoomData = lockerData.rooms.find(room => room.room_number === newRoom);
+    // Update handleCabinetChange to handle string cabinet numbers
+    const handleCabinetChange = (event) => {
+        setSelectedCabinet(event.target.value);
+        setSelectedSize(null);
+        setSelectedLocker(null);
+    };
 
-        // Find first cabinet in the selected room
-        if (selectedRoomData?.cabinets?.length > 0) {
-            setSelectedCabinet(selectedRoomData.cabinets[0].cabinet_number);
-        } else {
-            setSelectedCabinet('');
-        }
+    const handleReservedLockerClick = (locker) => {
+        setSelectedLocker({
+            locker_number: locker.locker_name,
+            status: locker.status,
+            locker_id: locker.locker_id,
+            size: 'Reserved' // or you can get the size from your data if available
+        });
     };
 
     // Update the form section to use the new structure
@@ -141,15 +161,14 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, cabinetId }) => {
                     <select
                         value={selectedCabinet || ''}
                         onChange={handleCabinetChange}
+                        disabled={!selectedRoom}
                     >
                         <option value="">Select Cabinet</option>
-                        {selectedRoomData?.cabinets
-                            ?.sort((a, b) => Number(a.cabinet_number) - Number(b.cabinet_number))
-                            .map((cabinet) => (
-                                <option key={cabinet.cabinet_number} value={cabinet.cabinet_number}>
-                                    Cabinet {cabinet.cabinet_number}
-                                </option>
-                            ))}
+                        {options.cabinets.map((cabinet) => (
+                            <option key={cabinet} value={cabinet}>
+                                Cabinet {cabinet}
+                            </option>
+                        ))}
                     </select>
                 </div>
 
@@ -158,6 +177,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, cabinetId }) => {
                     <select
                         value={selectedSize || ''}
                         onChange={(e) => setSelectedSize(e.target.value)}
+                        disabled={!selectedRoom || !selectedCabinet}
                     >
                         <option value="">Select Size</option>
                         {options.sizes.map((size) => (
@@ -187,12 +207,32 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, cabinetId }) => {
                         </span>
                     </div>
                 )}
+
+                {/* Add Reserved Lockers Section */}
+                {lockerData?.mappedLockers?.length > 0 && (
+                    <div className="reserved-lockers-section" style={{ marginTop: '1rem' }}>
+                        <h4>Reserved Lockers</h4>
+                        <div className="reserved-lockers-list">
+                            {lockerData.mappedLockers.map((locker) => (
+                                <button
+                                    key={locker.locker_id}
+                                    className={`reserved-locker-button ${selectedLocker?.locker_id === locker.locker_id ? 'selected' : ''
+                                        }`}
+                                    onClick={() => handleReservedLockerClick(locker)}
+                                >
+                                    {locker.locker_name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         );
     };
 
     useEffect(() => {
-        if (isOpen && cabinetId) {
+        console.log('Modal opened, fetching locker data...', centerId);
+        if (isOpen && centerId) {
             fetchLockerData();
         }
         return () => {
@@ -202,49 +242,45 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, cabinetId }) => {
             setError({ message: null, code: null });
             setRetryCount(0);
         };
-    }, [isOpen, cabinetId]); // Only re-run if modal opens or cabinetId changes
+    }, [isOpen, centerId]); // Only re-run if modal opens or centerId changes
 
     // Update getCabinetView function
     const getCabinetView = (cabinetNumber) => {
-        if (!lockerData || !selectedRoom) return [];
+        if (!lockerData?.master?.[0]?.rooms || !selectedRoom || !selectedSize) return [];
 
-        // Find the room data
-        const selectedRoomData = lockerData.rooms.find(room => room.room_number === selectedRoom);
-        if (!selectedRoomData) return [];
+        const room = lockerData.master[0].rooms.find(r => r.room_id.toString() === selectedRoom);
+        if (!room?.cabinates?.length) return [];
 
-        // Find cabinet with matching number
-        const cabinet = selectedRoomData.cabinets.find(c => c.cabinet_number === cabinetNumber.toString());
-        if (!cabinet) return [];
+        const sizeData = room.cabinates[0].size.find(s => s.size === selectedSize);
+        if (!sizeData?.lockers) return [];
 
-        // Filter lockers based on size
-        const filteredLockers = cabinet.lockers.filter(locker =>
-            locker && (!selectedSize || locker.size === selectedSize)
-        );
+        // Sort lockers by name and create grid
+        const filteredLockers = sizeData.lockers
+            .sort((a, b) => a.locker_name.localeCompare(b.locker_name))
+            .map(locker => ({
+                locker_number: locker.locker_name,
+                status: locker.status,
+                size: sizeData.size,
+                locker_id: locker.locker_id
+            }));
 
-        // Create grid with 5 columns, but only include actual lockers
+        // Create grid with 5 columns
         const COLUMNS = 5;
         const lockerGrid = [];
         let currentRow = [];
 
         filteredLockers.forEach((locker, index) => {
-            if (locker) { // Only add if locker exists
-                currentRow.push({
-                    ...locker,
-                    row: Math.floor(index / COLUMNS) + 1,
-                    column: (index % COLUMNS) + 1
-                });
+            currentRow.push({
+                ...locker,
+                row: Math.floor(index / COLUMNS) + 1,
+                column: (index % COLUMNS) + 1
+            });
 
-                if (currentRow.length === COLUMNS) {
-                    lockerGrid.push(currentRow);
-                    currentRow = [];
-                }
+            if (currentRow.length === COLUMNS || index === filteredLockers.length - 1) {
+                lockerGrid.push(currentRow);
+                currentRow = [];
             }
         });
-
-        // Push the last row if it has any lockers
-        if (currentRow.length > 0) {
-            lockerGrid.push(currentRow);
-        }
 
         return lockerGrid;
     };
@@ -255,6 +291,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, cabinetId }) => {
             setSelectedLocker(null);
         }
         else if (locker.status === LOCKER_STATUS.AVAILABLE) {
+            console.log('Locker clicked:', locker);
             setSelectedLocker(locker);
         }
     };
@@ -264,12 +301,6 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, cabinetId }) => {
             console.log('Assigning locker:', selectedLocker);
             onLockerAssign(selectedLocker);
         }
-    };
-
-    // Update handleCabinetChange to handle string cabinet numbers
-    const handleCabinetChange = (event) => {
-        setSelectedCabinet(event.target.value);
-        setSelectedLocker(null);
     };
 
     const handleRetry = () => {
