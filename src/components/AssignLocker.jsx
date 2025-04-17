@@ -106,7 +106,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
             locker_number: locker.locker_name,
             status: locker.status,
             locker_id: locker.locker_id,
-            size: 'Reserved' // or you can get the size from your data if available
+            size: locker.size
         });
     };
 
@@ -186,23 +186,24 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
                 )}
 
                 {/* Add Reserved Lockers Section */}
-                {lockerData?.mappedLockers?.length > 0 && (
-                    <div className="reserved-lockers-section" style={{ marginTop: '1rem' }}>
-                        <h4>Reserved Lockers</h4>
-                        <div className="reserved-lockers-list">
-                            {lockerData.mappedLockers.map((locker) => (
-                                <button
-                                    key={locker.locker_id}
-                                    className={`reserved-locker-button ${selectedLocker?.locker_id === locker.locker_id ? 'selected' : ''
-                                        }`}
-                                    onClick={() => handleReservedLockerClick(locker)}
-                                >
-                                    {locker.locker_name}
-                                </button>
-                            ))}
+                {
+
+                    lockerData?.mappedLockers?.length > 0 && (
+                        <div className="reserved-lockers-section" style={{ marginTop: '1rem' }}>
+                            <h4>Reserved Lockers</h4>
+                            <div className="reserved-lockers-list">
+                                {lockerData.mappedLockers.map((locker) => (
+                                    <button
+                                        key={locker.locker_id}
+                                        className={`reserved-locker-button ${selectedLocker?.locker_id === locker.locker_id ? 'selected' : ''}`}
+                                        onClick={() => handleReservedLockerClick(locker)}
+                                    >
+                                        {locker.locker_name}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
             </div>
         );
     };
@@ -276,8 +277,8 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
     const getLockerSvg = (locker, isSelected) => {
         if (!locker) return null;
         if (isSelected) return LockerSvgs.selected;
-        if (locker.status === 'occupied') return LockerSvgs.occupied;
-        if (locker.status === 'maintenance') return LockerSvgs.maintenance;
+        if (locker.status === LOCKER_STATUS.OCCUPIED) return LockerSvgs.occupied;
+        if (locker.status === LOCKER_STATUS.MAINTENANCE) return LockerSvgs.maintenance;
         return LockerSvgs.available;
     };
 

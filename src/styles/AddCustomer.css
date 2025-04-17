@@ -1,8 +1,10 @@
 :root {
   /* Primary Colors */
   --primary-blue: #007bff;
+  --primary-blue-light: #66b3ff;
   --primary-dark: #000000;
   --primary-hover: #444444;
+  --primary-light: #f0f0f0;
   
   /* Background Colors */
   --bg-gradient-light: linear-gradient(145deg, #ffffff, #e6e6e6);
@@ -77,28 +79,37 @@
   box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.2), -8px -8px 15px rgba(255, 255, 255, 0.7);
 }
 
+/* Header Container */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: inherit;
+}
+
 /* Add Customer Title */
 .add-customer-title {
   font-size: 16px;
   font-weight: bold;
-  margin-top: 0;
-  margin-bottom: 10px;
+  margin: 0;
   text-align: center;
   color: #ffffff;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
   background: linear-gradient(135deg, #333, #555);
-  padding: 10px;
+  padding: 12px;
 }
 
 /* Tabs Container */
 .tabs-container {
-  position: relative;
-  display: flex;
-  justify-content: space-evenly;
-  align-items: center;
+  position: sticky;
   background: linear-gradient(90deg, #f0f0f0, #e6e6e6);
   padding: 3px 3px 0 3px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Optional: Add transition for smooth shadow on scroll */
+.tabs-container.scrolled {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 /* Tabs Styling */
@@ -228,6 +239,13 @@
   background-color: #ffffff;
   box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.2), -4px -4px 8px rgba(210, 210, 210, 0.7);
   max-width: 38rem;
+}
+
+.form-section h2 {
+  font-weight: bold;
+  color: var(--primary-blue-light);
+  margin-top: 0;
+  margin-bottom: 20px;
 }
 
 /* Align fields side by side */
@@ -421,7 +439,7 @@
 .captured-image-container img {
   position:static;
   width: 70%;
-  height: 170px; 
+  height: 185px; 
   max-width: 300px;
   border: 2px solid #ccc;
   border-radius: 10px;
@@ -869,7 +887,6 @@
 .input-button-group {
   display: flex;
   gap: 10px;
-  flex: 1 1 65%;
 }
 
 .input-button-group input {

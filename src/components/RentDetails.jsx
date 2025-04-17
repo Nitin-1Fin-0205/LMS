@@ -11,7 +11,7 @@ const RentDetails = ({ onUpdate, initialData }) => {
         admissionFees: "",
         total: "",
         lockerKeyNo: "",
-        contactNumber: "",
+        contractNumber: "",
         selectedPlan: ""
     });
 
@@ -108,7 +108,7 @@ const RentDetails = ({ onUpdate, initialData }) => {
                         type="text"
                         value={rentData.lockerNo || ''}
                         readOnly
-                        className="form-control readonly-input"
+                        className="readonly-input"
                         style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
                     />
                     <button
@@ -116,7 +116,7 @@ const RentDetails = ({ onUpdate, initialData }) => {
                         onClick={handleFetchLockerDetails}
                         disabled={isLockerFetching || !rentData.lockerNo}
                     >
-                        {isLockerFetching ? 'Fetching Plans...' : 'Get Locker Plans'}
+                        {isLockerFetching ? 'Fetching Plans...' : 'Fetch Plans'}
                     </button>
                 </div>
             </div>
@@ -184,8 +184,8 @@ const RentDetails = ({ onUpdate, initialData }) => {
                 <input type="text" placeholder="Enter locker key no" value={rentData.lockerKeyNo} onChange={(e) => handleInputChange('lockerKeyNo', e.target.value)} />
             </div>
             <div className="form-group">
-                <label>Contact Number<span className='required'>*</span></label>
-                <input type="text" placeholder="Enter contact no" value={rentData.contactNumber} onChange={(e) => handleInputChange('contactNumber', e.target.value)} />
+                <label>Contract Number<span className='required'>*</span></label>
+                <input type="text" placeholder="Enter contract no" value={rentData.contractNumber} onChange={(e) => handleInputChange('contractNumber', e.target.value)} />
             </div>
             <div className="form-actions">
                 <button className="save-button" onClick={handleSaveLockerDetails}>

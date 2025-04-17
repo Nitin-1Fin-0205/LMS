@@ -190,7 +190,7 @@
 .reserved-lockers-section h4 {
     color: #333;
     margin-bottom: 0.5rem;
-    font-size: 1rem;
+    font-size: 0.9rem;
 }
 
 .reserved-lockers-list {
@@ -202,13 +202,13 @@
 
 .reserved-locker-button {
     padding: 0.5rem 1rem;
-    background-color: #fff3cd;
-    border: 1px solid #ffeeba;
+    background-color: royalblue;
+    border: 1px solid #847b60;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s;
-    font-size: 0.9rem;
-    color: #856404;
+    font-size: 0.6rem;
+    color: #ffffff;
 }
 
 .reserved-locker-button:hover {

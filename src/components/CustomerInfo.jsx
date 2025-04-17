@@ -43,7 +43,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
 
     const handleFetchPan = async () => {
         try {
-            if (!customerData.panNo && !customerData.dateOfBirth) {
+            if (!customerData.panNo || !customerData.dateOfBirth) {
                 toast.error('Please enter PAN No and D.O.B to fetch details');
                 return;
             }
@@ -392,7 +392,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 />
             </div>
 
-            <div className="form-group">
+            {/* <div className="form-group">
                 <label>Customer ID<span className='required'>*</span></label>
                 <input
                     type="text"
@@ -401,7 +401,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                     placeholder="Enter customer id"
                     required
                 />
-            </div>
+            </div> */}
             <div className="form-group">
                 <label>Customer Name<span className='required'>*</span></label>
                 <input

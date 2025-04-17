@@ -10,7 +10,7 @@ export const fetchLockerMaster = createAsyncThunk(
             }
 
             const token = localStorage.getItem('authToken');
-            const response = await fetch(`${API_URL}/lockers/locker-master?lockerCenterId=${centerId}`, {
+            const response = await fetch(`${API_URL}/lockers/locker-master?lockerCenterId=${centerId}&customerId=1`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',

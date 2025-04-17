@@ -29,7 +29,7 @@ const emptyRentDetails = {
     admissionFees: "",
     total: "",
     lockerKeyNo: "",
-    contactNumber: "",
+    contractNumber: "",
     selectedPlan: ""
 };
 

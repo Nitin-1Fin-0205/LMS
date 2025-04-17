@@ -260,27 +260,47 @@ const AddCustomer = () => {
         }
     }, [data?.primaryHolder?.lockerInfo, dispatch]);
 
+    // Add scroll effect handler
+    useEffect(() => {
+        const handleScroll = () => {
+            const tabsContainer = document.querySelector('.tabs-container');
+            if (tabsContainer) {
+                if (window.scrollY > 0) {
+                    tabsContainer.classList.add('scrolled');
+                } else {
+                    tabsContainer.classList.remove('scrolled');
+                }
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     // Memoize current holder type and data
     const currentHolderType = ['primaryHolder', 'secondHolder', 'thirdHolder'][activeTab];
     const currentData = data[currentHolderType];
 
     return (
         <div className="add-customer-container">
-            <h6 className="add-customer-title">Add Customer</h6>
-            <div className="tabs-container">
-                <div className="tabs">
-                    {['Add Primary Holder', 'Add Second Holder', 'Add Third Holder'].map((tab, index) => (
-                        <button
-                            key={index}
-                            className={activeTab === index ? 'active' : ''}
-                            onClick={() => handleTabChange(index)}
-                        >
-                            {tab}
-                        </button>
-                    ))}
-                    <div className="tab-indicator" ref={indicatorRef}></div>
+            <div className="sticky-header">
+                <h6 className="add-customer-title">Add Customer</h6>
+                <div className="tabs-container">
+                    <div className="tabs">
+                        {['Add Primary Holder', 'Add Second Holder', 'Add Third Holder'].map((tab, index) => (
+                            <button
+                                key={index}
+                                className={activeTab === index ? 'active' : ''}
+                                onClick={() => handleTabChange(index)}
+                            >
+                                {tab}
+                            </button>
+                        ))}
+                        <div className="tab-indicator" ref={indicatorRef}></div>
+                    </div>
                 </div>
             </div>
+
             <div className="tab-content-container">
                 <TabContent
                     holderType={currentHolderType}
