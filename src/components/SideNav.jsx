@@ -5,7 +5,8 @@ import {
     faChevronLeft,
     faChevronRight,
     faUserPlus,
-    faLock
+    faLock,
+    faUsers
 } from '@fortawesome/free-solid-svg-icons';
 import {
     Drawer,
@@ -142,6 +143,20 @@ const SideNav = () => {
                             <FontAwesomeIcon icon={faLock} />
                         </ListItemIcon>
                         {!isCollapsed && <ListItemText primary="Access" />}
+                    </ListItem>
+                    <ListItem
+                        selected={activeTab === TAB_NAMES.ACCESS}
+                        onClick={() => handleTabChange(TAB_NAMES.CUSTOMER, ROUTES.CUSTOMER)}
+                        sx={listItemSx}
+                    >
+                        <ListItemIcon sx={{
+                            color: 'inherit',
+                            minWidth: 35,
+                            marginRight: isCollapsed ? 0 : 2
+                        }}>
+                            <FontAwesomeIcon icon={faUsers} />
+                        </ListItemIcon>
+                        {!isCollapsed && <ListItemText primary="Customers" />}
                     </ListItem>
                 </List>
             </Drawer>

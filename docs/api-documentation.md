@@ -84,7 +84,7 @@
       "admissionFees": "string",
       "total": "string",
       "lockerKeyNo": "string",
-      "contactNumber": "string",
+      "contractNumber": "string",
       "moveInDate": "string",
       "anticipatedMoveOutDate": "string"
     }

@@ -21,6 +21,24 @@ export const addCustomer = createAsyncThunk(
     }
 );
 
+export const updateCustomer = createAsyncThunk(
+    'customer/update',
+    async ({ customerId, customerData }, { rejectWithValue }) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.put(`${API_URL}/customers/${customerId}`, customerData, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data);
+        }
+    }
+);
+
 const customerSlice = createSlice({
     name: 'customer',
     initialState: {
@@ -59,6 +77,17 @@ const customerSlice = createSlice({
                 state.error = null;
             })
             .addCase(addCustomer.rejected, (state, action) => {
+                state.isSubmitting = false;
+                state.error = action.payload;
+            })
+            .addCase(updateCustomer.pending, (state) => {
+                state.isSubmitting = true;
+            })
+            .addCase(updateCustomer.fulfilled, (state) => {
+                state.isSubmitting = false;
+                state.error = null;
+            })
+            .addCase(updateCustomer.rejected, (state, action) => {
                 state.isSubmitting = false;
                 state.error = action.payload;
             });
