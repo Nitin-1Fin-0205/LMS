@@ -1,16 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
-import customerReducer from './slices/customerSlice';
+import customerInfoReducer from './slices/customerInfoSlice';
 import lockerReducer from './slices/lockerSlice';
-import userReducer from './slices/userSlice';
+import rentDetailsReducer from './slices/rentDetailsSlice';
 
 export const store = configureStore({
     reducer: {
-        customer: customerReducer,
+        customerInfo: customerInfoReducer,
         locker: lockerReducer,
-        user: userReducer,
-    },
-    middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware({
-            serializableCheck: false,
-        }),
+        rentDetails: rentDetailsReducer
+    }
 });

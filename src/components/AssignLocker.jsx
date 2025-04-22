@@ -18,6 +18,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
     const { lockerData, loading, error } = useSelector(state => state.locker);
 
     const fetchLockerData = useCallback(async () => {
+        console.log('Fetching locker data...');
         try {
             if (!navigator.onLine) {
                 throw new Error('No internet connection');

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import '../styles/AddNominee.css';
 
 const AddNominee = ({ isOpen, onClose, onSave }) => {
     const [nominees, setNominees] = useState([
@@ -13,7 +14,6 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
         const updatedNominees = [...nominees];
         updatedNominees[index][field] = value;
         setNominees(updatedNominees);
-
     };
 
     const handleAddNominee = () => {
@@ -54,83 +54,78 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
 
     return (
         <div className="modal-overlay">
-            <div className="modal-content">
-                <h3>Nominee Details</h3>
-                <div className="nominee-form">
+            <div className="nominee-modal-content">
+                <div className="nominee-modal-header">
+                    <h3>Add Nominee Details</h3>
+                </div>
+
+                <div className="nominee-form-container">
                     {nominees.map((nominee, index) => (
-                        <div key={index} className="nominee-item">
-                            <div
-                                className={`form-group`}>
-                                <label>
-                                    Nominee Name {index + 1} <span className="required">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={nominee.name}
-                                    onChange={(e) =>
-                                        handleInputChange(index, 'name', e.target.value)
-                                    }
-                                    placeholder="Enter nominee name"
-                                />
+                        <div key={index} className="nominee-form-section">
+                            <div className="nominee-form-header">
+                                <h4>Nominee {index + 1}</h4>
+                                <button
+                                    className="delete-nominee-button"
+                                    onClick={() => handleDeleteNominee(index)}
+                                    title="Delete nominee"
+                                >
+                                    <FontAwesomeIcon icon={faTrashAlt} />
+                                </button>
                             </div>
-                            <div
-                                className={`form-group `}
-                            >
-                                <label>
-                                    Relation with Nominee {index + 1}{' '}
-                                    <span className="required">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={nominee.relation}
-                                    onChange={(e) =>
-                                        handleInputChange(index, 'relation', e.target.value)
-                                    }
-                                    placeholder="Enter relation"
-                                />
+
+                            <div className="nominee-fields-grid">
+                                <div className="form-group">
+                                    <label>Name<span className="required">*</span></label>
+                                    <input
+                                        type="text"
+                                        value={nominee.name}
+                                        onChange={(e) => handleInputChange(index, 'name', e.target.value)}
+                                        placeholder="Enter nominee name"
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Relation<span className="required">*</span></label>
+                                    <input
+                                        type="text"
+                                        value={nominee.relation}
+                                        onChange={(e) => handleInputChange(index, 'relation', e.target.value)}
+                                        placeholder="Enter relation"
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label>Date of Birth<span className="required">*</span></label>
+                                    <input
+                                        type="date"
+                                        value={nominee.dob}
+                                        onChange={(e) => handleInputChange(index, 'dob', e.target.value)}
+                                    />
+                                </div>
                             </div>
-                            <div
-                                className={`form-group`}
-                            >
-                                <label>
-                                    DOB {index + 1} <span className="required">*</span>
-                                </label>
-                                <input
-                                    type="date"
-                                    value={nominee.dob}
-                                    onChange={(e) =>
-                                        handleInputChange(index, 'dob', e.target.value)
-                                    }
-                                />
-                            </div>
-                            <button
-                                className="delete-button"
-                                onClick={() => handleDeleteNominee(index)}
-                            >
-                                <FontAwesomeIcon icon={faTrashAlt} />
-                            </button>
                         </div>
                     ))}
                 </div>
-                <div className="form-actions">
+
+                <div className="nominee-modal-footer">
                     <button
-                        className="add-button"
+                        className="add-nominee-button"
                         onClick={handleAddNominee}
                         disabled={nominees.length >= 2}
-                        title={nominees.length >= 2 ? 'Maximum 2 nominees allowed' : ''}
                     >
-                        Add Nominee
+                        Add Another Nominee
                     </button>
-                    <button className="save-nominee-button" onClick={handleSave}>
-                        Save
-                    </button>
-                    <button className="close-button" onClick={onClose}>
-                        Cancel
-                    </button>
+                    <div className="modal-actions">
+                        <button className="cancel-button" onClick={onClose}>
+                            Cancel
+                        </button>
+                        <button className="save-button" onClick={handleSave}>
+                            Save Nominees
+                        </button>
+                    </div>
                 </div>
             </div>
-            {/* <ToastContainer /> */}
-        </div >
+        </div>
     );
 };
 

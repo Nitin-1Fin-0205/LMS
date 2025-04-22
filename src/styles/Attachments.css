@@ -1,0 +1,40 @@
+/* Attachments Section */
+.attachments-section {
+    margin-top: 20px;
+    border: 2px solid #d0d0d0;
+    border-radius: 15px;
+    padding: 12px;
+    background: linear-gradient(145deg, #ffffff, #f0f0f0);
+    box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.2), -8px -8px 15px rgba(255, 255, 255, 0.7);
+}
+
+.attachments-section h3 {
+    text-align: center;
+    margin-bottom: 12px; 
+    color: tomato; 
+    font-size: 14px; 
+}
+
+.attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.attachment-item label {
+    color: #007bff;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.attachment-item label:hover {
+    color: #0056b3;
+}
+
+.tick-icon {
+    color: green;
+    font-size: 18px;
+    font-weight: bold;
+}

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { CssBaseline, Box } from '@mui/material';
 import { AuthProvider } from './context/AuthContext';
 import SideNav from './components/SideNav';
+import Customer from './components/Customer';
 import AddCustomer from './components/AddCustomer';
 import EditCustomer from './components/EditCustomer';
 import Forbidden from './components/pages/Forbidden';
@@ -14,6 +15,10 @@ import Access from './components/Access';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import CustomerList from './components/CustomerList';
+import PrimaryHolder from './components/PrimaryHolder';
+import NotFound from './components/pages/NotFound';
+import SecondaryHolder from './components/SecondaryHolder';
+import ThirdHolder from './components/ThirdHolder';
 
 function App() {
   // Helper function to determine required roles
@@ -39,13 +44,26 @@ function App() {
               <Route path="/*" element={
                 <Routes>
                   {/* Add Customer Route */}
+
+                  <Route path={ROUTES.CUSTOMER} element={
+                    <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
+                      <Customer />
+                    </PrivateRoute>
+                  } />
+
+                  <Route path={ROUTES.PRIMARY_HOLDER} element={
+                    <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
+                      <PrimaryHolder />
+                    </PrivateRoute>
+                  } />
+
                   <Route path={ROUTES.ADD_CUSTOMER} element={
                     <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
                       <AddCustomer />
                     </PrivateRoute>
                   } />
 
-                  <Route path={ROUTES.CUSTOMER} element={
+                  <Route path={ROUTES.CUSTOMERS} element={
                     <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
                       <CustomerList />
                     </PrivateRoute>
@@ -63,9 +81,21 @@ function App() {
                     </PrivateRoute>
                   } />
 
+                  <Route path={ROUTES.SECONDARY_HOLDER} element={
+                    <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
+                      <SecondaryHolder />
+                    </PrivateRoute>
+                  } />
+
+                  <Route path={ROUTES.THIRD_HOLDER} element={
+                    <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
+                      <ThirdHolder />
+                    </PrivateRoute>
+                  } />
+
                   <Route path={`${ROUTES.EDIT_CUSTOMER}/:customerId`} element={<EditCustomer />} />
 
-                  <Route path="*" element={<Navigate to={ROUTES.FORBIDDEN} replace />} />
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               } />
             </Routes>

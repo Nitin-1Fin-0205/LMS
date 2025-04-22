@@ -6,7 +6,7 @@ import CustomerInfo from './CustomerInfo';
 import LockerInfo from './LockerInfo';
 import RentDetails from './RentDetails';
 import Attachments from './Attachments';
-import '../styles/AddCustomer.css';
+// import '../styles/AddCustomer.css';
 import { formDataStructure } from '../models/customerModel';
 import { API_URL } from '../assets/config';
 import { updateFormData, resetForm, addCustomer } from '../store/slices/customerSlice';

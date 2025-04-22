@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import CustomerInfo from './CustomerInfo';
 import LockerInfo from './LockerInfo';
 import RentDetails from './RentDetails';
-import '../styles/AddCustomer.css';
+// import '../styles/AddCustomer.css';
 import axios from 'axios';
 import { API_URL } from '../assets/config';
 import { updateFormData } from '../store/slices/customerSlice';

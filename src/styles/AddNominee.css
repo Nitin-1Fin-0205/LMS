@@ -1,0 +1,171 @@
+.nominee-modal-content {
+    background-color: #fff;
+    padding: 24px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+.nominee-modal-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eee;
+}
+
+.nominee-modal-header h3 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.nominee-form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.nominee-form-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.nominee-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.nominee-form-header h4 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.nominee-fields-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.nominee-fields-grid .form-group input {
+    height: 36px;
+    /* padding: 4px 8px; */
+    font-size: 13px;
+}
+
+.delete-nominee-button {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.delete-nominee-button:hover {
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.nominee-modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.add-nominee-button {
+    padding: 8px 16px;
+    background: var(--primary-dark);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.add-nominee-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.cancel-button,
+.save-button {
+    padding: 8px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.cancel-button {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.save-button {
+    background: var(--success-green);
+    color: white;
+}
+
+.cancel-button:hover {
+    background: #dee2e6;
+}
+
+.save-button:hover {
+    background: var(--success-hover);
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Scrollbar styling */
+.nominee-modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.nominee-modal-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.nominee-modal-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+    .nominee-modal-content {
+        width: 95%;
+        padding: 16px;
+    }
+    
+    .nominee-fields-grid {
+        grid-template-columns: 1fr;
+    }
+}

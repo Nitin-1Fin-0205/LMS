@@ -42,3 +42,37 @@ button {
   font-size: 14px;
   letter-spacing: -0.01em;
 }
+
+:root {
+  /* Primary Colors */
+  --primary-blue: #007bff;
+  --primary-blue-light: #66b3ff;
+  --primary-dark: #000000;
+  --primary-hover: #444444;
+  --primary-light: #f0f0f0;
+  
+  /* Background Colors */
+  --bg-gradient-light: linear-gradient(145deg, #ffffff, #e6e6e6);
+  --bg-gradient-dark: linear-gradient(135deg, #333, #555);
+  --bg-gradient-button: linear-gradient(145deg, #4a90e2, #357abd);
+  
+  /* Text Colors */
+  --text-primary: #333333;
+  --text-light: #ffffff;
+  
+  /* Border Colors */
+  --border-color: #cccccc;
+  
+  /* Success Colors */
+  --success-green: #4CAF50;
+  --success-hover: #45a049;
+  
+  /* Shadow Colors */
+  --shadow-dark: rgba(0, 0, 0, 0.2);
+  --shadow-light: rgba(255, 255, 255, 0.7);
+}
+
+.required {
+  color: red;
+  margin-left:2px;
+}

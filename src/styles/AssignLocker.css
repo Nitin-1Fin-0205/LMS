@@ -52,19 +52,70 @@
     100% { transform: rotate(360deg); }
 }
 
-  
-  /* Modal content */
-  .assign-locker-modal-content {
-    background-color: #fff;
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
     padding: 20px;
-    border-radius: 10px;
-    width: 85vw;
-    max-width: 1400px;
-    margin: 0 auto;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
+}
 
-  
+.assign-locker-modal-content {
+    background-color: #fff;
+    padding: 24px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 1200px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Add scrollbar styling */
+.assign-locker-modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.assign-locker-modal-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.assign-locker-modal-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.assign-locker-modal-content h3 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eee;
+}
+
 /* Assign Locker Container */
 .assign-locker-container {
     display: grid;
@@ -76,6 +127,88 @@
 .assign-locker-form {
     min-width: 250px;
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Form Actions Section */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+}
+
+.form-actions button {
+    padding: 8px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.save-button {
+    background: var(--success-green);
+    color: white;
+}
+
+.save-button:hover {
+    background: var(--success-hover);
+    transform: translateY(-1px);
+}
+
+.save-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.close-button {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.close-button:hover {
+    background: #dee2e6;
+    transform: translateY(-1px);
+}
+
+/* Update form group styles */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.form-group select {
+    padding: 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #495057;
+    transition: all 0.3s ease;
+}
+
+.form-group select:focus {
+    border-color: #80bdff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.form-group select:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
 }
 
 .cabinet-view {

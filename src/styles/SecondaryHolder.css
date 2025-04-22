@@ -1,0 +1,111 @@
+/* Secondary Holder Form Stages */
+.secondary-holder-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0px;
+}
+
+.stages-progress {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    gap: 40px;
+    position: relative;
+    padding: 20px 0;
+}
+
+.stage {
+    padding: 12px 30px;
+    background: #f3f4f6;
+    border-radius: 30px;
+    color: #6b7280;
+    position: relative;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 
+        0 2px 4px rgba(0,0,0,0.05),
+        0 4px 8px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    transform-style: preserve-3d;
+    transform: perspective(1000px) translateZ(0);
+}
+
+.stage.active {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    transform: perspective(1000px) translateZ(20px);
+    box-shadow: 
+        0 4px 12px rgba(59, 130, 246, 0.3),
+        0 8px 16px rgba(59, 130, 246, 0.2);
+}
+
+.stage:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: -40px;
+    top: 50%;
+    width: 30px;
+    height: 3px;
+    background: linear-gradient(90deg, #e5e7eb, transparent);
+    transform: translateY(-50%);
+}
+
+.stage-container {
+    animation: fadeSlide 0.5s ease-out;
+    transform-origin: top;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 0;
+    box-shadow: 
+        0 4px 12px rgba(0,0,0,0.1),
+        0 8px 24px rgba(0,0,0,0.05);
+}
+
+@keyframes fadeSlide {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Stage Actions */
+.stage-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+}
+
+.stage-actions button {
+    transform: translateY(0);
+    transition: all 0.3s ease;
+}
+
+.stage-actions button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stages-progress {
+        gap: 20px;
+    }
+    
+    .stage {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+
+    .stage:not(:last-child)::after {
+        right: -25px;
+        width: 20px;
+    }
+}
