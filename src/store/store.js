@@ -1,12 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
-import customerInfoReducer from './slices/customerInfoSlice';
+import customerReducer from './slices/customerSlice';
 import lockerReducer from './slices/lockerSlice';
-import rentDetailsReducer from './slices/rentDetailsSlice';
 
 export const store = configureStore({
     reducer: {
-        customerInfo: customerInfoReducer,
-        locker: lockerReducer,
-        rentDetails: rentDetailsReducer
+        customer: customerReducer,
+        locker: lockerReducer
     }
 });

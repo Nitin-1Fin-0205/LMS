@@ -15,23 +15,39 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
     const [isPanFetching, setIsPanFetching] = useState(false);
     const [isPanImageFetching, setIsPanImageFetching] = useState(false);
 
-    const [customerData, setCustomerData] = useState(initialData || {
+    const [customerData, setCustomerData] = useState({
         photo: null,
-        customerId: "",
-        customerName: "",
-        fatherOrHusbandName: "",
-        address: "",
-        dateOfBirth: "",
-        mobileNo: "",
-        panNo: "",
-        gender: "",
-        emailId: "",
-        documentNo: ""
+        customerId: '',
+        customerName: '',
+        fatherOrHusbandName: '',
+        address: '',
+        dateOfBirth: '',
+        mobileNo: '',
+        panNo: '',
+        gender: '',
+        emailId: '',
+        documentNo: '',
+        ...initialData
     });
 
     useEffect(() => {
-        if (initialData?.photo) {
-            setCapturedImage(initialData.photo);
+        if (initialData) {
+            setCustomerData(prev => ({
+                ...prev,
+                ...initialData,
+                // Ensure these are never undefined
+                photo: initialData.photo || null,
+                customerId: initialData.customerId || '',
+                customerName: initialData.customerName || '',
+                fatherOrHusbandName: initialData.fatherOrHusbandName || '',
+                address: initialData.address || '',
+                dateOfBirth: initialData.dateOfBirth || '',
+                mobileNo: initialData.mobileNo || '',
+                panNo: initialData.panNo || '',
+                gender: initialData.gender || '',
+                emailId: initialData.emailId || '',
+                documentNo: initialData.documentNo || ''
+            }));
         }
     }, [initialData]);
 

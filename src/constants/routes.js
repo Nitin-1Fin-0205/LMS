@@ -9,6 +9,7 @@ export const ROUTES = {
     SECONDARY_HOLDER: '/secondary-holder',
     THIRD_HOLDER: '/third-holder',
     LOCKERDETAILS: '/add-locker-details',
+    LOCKER_DETAILS: '/locker-details',
 };
 
 export const TAB_NAMES = {

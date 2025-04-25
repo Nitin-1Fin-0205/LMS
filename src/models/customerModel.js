@@ -1,60 +1,31 @@
-const emptyCustomerInfo = {
+export const CustomerInfoModel = {
+    customerId: '',
+    customerName: '',
+    fatherOrHusbandName: '',
+    dateOfBirth: '',
+    gender: '',
+    mobileNo: '',
+    emailId: '',
+    panNo: '',
+    documentNo: '',
+    address: '',
     photo: null,
-    customerId: "",
-    customerName: "",
-    fatherOrHusbandName: "",
-    address: "",
-    dateOfBirth: "",
-    mobileNo: "",
-    panNo: "",
-    gender: "",
-    emailId: "",
-    documentNo: ""
+    documents: {}
 };
 
-const emptyLockerInfo = {
-    lockerId: null,
-    assignedLocker: "",
-    center: "",
-    remarks: "",
-    lockerId: null,
-    lockerSize: ""
+export const BiometricModel = {
+    fingerprints: []
 };
 
-const emptyRentDetails = {
-    lockerNo: "",
-    lockerId: null,
-    deposit: "",
-    rent: "",
-    admissionFees: "",
-    total: "",
-    lockerKeyNo: "",
-    contractNumber: "",
-    selectedPlan: ""
-};
-
-const emptyAttachments = {
-    identityProof: null,
-    addressProof: null,
-    contactDocument: null,
-    otherDocument: null
-};
-
-export const formDataStructure = {
+export const CustomerFormModel = {
     primaryHolder: {
-        customerInfo: { ...emptyCustomerInfo },
-        lockerInfo: { ...emptyLockerInfo },
-        rentDetails: { ...emptyRentDetails },
-        attachments: { ...emptyAttachments }
+        customerInfo: { ...CustomerInfoModel },
+        biometric: { ...BiometricModel }
     },
-    secondHolder: {
-        customerInfo: { ...emptyCustomerInfo },
-        lockerInfo: { ...emptyLockerInfo },
-        attachments: { ...emptyAttachments }
+    secondaryHolder: {
+        customerInfo: { ...CustomerInfoModel }
     },
     thirdHolder: {
-        customerInfo: { ...emptyCustomerInfo },
-        lockerInfo: { ...emptyLockerInfo },
-        attachments: { ...emptyAttachments }
+        customerInfo: { ...CustomerInfoModel }
     }
 };

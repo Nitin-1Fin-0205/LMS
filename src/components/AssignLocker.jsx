@@ -41,7 +41,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
         return () => {
             dispatch(clearLockerData());
         };
-    }, [isOpen, centerId, dispatch]);
+    }, [isOpen, centerId, dispatch, fetchLockerData]);
 
     // Reset retry count when component mounts
     useEffect(() => {
@@ -172,7 +172,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
                         onClick={handleAssign}
                         disabled={!selectedLocker}
                     >
-                        Assign Cabinet
+                        Assign Locker
                     </button>
                     <button className="close-button" onClick={onClose}>
                         Close
@@ -251,13 +251,16 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
     };
 
     const handleLockerClick = (locker) => {
-        // Check if the locker is selected  and toggle selection
         if (selectedLocker && selectedLocker.locker_number === locker.locker_number) {
             setSelectedLocker(null);
         }
         else if (locker.status === LOCKER_STATUS.AVAILABLE) {
-            console.log('Locker clicked:', locker);
-            setSelectedLocker(locker);
+            setSelectedLocker({
+                locker_number: locker.locker_number,
+                locker_id: locker.locker_id,
+                size: locker.size,
+                status: locker.status
+            });
         }
     };
 
@@ -265,6 +268,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
         if (selectedLocker) {
             console.log('Assigning locker:', selectedLocker);
             onLockerAssign(selectedLocker);
+            onClose();
         }
     };
 
@@ -309,7 +313,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
         <div className="modal-overlay">
             <div className="error-container">
                 <h4>Error Loading Lockers</h4>
-                <p>{error}</p>
+                <p>{typeof error === 'object' ? error.message || 'Unknown error' : error}</p>
                 <button
                     className="retry-button"
                     onClick={fetchLockerData}

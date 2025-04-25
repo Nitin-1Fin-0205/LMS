@@ -1,119 +1,98 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import CustomerInfo from './CustomerInfo';
-import LockerRentDetails from './LockerRentDetails';
 import BiometricCapture from './BiometricCapture';
+import Attachments from './Attachments';
 import { API_URL } from '../assets/config';
 import '../styles/PrimaryHolder.css';
 import { useNavigate } from 'react-router-dom';
+import { updateHolderSection, submitStageData, submitCustomerInfo } from '../store/slices/customerSlice';
+import { HOLDER_TYPES, HOLDER_SECTIONS, HOLDER_STAGES, STAGE_STATUS } from '../constants/holderConstants';
 
 const PrimaryHolder = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const customerData = location.state?.customer;
-    const [currentStage, setCurrentStage] = useState('customer-info');
-    const [centers, setCenters] = useState([]);
-    const [isLoadingCenters, setIsLoadingCenters] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const [formData, setFormData] = useState({
-        customerInfo: customerData || {},
-        lockerInfo: {},
-        rentDetails: {},
-        biometric: {}
+    const formData = useSelector(state => state.customer.form.primaryHolder);
+    const isSubmitting = useSelector(state => state.customer.isSubmitting);
+    const { customerId, isCustomerCreated } = useSelector(state => state.customer);
+    const [currentStage, setCurrentStage] = useState(HOLDER_STAGES.CUSTOMER_INFO);
+    const [stageStatus, setStageStatus] = useState({
+        [HOLDER_STAGES.CUSTOMER_INFO]: STAGE_STATUS.NOT_STARTED,
+        [HOLDER_STAGES.ATTACHMENTS]: STAGE_STATUS.NOT_STARTED,
+        [HOLDER_STAGES.BIOMETRIC]: STAGE_STATUS.NOT_STARTED
     });
 
-    const fetchCenters = async () => {
-        try {
-            setIsLoadingCenters(true);
-            const token = localStorage.getItem('authToken');
-            const response = await axios.get(`${API_URL}/lockers/locker-centers`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            setCenters(response.data);
-        } catch (error) {
-            toast.error('Failed to fetch centers');
-        } finally {
-            setIsLoadingCenters(false);
-        }
-    };
-
     useEffect(() => {
-        fetchCenters();
-    }, []);
+        // Log form data when it changes
+        console.log('Form Data Updated:', formData);
+    }, [formData]);
 
     const handleCustomerInfoUpdate = (data) => {
-        setFormData(prev => ({
-            ...prev,
-            customerInfo: { ...prev.customerInfo, ...data }
-        }));
-    };
-
-    const handleLockerInfoUpdate = (data) => {
-        setFormData(prev => ({
-            ...prev,
-            lockerInfo: { ...prev.lockerInfo, ...data }
-        }));
-
-        if (data.assignedLocker) {
-            setFormData(prev => ({
-                ...prev,
-                rentDetails: {
-                    ...prev.rentDetails,
-                    lockerNo: data.assignedLocker,
-                    lockerId: data.lockerId
-                }
-            }));
-        }
-    };
-
-    const handleRentDetailsUpdate = (data) => {
-        setFormData(prev => ({
-            ...prev,
-            rentDetails: { ...prev.rentDetails, ...data }
+        dispatch(updateHolderSection({
+            holder: HOLDER_TYPES.PRIMARY,
+            section: HOLDER_SECTIONS.CUSTOMER_INFO,
+            data
         }));
     };
 
     const handleBiometricUpdate = (data) => {
-        setFormData(prev => ({
-            ...prev,
-            biometric: { ...prev.biometric, ...data }
+        dispatch(updateHolderSection({
+            holder: HOLDER_TYPES.PRIMARY,
+            section: HOLDER_SECTIONS.BIOMETRIC,
+            data
+        }));
+    };
+
+    const handleAttachmentsUpdate = (data) => {
+        dispatch(updateHolderSection({
+            holder: HOLDER_TYPES.PRIMARY,
+            section: HOLDER_SECTIONS.ATTACHMENTS,
+            data
         }));
     };
 
     const handleSubmit = async () => {
         try {
-            setIsSubmitting(true);
             const token = localStorage.getItem('authToken');
 
-            await axios.post(`${API_URL}/customers/add`, formData, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+            const submitData = {
+                customerInfo: formData.customerInfo,
+                biometric: formData.biometric
+            };
 
-            toast.success('Primary holder added successfully!');
+            const response = await axios.post(
+                `${API_URL}/customers/add`,
+                submitData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (response.status === 200) {
+                toast.success('Primary holder added successfully!');
+                navigate(-1);
+            }
         } catch (error) {
             toast.error(error?.response?.data?.message || 'Failed to add primary holder');
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
-    const validateCurrentStage = () => {
+    const handleStageTransition = () => {
         switch (currentStage) {
-            case 'customer-info':
-                setCurrentStage('locker-rent');
+            case HOLDER_STAGES.CUSTOMER_INFO:
+                setCurrentStage(HOLDER_STAGES.ATTACHMENTS);
                 break;
-            case 'locker-rent':
-                setCurrentStage('biometric');
+            case HOLDER_STAGES.ATTACHMENTS:
+                setCurrentStage(HOLDER_STAGES.BIOMETRIC);
                 break;
-            case 'biometric':
+            case HOLDER_STAGES.BIOMETRIC:
                 handleSubmit();
                 break;
             default:
@@ -121,65 +100,131 @@ const PrimaryHolder = () => {
         }
     };
 
+    const submitCurrentStage = async () => {
+        try {
+            if (currentStage === HOLDER_STAGES.CUSTOMER_INFO) {
+                // Create customer first
+                const result = await dispatch(submitCustomerInfo(formData.customerInfo)).unwrap();
+                if (!result.customerId) {
+                    throw new Error('Failed to create customer');
+                }
+            } else if (!customerId) {
+                // Don't allow other stages without customerId
+                toast.error('Please complete customer information first');
+                setCurrentStage(HOLDER_STAGES.CUSTOMER_INFO);
+                return;
+            }
+
+            // For other stages, include customerId in the payload
+            const stageData = {
+                customerId,
+                ...getStageData(currentStage)
+            };
+
+            await dispatch(submitStageData({
+                holder: HOLDER_TYPES.PRIMARY,
+                stage: currentStage,
+                data: stageData
+            })).unwrap();
+
+            setStageStatus(prev => ({
+                ...prev,
+                [currentStage]: STAGE_STATUS.COMPLETED
+            }));
+
+            handleStageTransition();
+        } catch (error) {
+            setStageStatus(prev => ({
+                ...prev,
+                [currentStage]: STAGE_STATUS.ERROR
+            }));
+            toast.error(error.message || `Failed to save ${currentStage} data`);
+        }
+    };
+
+    const getStageData = (stage) => {
+        switch (stage) {
+            case HOLDER_STAGES.CUSTOMER_INFO:
+                return formData.customerInfo;
+            case HOLDER_STAGES.BIOMETRIC:
+                return formData.biometric;
+            case HOLDER_STAGES.ATTACHMENTS:
+                return formData.attachments;
+            default:
+                return {};
+        }
+    };
+
+    const validateAndSubmitStage = () => {
+        // Add validation logic here if needed
+        submitCurrentStage();
+    };
+
+    const canNavigateToStage = (stage) => {
+        if (stage === HOLDER_STAGES.CUSTOMER_INFO) return true;
+        return isCustomerCreated && customerId;
+    };
+
+    const getStageClassName = (stage) => {
+        const baseClass = 'stage';
+        const status = stageStatus[stage];
+        const isActive = currentStage === stage;
+        const isLocked = !canNavigateToStage(stage);
+
+        return `${baseClass} ${isActive ? 'active' : ''} ${status === STAGE_STATUS.COMPLETED ? 'completed' : ''} ${isLocked ? 'locked' : ''}`;
+    };
+
     const renderStage = () => {
         switch (currentStage) {
-            case 'customer-info':
+            case HOLDER_STAGES.CUSTOMER_INFO:
                 return (
                     <div className="stage-container">
                         <CustomerInfo
                             initialData={formData.customerInfo}
                             onUpdate={handleCustomerInfoUpdate}
+                            holderType="primaryHolder"
                         />
                         <div className="stage-actions">
-                            <button
-                                className="back-button"
-                                onClick={() => navigate(-1)}
-                            >
+                            <button className="back-button" onClick={() => navigate(-1)}>
                                 Back
                             </button>
                             <button
                                 className="next-button"
-                                onClick={validateCurrentStage}
+                                onClick={validateAndSubmitStage}
+                                disabled={isSubmitting}
                             >
-                                Next
+                                {isSubmitting ? 'Saving...' : 'Save & Continue'}
                             </button>
                         </div>
                     </div>
                 );
-            case 'locker-rent':
+
+            case HOLDER_STAGES.ATTACHMENTS:
                 return (
                     <div className="stage-container">
-                        <LockerRentDetails
-                            onUpdate={(data) => {
-                                handleLockerInfoUpdate(data);
-                                handleRentDetailsUpdate(data);
-                            }}
-                            initialData={{
-                                ...formData.lockerInfo,
-                                ...formData.rentDetails
-                            }}
-                            centers={centers}
-                            isLoadingCenters={isLoadingCenters}
-                            holderType="primaryHolder"
-                        />
+                        <div className="attachments-container">
+                            <Attachments
+                                holderType="primaryHolder"
+                                onUpdate={handleAttachmentsUpdate}
+                                initialData={formData.attachments}
+                            />
+                        </div>
                         <div className="stage-actions">
-                            <button
-                                className="back-button"
-                                onClick={() => setCurrentStage('customer-info')}
-                            >
+                            <button className="back-button" onClick={() => setCurrentStage(HOLDER_STAGES.CUSTOMER_INFO)}>
                                 Back
                             </button>
                             <button
-                                className="submit-button"
-                                onClick={validateCurrentStage}
+                                className="next-button"
+                                onClick={validateAndSubmitStage}
                                 disabled={isSubmitting}
                             >
-                                {isSubmitting ? 'Adding...' : 'Next'}
+                                {isSubmitting ? 'Saving...' : 'Save & Continue'}
                             </button>
                         </div>
                     </div>
                 );
-            case 'biometric':
+
+            case HOLDER_STAGES.BIOMETRIC:
                 return (
                     <div className="stage-container">
                         <BiometricCapture
@@ -187,22 +232,20 @@ const PrimaryHolder = () => {
                             initialData={formData.biometric}
                         />
                         <div className="stage-actions">
-                            <button
-                                className="back-button"
-                                onClick={() => setCurrentStage('locker-rent')}
-                            >
+                            <button className="back-button" onClick={() => setCurrentStage(HOLDER_STAGES.ATTACHMENTS)}>
                                 Back
                             </button>
                             <button
                                 className="submit-button"
-                                onClick={validateCurrentStage}
-                                disabled={isSubmitting}
+                                onClick={validateAndSubmitStage}
+                                disabled={isSubmitting || !canNavigateToStage(currentStage)}
                             >
                                 {isSubmitting ? 'Submitting...' : 'Submit'}
                             </button>
                         </div>
                     </div>
                 );
+
             default:
                 return null;
         }
@@ -211,14 +254,14 @@ const PrimaryHolder = () => {
     return (
         <div className="primary-holder-container">
             <div className="stages-progress">
-                <div className={`stage ${currentStage === 'customer-info' ? 'active' : ''}`}>
-                    Customer Info
+                <div className={getStageClassName(HOLDER_STAGES.CUSTOMER_INFO)}>
+                    Customer Info {stageStatus[HOLDER_STAGES.CUSTOMER_INFO] === STAGE_STATUS.COMPLETED && '✓'}
                 </div>
-                <div className={`stage ${currentStage === 'locker-rent' ? 'active' : ''}`}>
-                    Locker & Rent
+                <div className={getStageClassName(HOLDER_STAGES.ATTACHMENTS)}>
+                    Documents {stageStatus[HOLDER_STAGES.ATTACHMENTS] === STAGE_STATUS.COMPLETED && '✓'}
                 </div>
-                <div className={`stage ${currentStage === 'biometric' ? 'active' : ''}`}>
-                    Biometric
+                <div className={getStageClassName(HOLDER_STAGES.BIOMETRIC)}>
+                    Biometric {stageStatus[HOLDER_STAGES.BIOMETRIC] === STAGE_STATUS.COMPLETED && '✓'}
                 </div>
             </div>
             {renderStage()}

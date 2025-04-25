@@ -1,18 +1,34 @@
 import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
+import { useDispatch, useSelector } from 'react-redux';
+import { updateNominees } from '../store/slices/lockerSlice';
 import 'react-toastify/dist/ReactToastify.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import '../styles/AddNominee.css';
 
-const AddNominee = ({ isOpen, onClose, onSave }) => {
-    const [nominees, setNominees] = useState([
-        { name: '', relation: '', dob: '' },
-    ]);
+const AddNominee = ({ isOpen, onClose }) => {
+    const dispatch = useDispatch();
+    const existingNominees = useSelector(state => state.locker.lockerDetails.nominees || []);
+    const [nominees, setNominees] = useState([]);
+
+    useEffect(() => {
+        // Create new objects for each nominee to avoid read-only issues
+        const initialNominees = existingNominees.length > 0
+            ? existingNominees.map(nominee => ({
+                name: nominee.name || '',
+                relation: nominee.relation || '',
+                dob: nominee.dob || ''
+            }))
+            : [{ name: '', relation: '', dob: '' }];
+
+        setNominees(initialNominees);
+    }, [existingNominees]);
 
     const handleInputChange = (index, field, value) => {
-        const updatedNominees = [...nominees];
-        updatedNominees[index][field] = value;
+        const updatedNominees = nominees.map((nominee, i) =>
+            i === index ? { ...nominee, [field]: value } : nominee
+        );
         setNominees(updatedNominees);
     };
 
@@ -32,20 +48,18 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
 
     const handleSave = () => {
         const missingFields = [];
-
-        // Validate nominee fields and track missing fields
         nominees.forEach((nominee, index) => {
-            if (!nominee.name.trim()) missingFields.push({ index, field: 'name' });
-            if (!nominee.relation.trim()) missingFields.push({ index, field: 'relation' });
-            if (!nominee.dob.trim()) missingFields.push({ index, field: 'dob' });
+            if (!nominee.name.trim()) missingFields.push(`Name for Nominee ${index + 1}`);
+            if (!nominee.relation.trim()) missingFields.push(`Relation for Nominee ${index + 1}`);
+            if (!nominee.dob) missingFields.push(`Date of Birth for Nominee ${index + 1}`);
         });
 
         if (missingFields.length > 0) {
-            toast.error('All nominee fields are required!');
+            toast.error(`Please fill all required fields: ${missingFields.join(', ')}`);
             return;
         }
 
-        onSave(nominees); // Pass the nominees data to the parent component
+        dispatch(updateNominees(nominees));
         toast.success('Nominees saved successfully!');
         onClose();
     };

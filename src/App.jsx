@@ -4,8 +4,8 @@ import { CssBaseline, Box } from '@mui/material';
 import { AuthProvider } from './context/AuthContext';
 import SideNav from './components/SideNav';
 import Customer from './components/Customer';
-import AddCustomer from './components/AddCustomer';
-import EditCustomer from './components/EditCustomer';
+// import AddCustomer from './components/AddCustomer';
+// import EditCustomer from './components/EditCustomer';
 import Forbidden from './components/pages/Forbidden';
 import PrivateRoute from './components/auth/PrivateRoute';
 import './styles/App.css';
@@ -19,6 +19,7 @@ import PrimaryHolder from './components/PrimaryHolder';
 import NotFound from './components/pages/NotFound';
 import SecondaryHolder from './components/SecondaryHolder';
 import ThirdHolder from './components/ThirdHolder';
+import LockerDetails from './components/LockerDetails';
 
 function App() {
   // Helper function to determine required roles
@@ -57,11 +58,11 @@ function App() {
                     </PrivateRoute>
                   } />
 
-                  <Route path={ROUTES.ADD_CUSTOMER} element={
+                  {/* <Route path={ROUTES.ADD_CUSTOMER} element={
                     <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
                       <AddCustomer />
                     </PrivateRoute>
-                  } />
+                  } /> */}
 
                   <Route path={ROUTES.CUSTOMERS} element={
                     <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
@@ -69,11 +70,11 @@ function App() {
                     </PrivateRoute>
                   } />
 
-                  <Route path={`${ROUTES.EDIT_CUSTOMER}/:id`} element={
+                  {/* <Route path={`${ROUTES.EDIT_CUSTOMER}/:id`} element={
                     <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
                       <EditCustomer />
                     </PrivateRoute>
-                  } />
+                  } /> */}
 
                   <Route path={ROUTES.ACCESS} element={
                     <PrivateRoute requiredRoles={getRequiredRoles([])}>
@@ -93,7 +94,13 @@ function App() {
                     </PrivateRoute>
                   } />
 
-                  <Route path={`${ROUTES.EDIT_CUSTOMER}/:customerId`} element={<EditCustomer />} />
+                  <Route path={ROUTES.LOCKER_DETAILS} element={
+                    <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
+                      <LockerDetails />
+                    </PrivateRoute>
+                  } />
+
+                  {/* <Route path={`${ROUTES.EDIT_CUSTOMER}/:customerId`} element={<EditCustomer />} /> */}
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>

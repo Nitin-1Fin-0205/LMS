@@ -1,30 +1,38 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import CustomerInfo from './CustomerInfo';
+import Attachments from './Attachments';
 import { API_URL } from '../assets/config';
+import { updateHolderSection } from '../store/slices/customerSlice';
+import { HOLDER_TYPES, HOLDER_SECTIONS, HOLDER_STAGES } from '../constants/holderConstants';
 import '../styles/SecondaryHolder.css';
 
 const ThirdHolder = () => {
-    const location = useLocation();
+    const dispatch = useDispatch();
     const navigate = useNavigate();
-    const customerData = location.state?.customer;
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const [formData, setFormData] = useState({
-        customerInfo: customerData || {}
-    });
+    const thirdHolder = useSelector(state => state.customer.form.thirdHolder);
+    const [currentStage, setCurrentStage] = useState(HOLDER_STAGES.CUSTOMER_INFO);
 
     const handleCustomerInfoUpdate = (data) => {
-        setFormData(prev => ({
-            ...prev,
-            customerInfo: { ...prev.customerInfo, ...data }
+        dispatch(updateHolderSection({
+            holder: HOLDER_TYPES.THIRD,
+            section: HOLDER_SECTIONS.CUSTOMER_INFO,
+            data
+        }));
+    };
+
+    const handleAttachmentsUpdate = (data) => {
+        dispatch(updateHolderSection({
+            holder: HOLDER_TYPES.THIRD,
+            section: HOLDER_SECTIONS.ATTACHMENTS,
+            data
         }));
     };
 
     const handleSubmit = async () => {
         try {
-            setIsSubmitting(true);
             const token = localStorage.getItem('authToken');
 
             await fetch(`${API_URL}/customers/secondary-holder/add`, {
@@ -33,45 +41,61 @@ const ThirdHolder = () => {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(thirdHolder)
             });
 
             toast.success('Secondary holder added successfully!');
             navigate(-1); // Go back to previous page
         } catch (error) {
             toast.error('Failed to add secondary holder');
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
     return (
         <div className="secondary-holder-container">
             <div className="stages-progress">
-                <div className="stage active">
-                    Third Holder Info
+                <div className={`stage ${currentStage === HOLDER_STAGES.CUSTOMER_INFO ? 'active' : ''}`}>
+                    Customer Info
+                </div>
+                <div className={`stage ${currentStage === HOLDER_STAGES.ATTACHMENTS ? 'active' : ''}`}>
+                    Documents
                 </div>
             </div>
             <div className="stage-container">
-                <CustomerInfo
-                    initialData={formData.customerInfo}
-                    onUpdate={handleCustomerInfoUpdate}
-                />
-                <div className="stage-actions">
-                    <button
-                        className="back-button"
-                        onClick={() => navigate(-1)}
-                    >
-                        Back
-                    </button>
-                    <button
-                        className="submit-button"
-                        onClick={handleSubmit}
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? 'Adding...' : 'Submit'}
-                    </button>
-                </div>
+                {currentStage === HOLDER_STAGES.CUSTOMER_INFO ? (
+                    <>
+                        <CustomerInfo
+                            initialData={thirdHolder.customerInfo}
+                            onUpdate={handleCustomerInfoUpdate}
+                        />
+                        <div className="stage-actions">
+                            <button className="back-button" onClick={() => navigate(-1)}>
+                                Back
+                            </button>
+                            <button className="next-button" onClick={() => setCurrentStage(HOLDER_STAGES.ATTACHMENTS)}>
+                                Next
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <div className="attachments-container">
+                            <Attachments
+                                holderType="thirdHolder"
+                                onUpdate={handleAttachmentsUpdate}
+                                initialData={thirdHolder.attachments}
+                            />
+                        </div>
+                        <div className="stage-actions">
+                            <button className="back-button" onClick={() => setCurrentStage(HOLDER_STAGES.CUSTOMER_INFO)}>
+                                Back
+                            </button>
+                            <button className="submit-button" onClick={handleSubmit}>
+                                Submit
+                            </button>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

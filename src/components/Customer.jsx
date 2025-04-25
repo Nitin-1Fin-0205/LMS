@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
@@ -7,22 +7,56 @@ import '../styles/Customer.css';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faUserPlus, faVault, faFileAlt, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faUserPlus, faVault, faFileAlt, faEye, faPhone, faEnvelope, faSpinner, faUpLong, faDownload, faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
+import { fetchCustomerByPan, resetForm, updateHolderSection } from '../store/slices/customerSlice';
+import { updateLockerDetails, updateRentDetails, clearAllLockerData } from '../store/slices/lockerSlice';
+import { HOLDER_TYPES, HOLDER_SECTIONS } from '../constants/holderConstants';
+
+const mockCustomerResponse = {
+    primaryHolder: {
+        customerInfo: {
+            customerId: 'CUST001',
+            customerName: 'John Doe',
+            fatherOrHusbandName: 'Richard Doe',
+            dateOfBirth: '1990-01-01',
+            gender: 'Male',
+            mobileNo: '9876543210',
+            emailId: 'john@example.com',
+            panNo: '', // Use entered PAN
+            documentNo: 'AADHAR123456',
+            address: '123 Main Street, City'
+        },
+        lockerInfo: {
+            center: '',
+            assignedLocker: '',
+            remarks: '',
+            lockerSize: ''
+        },
+        rentDetails: {
+            deposit: '',
+            rent: '',
+            admissionFees: '',
+            total: '',
+            lockerKeyNo: '',
+            selectedPlan: ''
+        },
+        biometric: {
+            fingerprints: []
+        }
+    }
+};
 
 const Customer = () => {
     const dispatch = useDispatch();
+    const { form, isSubmitting } = useSelector(state => state.customer);
+    const primaryHolder = form.primaryHolder;
+    const lockerData = useSelector(state => state.locker);
     const [formData, setFormData] = useState({
         pan: '',
-        center: '',
+        center: ''
     });
     const [centers, setCenters] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [currentCustomer, setCurrentCustomer] = useState(null);
-    const [primaryHolder, setPrimaryHolder] = useState(true);
-    const [secondaryHolder, setSecondaryHolder] = useState(null);
-    const [lockerDetails, setLockerDetails] = useState(null);
     const navigate = useNavigate();
-
     const [activeCard, setActiveCard] = useState(null);
 
     const fetchCenters = async () => {
@@ -38,15 +72,21 @@ const Customer = () => {
     };
 
     const handlePrimaryHolder = () => {
-        navigate(ROUTES.PRIMARY_HOLDER, { state: { customer: currentCustomer } });
+        navigate(ROUTES.PRIMARY_HOLDER);
     };
 
     const handleSecondaryHolder = () => {
-        navigate(ROUTES.SECONDARY_HOLDER, { state: { customer: currentCustomer } });
+        navigate(ROUTES.SECONDARY_HOLDER, { state: { customer: primaryHolder } });
     };
 
     const handleThirdHolder = () => {
-        navigate(ROUTES.THIRD_HOLDER, { state: { customer: currentCustomer } });
+        navigate(ROUTES.THIRD_HOLDER, { state: { customer: primaryHolder } });
+    };
+
+    const handleLockerDetails = () => {
+        if (primaryHolder?.customerInfo?.customerId) {
+            navigate(ROUTES.LOCKER_DETAILS);
+        }
     };
 
     useEffect(() => {
@@ -55,57 +95,77 @@ const Customer = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsLoading(true);
         try {
-            // TODO: Uncomment when API is ready
-            // const token = localStorage.getItem('authToken');
-            // const response = await axios.post(`${API_URL}/customers/pan-details`,
-            //     { panNo: formData.pan },
-            //     { headers: { 'Authorization': `Bearer ${token}` } }
-            // );
-            // setCurrentCustomer(response.data);
+            const result = await dispatch(fetchCustomerByPan({
+                pan: formData.pan,
+                centerId: formData.center
+            })).unwrap();
 
-            // Temporary mock response with documents
-            const mockedResponse = {
-                status: 200,
-                data: {
-                    name: "John Doe",
-                    pan: formData.pan,
-                    phoneNumber: "9876543210",
-                    email: "john.doe@example.com",
-                    dob: "1990-01-01",
-                    gender: "MALE",
-                    address: "123 Main St, Mumbai",
-                    lockerNo: "LOCKER123",
-                    customerId: "CUST001",
-                    status: "ACTIVE",
-                    documents: {
-                        panCard: {
-                            name: "PAN_Card.pdf",
-                            url: "https://example.com/dummy/pan.pdf",
-                            type: "application/pdf"
-                        },
-                        aadharCard: {
-                            name: "Aadhar_Card.pdf",
-                            url: "https://example.com/dummy/aadhar.pdf",
-                            type: "application/pdf"
-                        }
-                    }
+            if (result.primaryHolder) {
+                // Update customer info
+                dispatch(updateHolderSection({
+                    holder: HOLDER_TYPES.PRIMARY,
+                    section: HOLDER_SECTIONS.CUSTOMER_INFO,
+                    data: result.primaryHolder.customerInfo
+                }));
+
+                // Update attachments if they exist
+                if (result.primaryHolder.attachments) {
+                    dispatch(updateHolderSection({
+                        holder: HOLDER_TYPES.PRIMARY,
+                        section: HOLDER_SECTIONS.ATTACHMENTS,
+                        data: result.primaryHolder.attachments
+                    }));
                 }
-            };
-            setCurrentCustomer(mockedResponse.data);
-            toast.success('Details fetched successfully');
+
+                // First update locker details with center
+                dispatch(updateLockerDetails({
+                    center: formData.center,
+                    ...result.lockerDetails,
+                }));
+
+                // Then update rent details if they exist
+                if (result.lockerDetails?.rentDetails) {
+                    dispatch(updateRentDetails(result.lockerDetails.rentDetails));
+                }
+
+                toast.success('Customer details fetched successfully');
+            } else {
+                dispatch(updateHolderSection({
+                    holder: HOLDER_TYPES.PRIMARY,
+                    section: HOLDER_SECTIONS.CUSTOMER_INFO,
+                    data: { panNo: formData.pan }
+                }));
+
+                dispatch(updateLockerDetails({
+                    center: formData.center,
+                    assignedLocker: '',
+                    lockerId: '',
+                    lockerSize: '',
+                    lockerKeyNo: '',
+                    remarks: '',
+                    isModalOpen: false,
+                    isNomineeModalOpen: false,
+                    nominees: []
+                }));
+
+                toast.info('No existing customer found. You can add a new customer.');
+            }
         } catch (error) {
-            toast.error('Failed to fetch details');
-            console.error('Error:', error);
-        } finally {
-            setIsLoading(false);
+            console.error('Error fetching customer details:', error);
+            toast.error('Failed to fetch customer details');
         }
     };
 
+    const handleReset = () => {
+        dispatch(resetForm()); // Reset customer state
+        dispatch(clearAllLockerData()); // Reset locker state
+        setFormData({ pan: '', center: '' }); // Reset local form state
+        setActiveCard(null);
+        toast.info('Form reset successfully');
+    };
+
     const handleViewDocument = (doc) => {
-        // In real implementation, this would open the document URL
-        // For now, just show a toast
         toast.info(`Viewing ${doc.name}`);
         window.open(doc.url, '_blank');
     };
@@ -137,16 +197,24 @@ const Customer = () => {
                         ))}
                     </select>
                 </div>
-                <button type="submit" className="fetch-button" disabled={isLoading}>
-                    {isLoading ? 'Fetching...' : 'Fetch Details'}
-                </button>
+                <div className="fetch-cust-actions">
+                    <button type="submit" className="fetch-button" disabled={isSubmitting}>
+                        {isSubmitting ? <span >Fetching... <FontAwesomeIcon icon={faSpinner} /></span> : <span>Fetch Customer <FontAwesomeIcon icon={faDownload} /> </span>}
+                    </button>
+                    <button
+                        type="button"
+                        className="reset-button"
+                        onClick={handleReset}
+                    >
+                        Reset <FontAwesomeIcon icon={faArrowsRotate} />
+                    </button>
+                </div>
             </form>
 
             <div className="action-cards">
                 <button
                     className={`card-button ${activeCard === 'primary' ? 'active' : ''}`}
                     onClick={handlePrimaryHolder}
-                    disabled={!primaryHolder}
                 >
                     <div className="card-icon">
                         <FontAwesomeIcon icon={faUser} />
@@ -159,8 +227,8 @@ const Customer = () => {
 
                 <button
                     className={`card-button ${activeCard === 'locker' ? 'active' : ''}`}
-                    onClick={() => setActiveCard('locker')}
-                    disabled={!lockerDetails}
+                    onClick={handleLockerDetails}
+                    disabled={!primaryHolder?.customerInfo?.customerId}
                 >
                     <div className="card-icon">
                         <FontAwesomeIcon icon={faVault} />
@@ -174,6 +242,7 @@ const Customer = () => {
                 <button
                     className={`card-button ${activeCard === 'secondary' ? 'active' : ''}`}
                     onClick={handleSecondaryHolder}
+                    disabled={!primaryHolder?.customerInfo?.customerId}
                 >
                     <div className="card-icon">
                         <FontAwesomeIcon icon={faUserPlus} />
@@ -187,6 +256,7 @@ const Customer = () => {
                 <button
                     className={`card-button ${activeCard === 'third' ? 'active' : ''}`}
                     onClick={handleThirdHolder}
+                    disabled={!primaryHolder?.customerInfo?.customerId}
                 >
                     <div className="card-icon">
                         <FontAwesomeIcon icon={faUserPlus} />
@@ -198,53 +268,67 @@ const Customer = () => {
                 </button>
             </div>
 
-            {currentCustomer && (
+            {primaryHolder?.customerInfo?.customerId && (
                 <div className="customer-preview">
                     <div className="preview-header">
                         <h3>Customer Details</h3>
-                        <span className="customer-status">{currentCustomer.status}</span>
+                        <span className="customer-status">
+                            {primaryHolder.customerInfo.status || 'Active'}
+                        </span>
                     </div>
 
                     <div className="preview-content">
                         <div className="preview-left">
                             <div className="customer-photo">
-                                {currentCustomer.photo ? (
-                                    <img src={currentCustomer.photo} alt="Customer" />
+                                {primaryHolder.customerInfo.photo ? (
+                                    <img src={primaryHolder.customerInfo.photo} alt="Customer" />
                                 ) : (
                                     <div className="photo-placeholder">
                                         <FontAwesomeIcon icon={faUser} />
                                     </div>
                                 )}
                             </div>
-                            <div className="customer-id">#{currentCustomer.customerId}</div>
+                            <div className="customer-id">#{primaryHolder.customerInfo.customerId}</div>
                         </div>
 
                         <div className="preview-info">
                             <div className="preview-row">
-                                <h4>{currentCustomer.name}</h4>
-                                <span className="badge">{currentCustomer.gender}</span>
+                                <h4>{primaryHolder.customerInfo.customerName}</h4>
+                                <span className="badge">{primaryHolder.customerInfo.gender}</span>
                             </div>
                             <div className="contact-info">
-                                <span><FontAwesomeIcon icon="phone" /> {currentCustomer.phoneNumber}</span>
-                                <span><FontAwesomeIcon icon="envelope" /> {currentCustomer.email}</span>
+                                <span><FontAwesomeIcon icon={faPhone} /> {primaryHolder.customerInfo.mobileNo}</span>
+                                <span><FontAwesomeIcon icon={faEnvelope} /> {primaryHolder.customerInfo.emailId}</span>
                             </div>
                             <div className="document-info">
-                                <span><strong>PAN:</strong> {currentCustomer.pan}</span>
-                                <span><strong>Locker No:</strong> {currentCustomer.lockerNo}</span>
+                                <span><strong>PAN:</strong> {primaryHolder.customerInfo.panNo}</span>
+                                <span><strong>Locker No:</strong> {lockerData.lockerDetails.assignedLocker}</span>
                             </div>
                         </div>
 
                         <div className="preview-docs">
                             <h5>Uploaded Documents</h5>
                             <div className="doc-list">
-                                {currentCustomer?.documents && Object.entries(currentCustomer.documents).map(([key, doc]) => (
-                                    <div key={key} className="doc-item" onClick={() => handleViewDocument(doc)}>
-                                        <FontAwesomeIcon icon={faFileAlt} />
-                                        <span>{doc.name}</span>
-                                        <button className="view-doc-btn">
-                                            <FontAwesomeIcon icon={faEye} />
-                                        </button>
-                                    </div>
+                                {primaryHolder.attachments && Object.entries(primaryHolder.attachments).map(([category, documents]) => (
+                                    documents.length > 0 && documents.map((doc) => (
+                                        <div key={doc.id} className="doc-item">
+                                            <FontAwesomeIcon icon={faFileAlt} />
+                                            <span className='doc-name' >{doc.name}</span>
+                                            <div className="doc-info">
+                                                <span className="doc-category">{category}</span>
+                                                <span className="doc-size">
+                                                    {(doc.size / (1024 * 1024)).toFixed(2)} MB
+                                                </span>
+                                            </div>
+                                            <button
+                                                className="view-doc-btn"
+                                                onClick={() => handleViewDocument(doc)}
+                                                title="View Document"
+                                            >
+                                                <FontAwesomeIcon icon={faEye} />
+                                            </button>
+                                        </div>
+                                    ))
                                 ))}
                             </div>
                         </div>

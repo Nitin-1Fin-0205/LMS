@@ -118,7 +118,7 @@ const SideNav = () => {
                 <List sx={{ padding: 0 }}>
                     <ListItem
                         selected={activeTab === TAB_NAMES.CUSTOMERS}
-                        onClick={() => handleTabChange(TAB_NAMES.CUSTOMERS, ROUTES.ADD_CUSTOMER)}
+                        onClick={() => handleTabChange(TAB_NAMES.CUSTOMERS, ROUTES.CUSTOMER)}
                         sx={listItemSx}
                     >
                         <ListItemIcon sx={{
