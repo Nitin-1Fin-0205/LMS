@@ -414,7 +414,8 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                         <input
                             type="text"
                             value={customerData.panNo}
-                            onChange={(e) => handleInputChange('panNo', e.target.value)}
+                            //to uppercase the input value
+                            onChange={(e) => handleInputChange('panNo', e.target.value.toUpperCase())}
                             placeholder="Enter PAN no"
                             required
                         />

@@ -1,5 +1,5 @@
 export const CustomerInfoModel = {
-    customerId: '',
+    customerId: null,
     customerName: '',
     fatherOrHusbandName: '',
     dateOfBirth: '',
@@ -10,22 +10,34 @@ export const CustomerInfoModel = {
     documentNo: '',
     address: '',
     photo: null,
-    documents: {}
 };
 
 export const BiometricModel = {
     fingerprints: []
 };
 
+export const AttachmentsModel = {
+    identityProof: [],
+    addressProof: [],
+    contactDocument: [],
+    otherDocument: []
+};
+
+
 export const CustomerFormModel = {
     primaryHolder: {
         customerInfo: { ...CustomerInfoModel },
-        biometric: { ...BiometricModel }
+        biometric: { ...BiometricModel },
+        attachments: { ...AttachmentsModel }
+
     },
     secondaryHolder: {
-        customerInfo: { ...CustomerInfoModel }
+        customerInfo: { ...CustomerInfoModel },
+        attachments: { ...AttachmentsModel }
     },
     thirdHolder: {
-        customerInfo: { ...CustomerInfoModel }
+        customerInfo: { ...CustomerInfoModel },
+        attachments: { ...AttachmentsModel }
+
     }
 };

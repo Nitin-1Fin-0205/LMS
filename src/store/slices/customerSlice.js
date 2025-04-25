@@ -55,7 +55,7 @@ export const fetchCustomerByPan = createAsyncThunk(
                     }
                 },
                 lockerDetails: {
-                    lockerId: 'LOCKER001',
+                    lockerId: '1',
                     assignedLocker: 'TH001',
                     lockerSize: 'Large',
                     lockerKeyNo: '123456',
@@ -175,7 +175,7 @@ export const submitStageData = createAsyncThunk(
             const response = await {
                 status: 200,
                 data: {
-                    customerId: 'CUST001',
+                    customerId: '1',
                     message: 'Stage data submitted successfully',
                     holder,
                     stage,
@@ -192,6 +192,7 @@ export const submitStageData = createAsyncThunk(
 export const submitCustomerInfo = createAsyncThunk(
     'customer/submitCustomerInfo',
     async (customerData, { rejectWithValue }) => {
+        console.log('Submitting customer data:', customerData);
         try {
             // const token = localStorage.getItem('authToken');
             // const response = await axios.post(
@@ -204,7 +205,8 @@ export const submitCustomerInfo = createAsyncThunk(
             //         }
             //     }
             // );
-            // Mock response for testing
+            // // Mock response for testing
+
             const response = await {
                 status: 200,
                 data: {
@@ -212,10 +214,11 @@ export const submitCustomerInfo = createAsyncThunk(
                     message: 'Customer created successfully'
                 }
             };
-            if (response.status !== 200) {
-                throw new Error('Failed to create customer');
+
+            if (response.status === 200 || response.status === 201) {
+                return response.data;
             }
-            return response.data; // Should include customerId in response
+            throw new Error('Failed to create customer');
         } catch (error) {
             return rejectWithValue(error.response?.data || 'Failed to create customer');
         }

@@ -12,48 +12,17 @@ import { fetchCustomerByPan, resetForm, updateHolderSection } from '../store/sli
 import { updateLockerDetails, updateRentDetails, clearAllLockerData } from '../store/slices/lockerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS } from '../constants/holderConstants';
 
-const mockCustomerResponse = {
-    primaryHolder: {
-        customerInfo: {
-            customerId: 'CUST001',
-            customerName: 'John Doe',
-            fatherOrHusbandName: 'Richard Doe',
-            dateOfBirth: '1990-01-01',
-            gender: 'Male',
-            mobileNo: '9876543210',
-            emailId: 'john@example.com',
-            panNo: '', // Use entered PAN
-            documentNo: 'AADHAR123456',
-            address: '123 Main Street, City'
-        },
-        lockerInfo: {
-            center: '',
-            assignedLocker: '',
-            remarks: '',
-            lockerSize: ''
-        },
-        rentDetails: {
-            deposit: '',
-            rent: '',
-            admissionFees: '',
-            total: '',
-            lockerKeyNo: '',
-            selectedPlan: ''
-        },
-        biometric: {
-            fingerprints: []
-        }
-    }
-};
-
 const Customer = () => {
     const dispatch = useDispatch();
     const { form, isSubmitting } = useSelector(state => state.customer);
     const primaryHolder = form.primaryHolder;
     const lockerData = useSelector(state => state.locker);
-    const [formData, setFormData] = useState({
-        pan: '',
-        center: ''
+    const [formData, setFormData] = useState(() => {
+        const savedForm = localStorage.getItem('customerSearchForm');
+        return savedForm ? JSON.parse(savedForm) : {
+            pan: '',
+            center: ''
+        };
     });
     const [centers, setCenters] = useState([]);
     const navigate = useNavigate();
@@ -92,6 +61,11 @@ const Customer = () => {
     useEffect(() => {
         fetchCenters();
     }, []);
+
+    // Save form data to localStorage whenever it changes
+    useEffect(() => {
+        localStorage.setItem('customerSearchForm', JSON.stringify(formData));
+    }, [formData]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -161,13 +135,6 @@ const Customer = () => {
         dispatch(resetForm()); // Reset customer state
         dispatch(clearAllLockerData()); // Reset locker state
         setFormData({ pan: '', center: '' }); // Reset local form state
-        setActiveCard(null);
-        toast.info('Form reset successfully');
-    };
-
-    const handleViewDocument = (doc) => {
-        toast.info(`Viewing ${doc.name}`);
-        window.open(doc.url, '_blank');
     };
 
     return (

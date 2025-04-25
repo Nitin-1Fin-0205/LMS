@@ -100,16 +100,62 @@ const PrimaryHolder = () => {
         }
     };
 
+    const validateStageData = (stage) => {
+        const data = getStageData(stage);
+        switch (stage) {
+            case HOLDER_STAGES.CUSTOMER_INFO:
+                const requiredFields = [
+                    'customerName',
+                    'fatherOrHusbandName',
+                    'dateOfBirth',
+                    'gender',
+                    'mobileNo',
+                    'emailId',
+                    'panNo',
+                    'documentNo',
+                    'address',
+                    'photo'
+                ];
+                const missingFields = requiredFields.filter(field => !data[field]);
+                if (missingFields.length > 0) {
+                    toast.error(`Please fill in required fields: ${missingFields[0]}`);
+                    return false;
+                }
+                break;
+
+            case HOLDER_STAGES.ATTACHMENTS:
+                // const requiredDocs = ['identityProof', 'addressProof'];
+                // const missingDocs = requiredDocs.filter(docType =>
+                //     !data[docType] || data[docType].length === 0
+                // );
+                // if (missingDocs.length > 0) {
+                //     toast.error(`Please upload required documents: ${missingDocs.join(', ')}`);
+                //     return false;
+                // }
+                break;
+
+            case HOLDER_STAGES.BIOMETRIC:
+                if (!data.fingerprints || data.fingerprints.length === 0) {
+                    toast.error('Please capture fingerprints');
+                    return false;
+                }
+                break;
+        }
+        return true;
+    };
+
     const submitCurrentStage = async () => {
         try {
+            if (!validateStageData(currentStage)) {
+                return;
+            }
+
             if (currentStage === HOLDER_STAGES.CUSTOMER_INFO) {
-                // Create customer first
                 const result = await dispatch(submitCustomerInfo(formData.customerInfo)).unwrap();
                 if (!result.customerId) {
                     throw new Error('Failed to create customer');
                 }
             } else if (!customerId) {
-                // Don't allow other stages without customerId
                 toast.error('Please complete customer information first');
                 setCurrentStage(HOLDER_STAGES.CUSTOMER_INFO);
                 return;

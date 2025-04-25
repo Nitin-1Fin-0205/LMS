@@ -46,7 +46,7 @@ const LockerDetails = () => {
 
     return (
         <div className="locker-details-wrapper">
-            <h2>Locker Configuration</h2>
+            {/* <h2>Locker Configuration</h2> */}
             <LockerRentDetails
                 onUpdate={handleUpdate}
                 initialData={{

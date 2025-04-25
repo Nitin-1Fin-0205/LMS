@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
@@ -9,6 +9,7 @@ import AssignLocker from './AssignLocker';
 import AddNominee from './AddNominee';
 import '../styles/LockerRentDetails.css';
 import axios from 'axios';
+
 const LockerRentDetails = ({ onUpdate, initialData, centers, isLoadingCenters, holderType }) => {
     const dispatch = useDispatch();
     const { lockerDetails } = useSelector(state => state.locker);
@@ -22,27 +23,38 @@ const LockerRentDetails = ({ onUpdate, initialData, centers, isLoadingCenters, h
     };
 
     const fetchPlansForLocker = async (lockerId) => {
+        console.log("Fetching plans for locker ID:", lockerId);
         try {
             setIsLoadingPlans(true);
             const token = localStorage.getItem('authToken');
-            const response = await axios.post(`${API_URL}/lockers/lockers/rent?lockerId=${lockerId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
+            const response = await axios.post(
+                `${API_URL}/lockers/lockers/rent?lockerId=${lockerId}`,
+                {},
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
                 }
-            });
-            const data = await response.data;
-            if (response.status === 201) {
-                console.log('Plans fetched successfully:', data);
-                setLockerPlans(data.plans || []);
+            );
+
+            if (response.status === 200 || response.status === 201) {
+                setLockerPlans(response.data.plans || []);
                 toast.success('Plans fetched successfully');
             }
         } catch (error) {
-            console.log('Error fetching plans:', error);
+            console.error('Error fetching plans:', error);
             toast.error('Failed to fetch plans');
         } finally {
             setIsLoadingPlans(false);
         }
     };
+
+    useEffect(() => {
+        if (lockerDetails?.lockerId) {
+            fetchPlansForLocker(lockerDetails.lockerId);
+        }
+    }, [lockerDetails.lockerId]);
 
     const handleLockerAssign = async (locker) => {
         dispatch(updateLockerDetails({
@@ -55,7 +67,6 @@ const LockerRentDetails = ({ onUpdate, initialData, centers, isLoadingCenters, h
         if (locker?.locker_id) {
             try {
                 await dispatch(fetchLockerDetails(locker.locker_id)).unwrap();
-                await fetchPlansForLocker(locker.locker_id);
             } catch (error) {
                 console.error('Error fetching locker details:', error);
             }
@@ -77,10 +88,6 @@ const LockerRentDetails = ({ onUpdate, initialData, centers, isLoadingCenters, h
             }));
         }
     };
-
-    useEffect(() => {
-        console.log("Initial Data in LockerRentDetails:", initialData);
-    }, [initialData]);
 
     return (
         <div className="form-section">

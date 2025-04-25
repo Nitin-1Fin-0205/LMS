@@ -48,55 +48,96 @@
 - **Response:** HTTP 200 OK
 
 ## Customer Management APIs (Mocked)
-### Add Customer
-- **Endpoint:** `${API_URL}`
+### Create Customer Basic Info
+- **Endpoint:** `${API_URL}/customers/add`
 - **Method:** POST
 - **Headers:**  
   - Content-Type: application/json
   - Authorization: Bearer {token}
-  - Accept: application/json
 - **Request Body:**
 ```json
 {
-  "primaryHolder": {
-    "customerInfo": {
-      "photo": "base64string",
-      "customerId": "string",
-      "customerName": "string", 
-      "fatherOrHusbandName": "string",
-      "address": "string",
-      "dateOfBirth": "string",
-      "mobileNo": "string",
-      "panNo": "string",
-      "gender": "string",
-      "emailId": "string",
-      "documentNo": "string"
-    },
-    "lockerInfo": {
-      "assignedLocker": "string",
-      "center": "string",
-      "remarks": "string"
-    },
-    "rentDetails": {
-      "lockerNo": "string",
-      "deposit": "string",  
-      "rent": "string",
-      "admissionFees": "string",
-      "total": "string",
-      "lockerKeyNo": "string",
-      "contractNumber": "string",
-      "moveInDate": "string",
-      "anticipatedMoveOutDate": "string"
-    }
-  },
-  "secondHolder": {
-    // Similar structure as primaryHolder
-  },
-  "thirdHolder": {
-    // Similar structure as primaryHolder  
+  "customerInfo": {
+    "photo": "base64string",
+    "customerName": "string",
+    "fatherOrHusbandName": "string",
+    "dateOfBirth": "string",
+    "gender": "string",
+    "mobileNo": "string",
+    "emailId": "string",
+    "panNo": "string",
+    "documentNo": "string",
+    "address": "string"
   }
 }
 ```
+- **Response:**
+```json
+{
+  "customerId": "string",
+  "message": "Customer created successfully"
+}
+```
+
+### Update Customer Basic Info
+- **Endpoint:** `${API_URL}/customers/{customerId}/update`
+- **Method:** PUT
+- **Headers:**  
+  - Content-Type: application/json
+  - Authorization: Bearer {token}
+- **Request Body:** Same as Create Customer
+- **Response:**
+```json
+{
+  "message": "Customer updated successfully"
+}
+```
+
+### Upload Customer Attachments
+- **Endpoint:** `${API_URL}/customers/{customerId}/attachments`
+- **Method:** POST
+- **Headers:**
+  - Content-Type: multipart/form-data
+  - Authorization: Bearer {token}
+- **Request Body:**
+```json
+{
+  "category": "identityProof|addressProof|contactDocument|otherDocument",
+  "file": "File"
+}
+```
+
+### Delete Customer Attachment
+- **Endpoint:** `${API_URL}/customers/{customerId}/attachments/{attachmentId}`
+- **Method:** DELETE
+- **Headers:**
+  - Authorization: Bearer {token}
+- **Response:** HTTP 204 No Content
+
+### Add Biometric Data
+- **Endpoint:** `${API_URL}/customers/{customerId}/biometric`
+- **Method:** POST
+- **Headers:**
+  - Content-Type: application/json
+  - Authorization: Bearer {token}
+- **Request Body:**
+```json
+{
+  "fingerprints": ["base64string"],
+  "device": {
+    "id": "string",
+    "type": "string"
+  }
+}
+```
+
+### Add Secondary/Third Holder
+- **Endpoint:** `${API_URL}/customers/secondary-holder/add`
+- **Method:** POST 
+- **Headers:**
+  - Content-Type: application/json
+  - Authorization: Bearer {token}
+- **Request Body:** Same structure as Add Customer Basic Info
 - **Response:** HTTP 201 Created
 
 ### Get Centers List
@@ -142,6 +183,85 @@
   }
 }
 ```
+
+### Get PAN Details Through OCR
+- **Endpoint:** `${API_URL}/api/pan-details/ocr`
+- **Method:** POST
+- **Headers:**
+  - Content-Type: application/json
+  - Authorization: Bearer {token}
+  - Accept: application/json
+- **Request Body:**
+```json
+{
+  "image": "base64string"
+}
+```
+- **Response:**
+```json
+{
+  "status": "success",
+  "data": {
+    "panNo": "string",
+    "customerName": "string",
+    "fatherOrHusbandName": "string",
+    "dateOfBirth": "string"
+  }
+}
+```
+
+Notes:
+- The `image` field should contain the base64-encoded string of the PAN card image.
+- The API extracts PAN details using OCR and returns the parsed information.
+- Ensure the image is clear and properly formatted for accurate OCR results.
+
+### Get Customer Complete Details
+- **Endpoint:** `${API_URL}/customers/{customerId}`
+- **Method:** GET
+- **Headers:**
+  - Authorization: Bearer {token}
+  - Accept: application/json
+- **Response:**
+```json
+{
+  "customerId": "string",
+  "status": "success",
+  "data": {
+    "customerInfo": {
+      "photo": "base64string",
+      "customerId": "string",
+      "customerName": "string",
+      "fatherOrHusbandName": "string",
+      "dateOfBirth": "string",
+      "gender": "string",
+      "mobileNo": "string",
+      "emailId": "string",
+      "panNo": "string",
+      "documentNo": "string",
+      "address": "string",
+      "status": "string"
+    },
+    "attachments": {
+      "identityProof": [],
+      "addressProof": [],
+      "contactDocument": [],
+      "otherDocument": []
+    },
+    "biometric": {
+      "fingerprints": []
+    },
+    "lockerDetails": {
+      "lockerId": "string",
+      "lockerNumber": "string",
+      "center": "string",
+      "status": "string"
+    },
+    "secondaryHolders": [],
+    "thirdHolders": []
+  }
+}
+```
+
 
 ## Locker Management APIs (Mocked)
 ### Get Locker Data
