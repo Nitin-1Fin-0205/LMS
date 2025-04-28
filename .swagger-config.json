@@ -1,0 +1,11 @@
+{
+  "validateSchema": true,
+  "validateSemantic": true,
+  "validateSpec": true,
+  "validateDuplicateOperationIds": true,
+  "validateDuplicatePathParams": true,
+  "validateCircularRefs": true,
+  "validateMissingRefs": true,
+  "validateRequiredProperties": true,
+  "validateReservedWords": true
+}

@@ -3,6 +3,10 @@ permissions:
   contents: read
   pull-requests: write
 
+env:
+  VALIDATOR_VERSION: "v3.0.2"
+  SWAGGER_CLI_VERSION: "4.0.4"
+
 on:
   push:
     branches: [main, develop]
@@ -15,7 +19,25 @@ on:
       - 'docs/**'
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install swagger-cli
+        run: npm install -g @apidevtools/swagger-cli@${{ env.SWAGGER_CLI_VERSION }}
+      
+      - name: Download Swagger Validator
+        run: |
+          curl -L -o swagger-validator.jar https://github.com/swagger-api/validator-badge/releases/download/${{ env.VALIDATOR_VERSION }}/swagger-validator.jar
+      
+      - name: Validate OpenAPI spec
+        run: |
+          swagger-cli validate docs/api-documentation.yml
+          java -jar swagger-validator.jar docs/api-documentation.yml
+
   deploy-doc:
+    needs: validate
     if: ${{ github.event_name == 'push' }}
     name: Deploy API documentation on Bump.sh
     runs-on: ubuntu-latest
