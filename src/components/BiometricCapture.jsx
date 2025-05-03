@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFingerprint } from '@fortawesome/free-solid-svg-icons';
 import '../styles/BiometricCapture.css';
@@ -22,38 +22,55 @@ const BiometricCapture = ({ onUpdate, initialData }) => {
     const [fingerprints, setFingerprints] = useState(initialData?.fingerprints || {});
     const [isScanning, setIsScanning] = useState(false);
     const [selectedFinger, setSelectedFinger] = useState('right-thumb');
+    const [deviceStatus, setDeviceStatus] = useState({ connected: false, error: null });
 
-    const handleCapture = async () => {
-        if (!selectedFinger) {
-            toast.error('Please select a finger first');
-            return;
-        }
+    useEffect(() => {
+        const initDevice = async () => {
+            try {
+                setDeviceStatus({ connected: false, error: null });
+                await BiometricService.initializeDevice();
+                setDeviceStatus({ connected: true, error: null });
+                toast.success('Fingerprint device connected');
+            } catch (error) {
+                setDeviceStatus({ connected: false, error: error.message });
+                toast.error(error.message);
+            }
+        };
 
+        initDevice();
+    }, []);
+
+    const handleCapture = async (finger) => {
         try {
-            setIsScanning(true);
-            const deviceStatus = await BiometricService.checkDeviceConnection();
-
-            if (!deviceStatus.isConnected) {
-                toast.error('Biometric device not connected');
+            if (!deviceStatus.connected) {
+                toast.error('Please ensure device is connected');
                 return;
             }
 
-            const captureResult = await BiometricService.captureFingerprint();
+            setIsScanning(true);
+
+            const result = await BiometricService.captureFingerprint();
+
+            if (result.quality < 60) {
+                toast.warning('Low quality fingerprint, please try again');
+                return;
+            }
 
             const updatedFingerprints = {
                 ...fingerprints,
-                [selectedFinger]: {
-                    template: captureResult.template,
-                    quality: captureResult.quality,
-                    image: captureResult.image,
-                    timestamp: new Date().toISOString(),
-                    fingerName: FINGER_OPTIONS[selectedFinger]
+                [finger]: {
+                    template: result.template,
+                    image: result.image,
+                    wsq: result.wsq,
+                    quality: result.quality,
+                    timestamp: new Date().toISOString()
                 }
             };
 
             setFingerprints(updatedFingerprints);
-            onUpdate({ fingerprints: updatedFingerprints });
-            toast.success(`${FINGER_OPTIONS[selectedFinger]} captured successfully`);
+            onUpdate(updatedFingerprints);
+            toast.success(`Fingerprint captured successfully`);
+
         } catch (error) {
             toast.error(error.message);
         } finally {
@@ -63,6 +80,14 @@ const BiometricCapture = ({ onUpdate, initialData }) => {
 
     return (
         <div className="biometric-section">
+            {deviceStatus.error && (
+                <div className="device-error">
+                    <p>{deviceStatus.error}</p>
+                    <button onClick={() => BiometricService.initializeDevice()}>
+                        Retry Connection
+                    </button>
+                </div>
+            )}
             <h2>Fingerprint Registration</h2>
             <div className="fingerprint-initial">
                 <div className={`fingerprint-box ${fingerprints[selectedFinger] ? 'captured' : ''}`}>
@@ -79,7 +104,7 @@ const BiometricCapture = ({ onUpdate, initialData }) => {
                     </select>
                     {!fingerprints[selectedFinger] ? (
                         <button
-                            onClick={handleCapture}
+                            onClick={() => handleCapture(selectedFinger)}
                             disabled={isScanning}
                         >
                             {isScanning ? 'Scanning...' : 'Capture'}

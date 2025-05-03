@@ -1,84 +1,165 @@
-const MANTRA_HOST = 'http://localhost:8097';
+const BIOMINI_HOST = 'http://localhost:8084';
 
-const DEVICE_CONFIG = {
-    minQuality: 60,
-    maxTimeout: 10,
-    deviceName: 'MANTRA.MFS100',
-    templateFormat: 'ISO19794_2',
-    isFormatAnsi: false
+const SDK_ENDPOINTS = {
+    STATUS: '/api/isServiceRunning',
+    INIT: '/api/initDevice',
+    SCAN: '/api/scanFingerprint',
+    MATCH: '/api/matchFingerprints'
 };
 
 class BiometricService {
-    async checkDeviceConnection() {
+    constructor() {
+        this.deviceSerialNumber = null;
+        this.isInitialized = false;
+        this.retryAttempts = 3;
+        this.retryDelay = 1000; // 1 second
+    }
+
+    async checkServiceRunning() {
         try {
-            const response = await fetch(`${MANTRA_HOST}/getDeviceInfo`);
+            const response = await fetch(`/api/isServiceRunning`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
             const data = await response.json();
-            return {
-                isConnected: data.deviceConnected,
-                deviceInfo: data.deviceInfo
-            };
+            return data.running || false;
         } catch (error) {
-            throw new Error('Biometric device not connected');
+            console.error('Service check failed:', error);
+            return false;
         }
+    }
+
+    async initializeDevice() {
+        try {
+            const params = new URLSearchParams({
+                dummy: Math.random().toString()
+            });
+
+            const response = await fetch(`/api/initDevice?${params}`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Device initialization failed');
+            }
+
+            const data = await response.json();
+            console.log('Device initialized:', data);
+            this.isInitialized = data.success;
+            return { isConnected: data.success, deviceInfo: data.device };
+        } catch (error) {
+            throw new Error('Failed to initialize device: ' + error.message);
+        }
+    }
+
+    async validateSetup() {
+        try {
+            // Check service
+            const serviceCheck = await this.checkServiceRunning();
+            if (!serviceCheck) {
+                throw new Error('BioStar service not running');
+            }
+
+            // Check SDK
+            const sdkPath = process.env.BIOSTAR_SDK_HOME;
+            if (!sdkPath) {
+                throw new Error('SDK environment not configured');
+            }
+
+            // Check device connection
+            await this.initializeDevice();
+            return { success: true };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+                fixes: this.getSetupFixes(error.message)
+            };
+        }
+    }
+
+    getSetupFixes(error) {
+        const fixes = {
+            'BioStar service not running': [
+                'Open Services (services.msc)',
+                'Start "BioStar 2 Device Service"'
+            ],
+            'SDK environment not configured': [
+                'Set BIOSTAR_SDK_HOME environment variable',
+                'Add SDK bin folder to PATH'
+            ],
+            'Device not connected': [
+                'Check USB connection',
+                'Verify driver installation',
+                'Run UFScanner test'
+            ]
+        };
+        return fixes[error] || ['Refer to BIOMETRIC_SETUP.md'];
     }
 
     async captureFingerprint(finger = 'R1', options = {}) {
         try {
-            const captureParams = {
-                quality: options.quality || DEVICE_CONFIG.minQuality,
-                timeout: options.timeout || DEVICE_CONFIG.maxTimeout,
-                deviceName: DEVICE_CONFIG.deviceName,
-                finger,
-                templateFormat: DEVICE_CONFIG.templateFormat
-            };
+            if (!this.isInitialized) {
+                await this.initializeDevice();
+            }
 
-            const response = await fetch(`${MANTRA_HOST}/capture`, {
+            const response = await fetch(`/api/startCapturing?dummy=${Math.random().toString()}&sHandle=22596168&id=0.38614681991092004&resetTimer=30000`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(captureParams)
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    quality: options.quality || 80,
+                    timeout: options.timeout || 10000
+                })
             });
 
             if (!response.ok) {
-                throw new Error(`Device Error: ${response.statusText}`);
+                throw new Error('Capture failed');
             }
 
             const data = await response.json();
-
-            // Validate quality
-            if (data.quality < DEVICE_CONFIG.minQuality) {
-                throw new Error(`Poor fingerprint quality: ${data.quality}`);
-            }
-
+            console.log('Fingerprint captured:', data);
             return {
                 template: data.template,
                 quality: data.quality,
-                nfiq: data.nfiq,
-                image: data.biometricImage,
+                image: data.rawImage,
                 finger,
                 timestamp: new Date().toISOString()
             };
         } catch (error) {
-            if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-                throw new Error('Device not connected or service not running');
-            }
-            throw error;
+            throw new Error('Capture failed: ' + error.message);
         }
     }
 
     async matchFingerprints(template1, template2) {
         try {
-            const response = await fetch(`${MANTRA_HOST}/match`, {
+            const response = await fetch(`/api/matchFingerprints`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({ template1, template2 })
             });
+
             const data = await response.json();
             return {
                 matched: data.matched,
-                score: data.matchScore
+                score: data.score
             };
         } catch (error) {
-            throw new Error('Failed to match fingerprints');
+            throw new Error('Fingerprint matching failed');
         }
     }
 }
