@@ -1,5 +1,3 @@
-const BIOMINI_HOST = 'http://localhost:8084';
-
 const SDK_ENDPOINTS = {
     STATUS: '/api/isServiceRunning',
     INIT: '/api/initDevice',
@@ -34,15 +32,21 @@ class BiometricService {
 
     async initializeDevice() {
         try {
+            // Step 1: Create session ID first
+            await this.createSession();
+
+            // Step 2: Initialize device with proxy path
+            // Add dummy parameter for cache busting
             const params = new URLSearchParams({
                 dummy: Math.random().toString()
             });
 
             const response = await fetch(`/api/initDevice?${params}`, {
-                method: 'POST',
+                method: 'GET',
                 credentials: 'include',
                 headers: {
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
                 }
             });
 
@@ -51,11 +55,34 @@ class BiometricService {
             }
 
             const data = await response.json();
-            console.log('Device initialized:', data);
-            this.isInitialized = data.success;
-            return { isConnected: data.success, deviceInfo: data.device };
+            this.isInitialized = (data.retValue === 0);
+            return {
+                isConnected: this.isInitialized,
+                deviceInfo: data.ScannerInfos?.[0]
+            };
         } catch (error) {
             throw new Error('Failed to initialize device: ' + error.message);
+        }
+    }
+
+    async createSession() {
+        try {
+            const response = await fetch('/api/createSessionID', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            const data = await response.json();
+            if (data?.sessionId) {
+                document.cookie = `username=${data.sessionId}`;
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Session creation failed:', error);
+            return false;
         }
     }
 
@@ -110,34 +137,81 @@ class BiometricService {
                 await this.initializeDevice();
             }
 
-            const response = await fetch(`/api/startCapturing?dummy=${Math.random().toString()}&sHandle=22596168&id=0.38614681991092004&resetTimer=30000`, {
-                method: 'POST',
+            // Step 1: Start capture
+            const startResponse = await fetch('/api/startCapturing', {
+                method: 'GET',
                 credentials: 'include',
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    quality: options.quality || 80,
-                    timeout: options.timeout || 10000
-                })
+                params: {
+                    resetTimer: 30000
+                }
             });
 
-            if (!response.ok) {
+            if (!startResponse.ok) {
+                throw new Error('Failed to start capture');
+            }
+
+            // Step 2: Capture single fingerprint
+            const captureResponse = await fetch('/api/captureSingle', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!captureResponse.ok) {
                 throw new Error('Capture failed');
             }
 
-            const data = await response.json();
-            console.log('Fingerprint captured:', data);
+            // Step 3: Get template data
+            const templateResponse = await fetch('/api/getTemplateData', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                params: {
+                    extractEx: true,
+                    qualityLevel: options.quality || 80
+                }
+            });
+
+            const templateData = await templateResponse.json();
+
+            if (templateData.retValue !== 0) {
+                throw new Error('Template extraction failed');
+            }
+
             return {
-                template: data.template,
-                quality: data.quality,
-                image: data.rawImage,
+                template: templateData.templateBase64,
+                quality: templateData.quality,
                 finger,
                 timestamp: new Date().toISOString()
             };
         } catch (error) {
+            await this.abortCapture(); // Cleanup on error
             throw new Error('Capture failed: ' + error.message);
+        }
+    }
+
+    async abortCapture() {
+        try {
+            await fetch('/api/abortCapture', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+        } catch (error) {
+            console.error('Abort capture failed:', error);
         }
     }
 
