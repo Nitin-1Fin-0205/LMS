@@ -122,11 +122,12 @@ const CustomerList = () => {
                             customerInfo: {
                                 customerId: 'CUST001',
                                 customerName: 'John Doe',
+                                pan: 'ABCDE1234F',
                                 mobileNo: '1234567890',
                                 emailId: 'john@example.com',
                             },
                             lockerInfo: {
-                                center: 'Main Center',
+                                center: '1',
                                 assignedLocker: 'L001',
                             },
                             rentDetails: {
@@ -143,6 +144,7 @@ const CustomerList = () => {
                     id: customer.id,
                     customerId: customer.primaryHolder.customerInfo.customerId,
                     customerName: customer.primaryHolder.customerInfo.customerName,
+                    customerPAN: customer.primaryHolder.customerInfo.pan,
                     mobileNo: customer.primaryHolder.customerInfo.mobileNo,
                     emailId: customer.primaryHolder.customerInfo.emailId,
                     center: customer.primaryHolder.lockerInfo.center,
@@ -162,8 +164,15 @@ const CustomerList = () => {
 
     const handleEdit = (customerId) => {
         try {
-            console.log('Editing customer:', customerId);
-            navigate(`${ROUTES.EDIT_CUSTOMER}/${customerId}`);
+            const customer = customers.find(c => c.id === customerId);
+            if (customer) {
+                sessionStorage.setItem('editCustomerData', JSON.stringify({
+                    pan: customer.customerPAN,
+                    center: customer.center
+                }));
+                console.log(sessionStorage.getItem('editCustomerData'), customer)
+                navigate(ROUTES.CUSTOMER);
+            }
         } catch (error) {
             console.error('Navigation error:', error);
             toast.error('Failed to navigate to edit page');
