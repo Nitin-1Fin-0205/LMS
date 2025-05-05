@@ -18,10 +18,12 @@ const Customer = () => {
     const primaryHolder = form.primaryHolder;
     const lockerData = useSelector(state => state.locker);
     const [formData, setFormData] = useState(() => {
-        const savedForm = localStorage.getItem('customerSearchForm');
-        return savedForm ? JSON.parse(savedForm) : {
+        const savedForm = sessionStorage.getItem('customerSearchForm');
+        // Ensure default values are never undefined
+        return {
             pan: '',
-            center: ''
+            center: '',
+            ...(savedForm ? JSON.parse(savedForm) : {})
         };
     });
     const [centers, setCenters] = useState([]);
@@ -59,16 +61,28 @@ const Customer = () => {
     };
 
     useEffect(() => {
+        const editData = sessionStorage.getItem('editCustomerData');
+        if (editData) {
+            const { pan, center } = JSON.parse(editData);
+            setFormData({ pan, center });
+            handleSubmit(new Event('submit'));
+            sessionStorage.removeItem('editCustomerData');
+        }
         fetchCenters();
     }, []);
 
-    // Save form data to localStorage whenever it changes
     useEffect(() => {
-        localStorage.setItem('customerSearchForm', JSON.stringify(formData));
+        sessionStorage.setItem('customerSearchForm', JSON.stringify(formData));
     }, [formData]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        // Validate form data before submission
+        if (!formData.pan || !formData.center) {
+            toast.error('Please fill all required fields');
+            return;
+        }
+
         try {
             const result = await dispatch(fetchCustomerByPan({
                 pan: formData.pan,
@@ -76,7 +90,6 @@ const Customer = () => {
             })).unwrap();
 
             if (result.primaryHolder) {
-                // Update customer info
                 dispatch(updateHolderSection({
                     holder: HOLDER_TYPES.PRIMARY,
                     section: HOLDER_SECTIONS.CUSTOMER_INFO,
@@ -132,9 +145,11 @@ const Customer = () => {
     };
 
     const handleReset = () => {
-        dispatch(resetForm()); // Reset customer state
-        dispatch(clearAllLockerData()); // Reset locker state
-        setFormData({ pan: '', center: '' }); // Reset local form state
+        // Reset to initial empty values, not undefined
+        setFormData({ pan: '', center: '' });
+        dispatch(resetForm());
+        dispatch(clearAllLockerData());
+        sessionStorage.removeItem('customerSearchForm');
     };
 
     return (
@@ -144,16 +159,22 @@ const Customer = () => {
                     <label>PAN Number</label>
                     <input
                         type="text"
-                        value={formData.pan}
-                        onChange={(e) => setFormData({ ...formData, pan: e.target.value })}
+                        value={formData.pan || ''} // Ensure value is never undefined
+                        onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            pan: e.target.value
+                        }))}
                         required
                     />
                 </div>
                 <div className="form-group">
                     <label>Locker Center</label>
                     <select
-                        value={formData.center}
-                        onChange={(e) => setFormData({ ...formData, center: e.target.value })}
+                        value={formData.center || ''} // Ensure value is never undefined
+                        onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            center: e.target.value
+                        }))}
                         required
                     >
                         <option value="">Select Center</option>
@@ -166,7 +187,14 @@ const Customer = () => {
                 </div>
                 <div className="fetch-cust-actions">
                     <button type="submit" className="fetch-button" disabled={isSubmitting}>
-                        {isSubmitting ? <span >Fetching... <FontAwesomeIcon icon={faSpinner} /></span> : <span>Fetch Customer <FontAwesomeIcon icon={faDownload} /> </span>}
+                        {isSubmitting ? (
+                            <span>Fetching... <FontAwesomeIcon icon={faSpinner} /></span>
+                        ) : (
+                            <span>
+                                Fetch Customer
+                                <FontAwesomeIcon icon={faDownload} />
+                            </span>
+                        )}
                     </button>
                     <button
                         type="button"

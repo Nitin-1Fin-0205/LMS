@@ -3,7 +3,7 @@ export const ROUTES = {
     ACCESS: '/access',
     FORBIDDEN: '/forbidden',
     CUSTOMERS: '/customers',
-    EDIT_CUSTOMER: '/edit-customer',
+    // EDIT_CUSTOMER: '/edit-customer',
     CUSTOMER: '/customer',
     PRIMARY_HOLDER: '/primary-holder',
     SECONDARY_HOLDER: '/secondary-holder',
