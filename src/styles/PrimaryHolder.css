@@ -9,9 +9,9 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
-    margin-bottom: 2rem;
+    margin-bottom: 0.5rem;
     position: relative;
-    padding: 20px 0;
+    /* padding: 20px 0; */
 }
 
 .stage {

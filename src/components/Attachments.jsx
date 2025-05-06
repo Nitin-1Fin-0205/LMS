@@ -111,7 +111,7 @@ const Attachments = ({ onUpdate, initialData, holderType }) => {
             );
         }
         if (doc.type === 'application/pdf') {
-            return <FontAwesomeIcon icon={faFilePdf} size="3x" color="#344767" />;
+            return <FontAwesomeIcon icon={faFilePdf} size="2x" color="#344767" />;
         }
         return <FontAwesomeIcon icon={faFileUpload} size="3x" />;
     };

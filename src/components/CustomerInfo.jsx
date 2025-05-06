@@ -86,10 +86,9 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                     const updatedData = {
                         ...prev,
                         customerId: data?.customerId || '',
-                        customerName: data?.customerName || '',
+                        customerName: data?.name || '',
                         address: data?.address || '',
-                        dateOfBirth: data?.dateOfBirth || '',
-                        mobileNo: data?.mobileNo || ''
+                        mobileNo: data?.mobileNumber || ''
                     };
                     onUpdate(updatedData);
                     return updatedData;

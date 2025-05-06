@@ -60,64 +60,73 @@ const Customer = () => {
         }
     };
 
+    // Separate effect for handling edit data
     useEffect(() => {
         const editData = sessionStorage.getItem('editCustomerData');
         if (editData) {
             const { pan, center } = JSON.parse(editData);
             setFormData({ pan, center });
-            handleSubmit(new Event('submit'));
             sessionStorage.removeItem('editCustomerData');
         }
         fetchCenters();
     }, []);
 
     useEffect(() => {
-        sessionStorage.setItem('customerSearchForm', JSON.stringify(formData));
-    }, [formData]);
+        // Only fetch if both pan and center are present (handles both edit and manual input)
+        if (formData.pan && formData.center) {
+            handleSubmit();
+        }
+    }, [formData.pan, formData.center]);
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        // Validate form data before submission
+        if (e) {
+            e.preventDefault();
+        }
+
         if (!formData.pan || !formData.center) {
-            toast.error('Please fill all required fields');
             return;
         }
 
         try {
             const result = await dispatch(fetchCustomerByPan({
-                pan: formData.pan,
+                pan: formData.pan.trim().toUpperCase(),
                 centerId: formData.center
             })).unwrap();
 
             if (result.primaryHolder) {
-                dispatch(updateHolderSection({
-                    holder: HOLDER_TYPES.PRIMARY,
-                    section: HOLDER_SECTIONS.CUSTOMER_INFO,
-                    data: result.primaryHolder.customerInfo
-                }));
+                const updates = [
+                    updateHolderSection({
+                        holder: HOLDER_TYPES.PRIMARY,
+                        section: HOLDER_SECTIONS.CUSTOMER_INFO,
+                        data: result.primaryHolder.customerInfo
+                    }),
+                    updateLockerDetails({
+                        center: formData.center,
+                        ...result.lockerDetails,
+                    })
+                ];
 
-                // Update attachments if they exist
+                // Add attachments if they exist
                 if (result.primaryHolder.attachments) {
-                    dispatch(updateHolderSection({
+                    updates.push(updateHolderSection({
                         holder: HOLDER_TYPES.PRIMARY,
                         section: HOLDER_SECTIONS.ATTACHMENTS,
                         data: result.primaryHolder.attachments
                     }));
                 }
 
-                // First update locker details with center
-                dispatch(updateLockerDetails({
-                    center: formData.center,
-                    ...result.lockerDetails,
-                }));
-
-                // Then update rent details if they exist
+                // Add rent details if they exist
                 if (result.lockerDetails?.rentDetails) {
-                    dispatch(updateRentDetails(result.lockerDetails.rentDetails));
+                    updates.push(updateRentDetails(result.lockerDetails.rentDetails));
                 }
 
-                toast.success('Customer details fetched successfully');
+                // Dispatch all updates at once
+                updates.forEach(action => dispatch(action));
+
+                // Only show success toast on manual submit
+                if (e) toast.success('Customer details fetched successfully');
             } else {
+                // New customer case
                 dispatch(updateHolderSection({
                     holder: HOLDER_TYPES.PRIMARY,
                     section: HOLDER_SECTIONS.CUSTOMER_INFO,
@@ -136,11 +145,13 @@ const Customer = () => {
                     nominees: []
                 }));
 
-                toast.info('No existing customer found. You can add a new customer.');
+                if (e) toast.info('No existing customer found. You can add a new customer.');
             }
+
+            sessionStorage.setItem('customerSearchForm', JSON.stringify(formData));
         } catch (error) {
             console.error('Error fetching customer details:', error);
-            toast.error('Failed to fetch customer details');
+            if (e) toast.error('Failed to fetch customer details');
         }
     };
 

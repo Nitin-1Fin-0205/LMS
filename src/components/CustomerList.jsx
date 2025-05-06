@@ -58,10 +58,20 @@ const CustomerList = () => {
             renderCell: (params) => (
                 <Box
                     sx={{
-                        padding: '4px 2px',
-                        borderRadius: '4px',
-                        backgroundColor: params.value === 'Active' ? '#4caf50' : '#ff9800',
-                        color: 'white'
+                        borderRadius: '12px',
+                        backgroundColor: params.value === 'Active' ? 'rgba(46, 204, 113, 0.15)' : 'rgba(255, 152, 0, 0.15)',
+                        color: params.value === 'Active' ? '#2ecc71' : '#f39c12',
+                        fontSize: '0.65rem',
+                        fontWeight: '600',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: '80px',
+                        border: `1px solid ${params.value === 'Active' ? '#2ecc71' : '#f39c12'}`,
+                        height: '25px',
+                        marginBottom: '100px',
+                        textTransform: 'uppercase',
+
                     }}
                 >
                     {params.value}
@@ -136,6 +146,26 @@ const CustomerList = () => {
                             }
                         },
                     },
+                    {
+                        id: 2,
+                        primaryHolder: {
+                            customerInfo: {
+                                customerId: 'CUST002',
+                                customerName: 'Jane Smith',
+                                pan: 'FGHIJ5678K',
+                                mobileNo: '0987654321',
+                                emailId: 'janesmit@gmail.com',
+                            },
+                            lockerInfo: {
+                                center: '2',
+                                assignedLocker: 'L002',
+                            },
+                            rentDetails: {
+                                status: 'Active',
+                                premium: '3000',
+                            }
+                        },
+                    },
                 ]
             };
 
@@ -152,6 +182,10 @@ const CustomerList = () => {
                     status: customer.primaryHolder.rentDetails?.status || 'Inactive',
                     premium: customer.primaryHolder.rentDetails?.premium || ''
                 }));
+
+                // Log the formatted data to verify it has the required fields
+                console.log('Formatted customer data:', formattedData);
+
                 setCustomers(formattedData);
             }
         } catch (error) {
@@ -166,12 +200,23 @@ const CustomerList = () => {
         try {
             const customer = customers.find(c => c.id === customerId);
             if (customer) {
+                // Make sure we have both PAN and center before navigating
+                if (!customer.customerPAN || !customer.center) {
+                    console.error('Missing required data:', customer);
+                    toast.error('Missing required customer data for editing');
+                    return;
+                }
+
+                // Store the data in sessionStorage
                 sessionStorage.setItem('editCustomerData', JSON.stringify({
                     pan: customer.customerPAN,
                     center: customer.center
                 }));
-                console.log(sessionStorage.getItem('editCustomerData'), customer)
+
+                console.log('Navigating to edit with data:', JSON.parse(sessionStorage.getItem('editCustomerData')));
                 navigate(ROUTES.CUSTOMER);
+            } else {
+                toast.error('Customer not found');
             }
         } catch (error) {
             console.error('Navigation error:', error);
@@ -214,14 +259,35 @@ const CustomerList = () => {
 
     return (
         <Box sx={{
-            height: '100%',
+            height: 'calc(100vh - 80px)',
             width: '100%',
-            p: 2,
+            p: 3,
             boxSizing: 'border-box',
-            overflowX: 'auto'
+            overflowX: 'auto',
+            display: 'flex',
+            flexDirection: 'column'
         }}>
-            <Stack spacing={2} sx={{ minWidth: '1000px' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Stack
+                spacing={3}
+                sx={{
+                    minWidth: '1000px',
+                    height: '100%',
+                    '& .MuiDataGrid-root': {
+                        backgroundColor: 'white',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '8px',
+                        // overflow: 'hidden'
+                    }
+                }}
+            >
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        // py: 2 
+                    }}
+                >
                     <h2>Customer List</h2>
                     <TextField
                         variant="outlined"
@@ -262,8 +328,16 @@ const CustomerList = () => {
                     loading={loading}
                     disableSelectionOnClick
                     sx={{
+                        height: 'calc(100vh - 180px)',
                         '& .MuiDataGrid-row:hover': {
                             backgroundColor: '#f5f5f5'
+                        },
+                        '& .MuiDataGrid-cell': {
+                            py: 1.5
+                        },
+                        '& .MuiDataGrid-columnHeaders': {
+                            backgroundColor: '#f5f5f5',
+                            borderBottom: '2px solid #e0e0e0'
                         }
                     }}
                 />
