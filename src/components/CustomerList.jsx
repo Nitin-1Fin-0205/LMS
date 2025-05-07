@@ -132,7 +132,7 @@ const CustomerList = () => {
                             customerInfo: {
                                 customerId: 'CUST001',
                                 customerName: 'John Doe',
-                                pan: 'ABCDE1234F',
+                                pan: 'ABCPE1234F',
                                 mobileNo: '1234567890',
                                 emailId: 'john@example.com',
                             },

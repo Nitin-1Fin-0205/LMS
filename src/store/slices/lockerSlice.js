@@ -22,7 +22,7 @@ export const fetchLockerDetails = createAsyncThunk(
             const response = await axios.get(`https://newuat.support-backend.onefin.app/lockers/locker-master?lockerCenterId=1`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (response.status !== 200) {
+            if (response.status !== 200 || response.status !== 201) {
                 throw new Error('Failed to fetch locker details');
             }
             return response.data;

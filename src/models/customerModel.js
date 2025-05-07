@@ -1,15 +1,18 @@
 export const CustomerInfoModel = {
     customerId: null,
-    customerName: '',
+    firstName: '',
+    middleName: '',
+    lastName: '',
     fatherOrHusbandName: '',
     dateOfBirth: '',
     gender: '',
     mobileNo: '',
     emailId: '',
     panNo: '',
-    documentNo: '',
+    aadharNo: '',
     address: '',
     photo: null,
+    aadharNo: null,
 };
 
 export const BiometricModel = {

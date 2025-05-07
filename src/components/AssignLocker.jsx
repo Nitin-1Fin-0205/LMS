@@ -180,7 +180,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
                 </div>
                 {selectedLocker && (
                     <div className="selected-locker-info" style={{ marginTop: '1rem' }}>
-                        <span style={{ color: 'red', fontWeight: 'bold' }}>
+                        <span style={{ color: '#ff69b4', fontWeight: 'bold', fontSize: '0.95rem' }}>
                             Selected Locker: {selectedLocker.locker_number} ({selectedLocker.size})
                         </span>
                     </div>

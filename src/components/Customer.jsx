@@ -11,11 +11,13 @@ import { faUser, faUserPlus, faVault, faFileAlt, faEye, faPhone, faEnvelope, faS
 import { fetchCustomerByPan, resetForm, updateHolderSection } from '../store/slices/customerSlice';
 import { updateLockerDetails, updateRentDetails, clearAllLockerData } from '../store/slices/lockerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS } from '../constants/holderConstants';
+import { ValidationService } from '../services/ValidationService';
 
 const Customer = () => {
     const dispatch = useDispatch();
     const { form, isSubmitting } = useSelector(state => state.customer);
     const primaryHolder = form.primaryHolder;
+    const secondaryHolder = form.secondaryHolder;
     const lockerData = useSelector(state => state.locker);
     const [formData, setFormData] = useState(() => {
         const savedForm = sessionStorage.getItem('customerSearchForm');
@@ -29,6 +31,7 @@ const Customer = () => {
     const [centers, setCenters] = useState([]);
     const navigate = useNavigate();
     const [activeCard, setActiveCard] = useState(null);
+    const [isEditMode, setIsEditMode] = useState(false);
 
     const fetchCenters = async () => {
         try {
@@ -60,23 +63,37 @@ const Customer = () => {
         }
     };
 
-    // Separate effect for handling edit data
     useEffect(() => {
         const editData = sessionStorage.getItem('editCustomerData');
         if (editData) {
             const { pan, center } = JSON.parse(editData);
             setFormData({ pan, center });
+            setIsEditMode(true);
             sessionStorage.removeItem('editCustomerData');
         }
         fetchCenters();
     }, []);
 
     useEffect(() => {
-        // Only fetch if both pan and center are present (handles both edit and manual input)
-        if (formData.pan && formData.center) {
+        if (isEditMode && formData.pan && formData.center) {
             handleSubmit();
+            setIsEditMode(false);
         }
-    }, [formData.pan, formData.center]);
+    }, [formData.pan, formData.center, isEditMode]);
+
+    const handlePanChange = (e) => {
+        const pan = e.target.value.toUpperCase();
+        const validation = ValidationService.isValidPAN(pan);
+
+        if (pan.length === 10 && !validation.isValid) {
+            toast.error(validation.error);
+        }
+
+        setFormData(prev => ({
+            ...prev,
+            pan
+        }));
+    };
 
     const handleSubmit = async (e) => {
         if (e) {
@@ -84,6 +101,13 @@ const Customer = () => {
         }
 
         if (!formData.pan || !formData.center) {
+            if (e) toast.error('Please fill all required fields');
+            return;
+        }
+
+        const validation = ValidationService.isValidPAN(formData.pan);
+        if (!validation.isValid) {
+            if (e) toast.error(validation.error);
             return;
         }
 
@@ -93,62 +117,8 @@ const Customer = () => {
                 centerId: formData.center
             })).unwrap();
 
-            if (result.primaryHolder) {
-                const updates = [
-                    updateHolderSection({
-                        holder: HOLDER_TYPES.PRIMARY,
-                        section: HOLDER_SECTIONS.CUSTOMER_INFO,
-                        data: result.primaryHolder.customerInfo
-                    }),
-                    updateLockerDetails({
-                        center: formData.center,
-                        ...result.lockerDetails,
-                    })
-                ];
-
-                // Add attachments if they exist
-                if (result.primaryHolder.attachments) {
-                    updates.push(updateHolderSection({
-                        holder: HOLDER_TYPES.PRIMARY,
-                        section: HOLDER_SECTIONS.ATTACHMENTS,
-                        data: result.primaryHolder.attachments
-                    }));
-                }
-
-                // Add rent details if they exist
-                if (result.lockerDetails?.rentDetails) {
-                    updates.push(updateRentDetails(result.lockerDetails.rentDetails));
-                }
-
-                // Dispatch all updates at once
-                updates.forEach(action => dispatch(action));
-
-                // Only show success toast on manual submit
-                if (e) toast.success('Customer details fetched successfully');
-            } else {
-                // New customer case
-                dispatch(updateHolderSection({
-                    holder: HOLDER_TYPES.PRIMARY,
-                    section: HOLDER_SECTIONS.CUSTOMER_INFO,
-                    data: { panNo: formData.pan }
-                }));
-
-                dispatch(updateLockerDetails({
-                    center: formData.center,
-                    assignedLocker: '',
-                    lockerId: '',
-                    lockerSize: '',
-                    lockerKeyNo: '',
-                    remarks: '',
-                    isModalOpen: false,
-                    isNomineeModalOpen: false,
-                    nominees: []
-                }));
-
-                if (e) toast.info('No existing customer found. You can add a new customer.');
-            }
-
             sessionStorage.setItem('customerSearchForm', JSON.stringify(formData));
+
         } catch (error) {
             console.error('Error fetching customer details:', error);
             if (e) toast.error('Failed to fetch customer details');
@@ -156,7 +126,6 @@ const Customer = () => {
     };
 
     const handleReset = () => {
-        // Reset to initial empty values, not undefined
         setFormData({ pan: '', center: '' });
         dispatch(resetForm());
         dispatch(clearAllLockerData());
@@ -170,18 +139,17 @@ const Customer = () => {
                     <label>PAN Number</label>
                     <input
                         type="text"
-                        value={formData.pan || ''} // Ensure value is never undefined
-                        onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            pan: e.target.value
-                        }))}
+                        value={formData.pan || ''}
+                        onChange={handlePanChange}
+                        maxLength={10}
+                        // placeholder="AAAPL1234A"
                         required
                     />
                 </div>
                 <div className="form-group">
                     <label>Locker Center</label>
                     <select
-                        value={formData.center || ''} // Ensure value is never undefined
+                        value={formData.center || ''}
                         onChange={(e) => setFormData(prev => ({
                             ...prev,
                             center: e.target.value
@@ -262,7 +230,7 @@ const Customer = () => {
                 <button
                     className={`card-button ${activeCard === 'third' ? 'active' : ''}`}
                     onClick={handleThirdHolder}
-                    disabled={!primaryHolder?.customerInfo?.customerId}
+                    disabled={!secondaryHolder?.customerInfo?.customerId}
                 >
                     <div className="card-icon">
                         <FontAwesomeIcon icon={faUserPlus} />
@@ -283,7 +251,7 @@ const Customer = () => {
                         </span>
                     </div>
 
-                    <div className="preview-content">
+                    <div className="profile-preview-content">
                         <div className="preview-left">
                             <div className="customer-photo">
                                 {primaryHolder.customerInfo.photo ? (
@@ -312,6 +280,7 @@ const Customer = () => {
                             </div>
                         </div>
 
+                        {/* Commented out preview-docs section
                         <div className="preview-docs">
                             <h5>Uploaded Documents</h5>
                             <div className="doc-list">
@@ -338,6 +307,7 @@ const Customer = () => {
                                 ))}
                             </div>
                         </div>
+                        */}
                     </div>
                 </div>
             )}

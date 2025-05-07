@@ -9,7 +9,7 @@ export const customerInfoModel = {
     panNo: "",
     gender: "",
     emailId: "",
-    documentNo: ""
+    aadharNo: ""
 };
 
 export const lockerInfoModel = {
