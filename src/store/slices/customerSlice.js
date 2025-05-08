@@ -11,9 +11,38 @@ const initialState = {
     form: { ...CustomerFormModel }
 };
 
+// This API is used to fetch customer details by PAN number
 export const fetchCustomerByPan = createAsyncThunk(
     'customer/fetchByPan',
     async ({ pan, centerId }, { rejectWithValue }) => {
+
+        // // // TODO: remove this response and use the actual response when the API is ready
+        // return {
+        //     "member_id": "MBR1",
+        //     "customer_id": 1,
+        //     "customer_code": "97709a61-d13d-4dc0-8d99-38ec101157a0",
+        //     "name": "string",
+        //     "first_name": "Nitin ",
+        //     "middle_name": "Kishan",
+        //     "last_name": "Gupta",
+        //     "dob": "1990-05-12",
+        //     "email": "nitingupta1906@gmail.com",
+        //     "mobile_number": "9876543210",
+        //     "pan": "ABCPE1234F",
+        //     "gender": "MALE",
+        //     "aadhar": "ABCPE1234F",
+        //     "type": "primary",
+        //     "parent_customer_id": null,
+        //     "locker_center_id": 1,
+        //     "guardian": "Kishan Gupta",
+        //     "address": "gugujh",
+        //     "secondary_holder_id": 3,
+        //     "third_holder_id": 5,
+        //     "locker_number": "",
+        //     "locker_id": null,
+        //     "profile_img": "https://media.istockphoto.com/id/615279718/photo/businesswoman-portrait-on-white.jpg?s=612x612&w=0&k=20&c=Aa2Vy4faAPe9fAE68Z01jej9YqPqy-RbAteIlF3wcjk="
+        // }
+
         try {
             const token = localStorage.getItem('authToken');
             const response = await axios.get(`${API_URL}/customers/details?pan=${pan}&locker_center_id=${centerId}`, {
@@ -22,30 +51,6 @@ export const fetchCustomerByPan = createAsyncThunk(
                     'Accept': 'application/json'
                 },
             });
-
-            // this is response structure from the API
-            // {
-            //     "status_code": 200,
-            //     "message": "Customers Data Fetched Successfully !",
-            //     "data": {
-            //       "member_id": "MBR6",
-            //       "customer_code": "00000000-0000-0000-0000-000000000000",
-            //   "first_name": "Niokhil Test",
-            //   "middle_name": "",
-            //   "last_name": "",
-            //       "dob": "2025-09-09",
-            //       "email": "nikhil@ghmail.com",
-            //       "mobile_number": "7877676767",
-            //       "pan": "BSGHG76867G",
-            //       "gender": "Male",
-            //       "aadhar": "786656543333",
-            //       "type": "primary",
-            //       "parent_customer_id": null,
-            //       "locker_center_id": 1,
-            //       "guardian": "Name",
-            //       "profile_img": ""
-            //     }
-            //   }
 
             if (response.status !== 200 && response.status !== 201) {
                 throw new Error('Failed to fetch customer info');
@@ -98,23 +103,59 @@ export const fetchBiometricData = createAsyncThunk(
     }
 );
 
-// export const submitStageData = createAsyncThunk(
-//     'customer/submitStage',
-//     async ({ holder, stage, data }, { rejectWithValue }) => {
 
-//         try {
-//             const token = localStorage.getItem('authToken');
-//             const response = await axios.post(`${API_URL}/customer/${holder}/${stage}`, data, {
-//                 headers: {
-//                     Authorization: `Bearer ${token}`
-//                 }
-//             });
-//             return response.data;
-//         } catch (error) {
-//             return rejectWithValue(error.response?.data || 'Failed to submit stage data');
-//         }
-//     }
-// );
+// This API is used to fetch customer details by ID
+export const fetchCustomerById = createAsyncThunk(
+    'customer/fetchById',
+    async (customerId, { rejectWithValue }) => {
+
+        // // TODO: remove this response and use the actual response when the API is ready
+        // // Dummy response data for testing purposes
+        // return {
+        //     "customer_id": 1,
+        //     "customer_code": "97709a61-d13d-4dc0-8d99-38ec101157a0",
+        //     "name": "John Doe",
+        //     "first_name": "John",
+        //     "middle_name": "A.",
+        //     "last_name": "Doe",
+        //     "dob": "1985-07-15",
+        //     "email": "johndoe@example.com",
+        //     "mobile_number": "9876543210",
+        //     "pan": "ABCDE1234F",
+        //     "member_id": "MBR123",
+        //     "gender": "MALE",
+        //     "aadhar": "123456789012",
+        //     "type": "primary",
+        //     "parent_customer_id": null,
+        //     "locker_center_id": 2,
+        //     "guardian": "Jane Doe",
+        //     "address": "123 Main Street, Cityville",
+        //     "secondary_holder_id": 4,
+        //     "third_holder_id": 6,
+        //     "locker_number": "LCK123",
+        //     "locker_id": 10,
+        //     "profile_img": "https://i.pinimg.com/236x/db/1f/9a/db1f9a3eaca4758faae5f83947fa807c.jpg"
+        // };
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.get(`${API_URL}/customers/details-by-id?customer_id=${customerId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.data?.data) {
+                throw new Error('No customer data found');
+            }
+
+            return response.data.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch customer details');
+        }
+    }
+);
 
 // This API is used to create a new customer or update an existing one
 export const submitCustomerInfo = createAsyncThunk(
@@ -181,6 +222,17 @@ const customerSlice = createSlice({
                     type: action.payload.type,
                     address: action.payload.address,
                 };
+
+                state.form.secondaryHolder.customerInfo = {
+                    ...state.form.secondaryHolder.customerInfo,
+                    customerId: action.payload.secondary_holder_id
+                };
+
+                state.form.thirdHolder.customerInfo = {
+                    ...state.form.thirdHolder.customerInfo,
+                    customerId: action.payload.third_holder_id
+                };
+
             })
             .addCase(fetchCustomerByPan.rejected, (state, action) => {
                 state.isSubmitting = false;
@@ -191,6 +243,36 @@ const customerSlice = createSlice({
             })
             .addCase(fetchBiometricData.fulfilled, (state, action) => {
                 state.form.primaryHolder.biometric = action.payload;
+            })
+            .addCase(fetchCustomerById.pending, (state) => {
+                state.isSubmitting = true;
+                state.error = null;
+            })
+            .addCase(fetchCustomerById.fulfilled, (state, action) => {
+                state.isSubmitting = false;
+                state.error = null;
+                const customerData = action.payload;
+
+                state.form.secondaryHolder.customerInfo = {
+                    ...state.form.secondaryHolder.customerInfo,
+                    customerId: customerData.customer_id,
+                    firstName: customerData.first_name,
+                    middleName: customerData.middle_name,
+                    lastName: customerData.last_name,
+                    dateOfBirth: customerData.dob,
+                    emailId: customerData.email,
+                    mobileNo: customerData.mobile_number,
+                    panNo: customerData.pan,
+                    gender: customerData.gender,
+                    aadharNo: customerData.aadhar,
+                    fatherOrHusbandName: customerData.guardian,
+                    photo: customerData.profile_img,
+                    address: customerData.address
+                };
+            })
+            .addCase(fetchCustomerById.rejected, (state, action) => {
+                state.isSubmitting = false;
+                state.error = action.payload;
             })
             .addCase(submitCustomerInfo.fulfilled, (state, action) => {
                 state.isSubmitting = false;

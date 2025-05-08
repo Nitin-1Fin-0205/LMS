@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import LockerRentDetails from './LockerRentDetails';
-import { updateLockerDetails, updateRentDetails } from '../store/slices/lockerSlice';
+import { updateLockerDetails, updateRentDetails, fetchLockerDetails } from '../store/slices/lockerSlice';
 import { API_URL } from '../assets/config';
 import '../styles/LockerDetails.css';
 
@@ -12,6 +12,7 @@ const LockerDetails = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const lockerData = useSelector(state => state.locker);
+    const primaryHolder = useSelector(state => state.customer.form.primaryHolder);
     const [centers, setCenters] = useState([]);
     const [isLoadingCenters, setIsLoadingCenters] = useState(false);
 
@@ -34,10 +35,26 @@ const LockerDetails = () => {
         fetchCenters();
     }, []);
 
-    const handleUpdate = (data) => {
-        dispatch(updateLockerDetails(data));
-        dispatch(updateRentDetails(data));
-    };
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const customerId = primaryHolder?.customerInfo?.customerId;
+                if (customerId) {
+                    await dispatch(fetchLockerDetails(customerId)).unwrap();
+                }
+            } catch (error) {
+                toast.error('Failed to fetch locker details');
+                console.error('Error:', error);
+            }
+        };
+
+        fetchData();
+    }, [dispatch, primaryHolder?.customerInfo?.customerId]);
+
+    // const handleUpdate = (data) => {
+    //     dispatch(updateLockerDetails(data));
+    //     dispatch(updateRentDetails(data));
+    // };
 
     const handleSubmit = () => {
         // Add API call for submitting locker and rent details
@@ -48,11 +65,11 @@ const LockerDetails = () => {
         <div className="locker-details-wrapper">
             {/* <h2>Locker Configuration</h2> */}
             <LockerRentDetails
-                onUpdate={handleUpdate}
-                initialData={{
-                    ...lockerData.lockerDetails,
-                    ...lockerData.rentDetails
-                }}
+                // onUpdate={handleUpdate}
+                // initialData={{
+                //     ...lockerData.lockerDetails,
+                //     ...lockerData.rentDetails
+                // }}
                 centers={centers}
                 isLoadingCenters={isLoadingCenters}
                 holderType="primaryHolder"

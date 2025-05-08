@@ -33,6 +33,17 @@ const AddNominee = ({ isOpen, onClose }) => {
     };
 
     const handleAddNominee = () => {
+        const missingFields = [];
+        nominees.forEach((nominee, index) => {
+            if (!nominee.name.trim()) missingFields.push(`Name for Nominee ${index + 1}`);
+            if (!nominee.relation.trim()) missingFields.push(`Relation for Nominee ${index + 1}`);
+            if (!nominee.dob) missingFields.push(`Date of Birth for Nominee ${index + 1}`);
+        });
+
+        if (missingFields.length > 0) {
+            toast.error(`Please fill all required fields: ${missingFields.join(', ')}`);
+            return;
+        }
         if (nominees.length < 2) {
             setNominees([...nominees, { name: '', relation: '', dob: '' }]);
         } else {

@@ -13,26 +13,25 @@ const initialState = {
     mappedLockers: []
 };
 
-// Add fetchLockerDetails thunk
 export const fetchLockerDetails = createAsyncThunk(
     'locker/fetchDetails',
-    async (lockerId, { rejectWithValue }) => {
+    async (customerId, { rejectWithValue }) => {
         try {
             const token = localStorage.getItem('authToken');
-            const response = await axios.get(`https://newuat.support-backend.onefin.app/lockers/locker-master?lockerCenterId=1`, {
+            const response = await axios.get(`${API_URL}/lockers/locker-details?customer_id=${customerId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (response.status !== 200 || response.status !== 201) {
-                throw new Error('Failed to fetch locker details');
+
+            if (!response.data?.data?.lockers?.[0]) {
+                throw new Error('No locker details found');
             }
             return response.data;
         } catch (error) {
-            return rejectWithValue(error.response?.data || 'Failed to fetch locker details');
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch locker details');
         }
     }
 );
 
-// Add fetchLockerMaster thunk
 export const fetchLockerMaster = createAsyncThunk(
     'locker/fetchMaster',
     async (centerId, { rejectWithValue }) => {
@@ -43,8 +42,52 @@ export const fetchLockerMaster = createAsyncThunk(
             });
             return response.data;
         } catch (error) {
-            // Return error message string instead of object
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch locker master');
+        }
+    }
+);
+
+export const fetchNominees = createAsyncThunk(
+    'locker/fetchNominees',
+    async (lockerId, { rejectWithValue }) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.get(`${API_URL}/lockers/${lockerId}/nominees`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return response.data;
+        } catch (error) {
+            return rejectWithValue('Failed to fetch nominees');
+        }
+    }
+);
+
+export const addNominee = createAsyncThunk(
+    'locker/addNominee',
+    async ({ lockerId, nomineeData }, { rejectWithValue }) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.post(`${API_URL}/lockers/${lockerId}/nominees`, nomineeData, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return response.data;
+        } catch (error) {
+            return rejectWithValue('Failed to add nominee');
+        }
+    }
+);
+
+export const deleteNominee = createAsyncThunk(
+    'locker/deleteNominee',
+    async ({ lockerId, nomineeId }, { rejectWithValue }) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            await axios.delete(`${API_URL}/lockers/${lockerId}/nominees/${nomineeId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return nomineeId;
+        } catch (error) {
+            return rejectWithValue('Failed to delete nominee');
         }
     }
 );
@@ -67,7 +110,10 @@ const lockerSlice = createSlice({
         updateRentDetails: (state, action) => {
             state.rentDetails = {
                 ...state.rentDetails,
-                ...action.payload
+                deposit: action.payload.deposit,
+                rent: action.payload.rent,
+                admissionFees: action.payload.admissionFees,
+                total: action.payload.total
             };
         },
         setLockerData: (state, action) => {
@@ -94,7 +140,6 @@ const lockerSlice = createSlice({
             })
             .addCase(fetchLockerMaster.rejected, (state, action) => {
                 state.loading = false;
-                // Store error message as string
                 state.error = typeof action.payload === 'string' ? action.payload : 'Failed to load lockers';
             })
             .addCase(fetchLockerDetails.pending, (state) => {
@@ -103,23 +148,38 @@ const lockerSlice = createSlice({
             })
             .addCase(fetchLockerDetails.fulfilled, (state, action) => {
                 state.loading = false;
-                if (action.payload.lockerDetails) {
-                    state.lockerDetails = {
-                        ...state.lockerDetails,
-                        ...action.payload.lockerDetails
-                    };
-                }
-                if (action.payload.rentDetails) {
-                    state.rentDetails = {
-                        ...state.rentDetails,
-                        ...action.payload.rentDetails
-                    };
-                }
-                state.plans = action.payload.plans || [];
+                state.error = null;
+                const lockerData = action.payload.data.lockers[0];
+
+                state.lockerDetails = {
+                    ...state.lockerDetails,
+                    assignedLocker: lockerData.lockerNumber,
+                    lockerId: lockerData.lockerId,
+                    center: lockerData.center_id,
+                    lockerKey: lockerData.locker_key,
+                    selectedPlan: lockerData.plan_id || 102,
+                };
             })
             .addCase(fetchLockerDetails.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+            })
+            .addCase(fetchNominees.fulfilled, (state, action) => {
+                state.loading = false;
+                state.lockerDetails.nominees = action.payload.data || [];
+            })
+            .addCase(addNominee.fulfilled, (state, action) => {
+                state.loading = false;
+                state.lockerDetails.nominees = [
+                    ...state.lockerDetails.nominees,
+                    action.payload.data
+                ];
+            })
+            .addCase(deleteNominee.fulfilled, (state, action) => {
+                state.loading = false;
+                state.lockerDetails.nominees = state.lockerDetails.nominees.filter(
+                    nominee => nominee.id !== action.payload
+                );
             });
     }
 });

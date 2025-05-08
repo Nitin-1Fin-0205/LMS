@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
-import { updateLockerDetails, updateRentDetails, fetchLockerDetails } from '../store/slices/lockerSlice';
+import { updateLockerDetails, updateRentDetails } from '../store/slices/lockerSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import AssignLocker from './AssignLocker';
@@ -10,7 +10,7 @@ import AddNominee from './AddNominee';
 import '../styles/LockerRentDetails.css';
 import axios from 'axios';
 
-const LockerRentDetails = ({ onUpdate, initialData, centers, isLoadingCenters, holderType }) => {
+const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
     const dispatch = useDispatch();
     const { lockerDetails } = useSelector(state => state.locker);
     const [lockerPlans, setLockerPlans] = useState([]);
@@ -63,19 +63,21 @@ const LockerRentDetails = ({ onUpdate, initialData, centers, isLoadingCenters, h
             lockerSize: locker?.size || "",
             isModalOpen: false
         }));
+        console.log("Locker assigned:", locker);
 
-        if (locker?.locker_id) {
-            try {
-                await dispatch(fetchLockerDetails(locker.locker_id)).unwrap();
-            } catch (error) {
-                console.error('Error fetching locker details:', error);
-            }
-        }
+        // if (locker?.locker_id) {
+        //     try {
+        //         await dispatch(fetchLockerDetails(locker.locker_id)).unwrap();
+        //     } catch (error) {
+        //         console.error('Error fetching locker details:', error);
+        //     }
+        // }
     };
 
     const handlePlanSelect = (planId) => {
         const selectedPlan = lockerPlans.find(plan => plan.planId === planId);
         if (selectedPlan) {
+            console.log("Selected plan:", selectedPlan);
             // Update lockerDetails with plan information
             dispatch(updateLockerDetails({
                 selectedPlan: planId,

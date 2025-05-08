@@ -9,7 +9,7 @@ import Attachments from './Attachments';
 import { API_URL } from '../assets/config';
 import '../styles/PrimaryHolder.css';
 import { useNavigate } from 'react-router-dom';
-import { updateHolderSection, submitCustomerInfo } from '../store/slices/customerSlice';
+import { updateHolderSection, submitCustomerInfo, fetchCustomerAttachments } from '../store/slices/customerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS, HOLDER_STAGES, STAGE_STATUS } from '../constants/holderConstants';
 
 const PrimaryHolder = () => {
@@ -55,50 +55,17 @@ const PrimaryHolder = () => {
         }));
     };
 
-    // const handleSubmit = async () => {
-    //     try {
-    //         const token = localStorage.getItem('authToken');
-
-    //         const submitData = {
-    //             customerInfo: formData.customerInfo,
-    //             biometric: formData.biometric
-    //         };
-
-    //         const response = await axios.post(
-    //             `${API_URL}/customers/add-update/personal-details`,
-    //             submitData,
-    //             {
-    //                 headers: {
-    //                     'Authorization': `Bearer ${token}`,
-    //                     'Content-Type': 'application/json'
-    //                 }
-    //             }
-    //         );
-
-    //         if (response.status === 200) {
-    //             toast.success('Customer Details saved successfully!');
-    //         } else {
-    //             toast.error('Failed to save customer details!');
-    //         }
-    //     } catch (error) {
-    //         toast.error(error?.response?.data?.message || 'Failed to add primary holder');
-    //     }
-    // };
-
-    const handleStageTransition = () => {
-        switch (currentStage) {
-            case HOLDER_STAGES.CUSTOMER_INFO:
-                setCurrentStage(HOLDER_STAGES.ATTACHMENTS);
-                break;
-            case HOLDER_STAGES.ATTACHMENTS:
-                setCurrentStage(HOLDER_STAGES.BIOMETRIC);
-                break;
-            case HOLDER_STAGES.BIOMETRIC:
-                // handleSubmit();
-                break;
-            default:
-                break;
+    const handleStageTransition = async (newStage) => {
+        // Fetch attachments when moving to attachments stage
+        if (newStage === HOLDER_STAGES.ATTACHMENTS && customerId) {
+            try {
+                await dispatch(fetchCustomerAttachments(customerId)).unwrap();
+            } catch (error) {
+                toast.error('Failed to fetch customer documents');
+                console.error('Error fetching attachments:', error);
+            }
         }
+        setCurrentStage(newStage);
     };
 
     const validateStageData = (stage) => {
@@ -128,14 +95,6 @@ const PrimaryHolder = () => {
                 break;
 
             case HOLDER_STAGES.ATTACHMENTS:
-                // const requiredDocs = ['identityProof', 'addressProof'];
-                // const missingDocs = requiredDocs.filter(docType =>
-                //     !data[docType] || data[docType].length === 0
-                // );
-                // if (missingDocs.length > 0) {
-                //     toast.error(`Please upload required documents: ${missingDocs.join(', ')}`);
-                //     return false;
-                // }
                 break;
 
             case HOLDER_STAGES.BIOMETRIC:
@@ -156,7 +115,6 @@ const PrimaryHolder = () => {
 
             if (currentStage === HOLDER_STAGES.CUSTOMER_INFO) {
                 const submitData = {
-                    // customerInfo: formData.customerInfo,
                     customer_id: formData.customerInfo.customerId,
                     first_name: `${formData.customerInfo.firstName}`,
                     middle_name: `${formData.customerInfo.middleName}`,
@@ -179,16 +137,11 @@ const PrimaryHolder = () => {
                     throw new Error('Failed to create customer');
                 } else {
                     toast.success('Customer details saved successfully!');
-                    // dispatch(updateHolderSection({
-                    //     holder: HOLDER_TYPES.PRIMARY,
-                    //     section: HOLDER_SECTIONS.CUSTOMER_INFO,
-                    //     data: { customerId: result.customerId }
-                    // }));
                     setStageStatus(prev => ({
                         ...prev,
                         [currentStage]: STAGE_STATUS.COMPLETED
                     }));
-                    setCurrentStage(HOLDER_STAGES.ATTACHMENTS);
+                    handleStageTransition(HOLDER_STAGES.ATTACHMENTS);
                     return;
                 }
             }
@@ -198,24 +151,12 @@ const PrimaryHolder = () => {
                 return;
             }
 
-            // // For other stages, include customerId in the payload
-            // const stageData = {
-            //     customerId,
-            //     ...getStageData(currentStage)
-            // };
-
-            // await dispatch(submitStageData({
-            //     holder: HOLDER_TYPES.PRIMARY,
-            //     stage: currentStage,
-            //     data: stageData
-            // })).unwrap();
-
             setStageStatus(prev => ({
                 ...prev,
                 [currentStage]: STAGE_STATUS.COMPLETED
             }));
 
-            handleStageTransition();
+            handleStageTransition(currentStage === HOLDER_STAGES.ATTACHMENTS ? HOLDER_STAGES.BIOMETRIC : HOLDER_STAGES.CUSTOMER_INFO);
         } catch (error) {
             setStageStatus(prev => ({
                 ...prev,
@@ -239,7 +180,6 @@ const PrimaryHolder = () => {
     };
 
     const validateAndSubmitStage = () => {
-        // Add validation logic here if needed
         submitCurrentStage();
     };
 

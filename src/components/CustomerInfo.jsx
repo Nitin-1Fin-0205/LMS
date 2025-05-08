@@ -22,9 +22,10 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         email: 0,
         mobile: 0
     });
+    const [request_id, setRequestId] = useState(null);
 
     const [customerData, setCustomerData] = useState({
-        photo: null,
+        photo: '',  // Initialize with empty string instead of null
         customerId: '',
         firstName: '',
         middleName: '',
@@ -37,7 +38,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         gender: '',
         emailId: '',
         aadharNo: '',
-        ...initialData
+        ...initialData  // Spread initialData after default values
     });
 
     const [otpVerification, setOtpVerification] = useState({
@@ -73,7 +74,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 ...prev,
                 ...initialData,
                 // Ensure these are never undefined
-                photo: initialData.photo || null,
+                photo: initialData.photo || '',
                 customerId: initialData.customerId || '',
                 firstName: initialData.firstName || '',
                 middleName: initialData.middleName || '',
@@ -93,7 +94,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
     const handleInputChange = (field, value) => {
         const updatedData = {
             ...customerData,
-            [field]: value
+            [field]: value || '' // Ensure value is never undefined
         };
         setCustomerData(updatedData);
         onUpdate(updatedData);
@@ -410,7 +411,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
 
     const handleVerifyOtp = async (type) => {
         try {
-            const value = type === 'email' ? customerData.emailId : customerData.mobileNo;
+            // const value = type === 'email' ? customerData.emailId : customerData.mobileNo;
             const otp = type === 'email' ? otpVerification.emailOtp : otpVerification.mobileOtp;
 
             if (!otp) {
@@ -418,7 +419,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 return;
             }
 
-            await otpService.verifyOtp(type, value, otp);
+            await otpService.verifyOtp(request_id, otp);
             setOtpVerification(prev => ({
                 ...prev,
                 [type === 'email' ? 'isEmailVerified' : 'isMobileVerified']: true
@@ -449,6 +450,12 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 ? otpService.sendEmailOtp(value)
                 : otpService.sendMobileOtp(value)
             );
+
+            console.log('OTP Response:', response);
+            setRequestId(response?.request_id || null);
+            if (!response?.request_id) {
+                throw new Error('Failed to send OTP');
+            }
 
             startResendTimer(type);
             setOtpVerification(prev => ({
@@ -791,7 +798,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                     <label>Aadhar No<span className='required'>*</span></label>
                     <input
                         type="text"
-                        value={formatAadhar(customerData.aadharNo)}
+                        value={formatAadhar(customerData?.aadharNo)}
                         onChange={handleAadharInput}
                         placeholder="Enter Aadhar (e.g., 1234 5678 9012)"
                         maxLength={14}

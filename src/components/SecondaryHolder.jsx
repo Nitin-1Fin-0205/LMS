@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import CustomerInfo from './CustomerInfo';
 import Attachments from './Attachments';
 import { API_URL } from '../assets/config';
-import { updateHolderSection } from '../store/slices/customerSlice';
+import { updateHolderSection, submitCustomerInfo, fetchCustomerById } from '../store/slices/customerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS, HOLDER_STAGES } from '../constants/holderConstants';
 import '../styles/SecondaryHolder.css';
 
@@ -17,6 +17,24 @@ const SecondaryHolder = () => {
     const customerData = location.state?.customer;
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [currentStage, setCurrentStage] = useState(HOLDER_STAGES.CUSTOMER_INFO);
+
+    useEffect(() => {
+        const fetchSecondaryHolderDetails = async () => {
+            try {
+                const secondaryHolderId = secondaryHolder?.customerInfo?.customerId;
+                console.log('Secondary Holder:',);
+
+                if (secondaryHolderId) {
+                    await dispatch(fetchCustomerById(secondaryHolderId)).unwrap();
+                }
+            } catch (error) {
+                toast.error('Failed to fetch secondary holder details');
+                console.error('Error:', error);
+            }
+        };
+
+        fetchSecondaryHolderDetails();
+    }, [dispatch, location.state]);
 
     const handleCustomerInfoUpdate = (data) => {
         dispatch(updateHolderSection({
@@ -34,7 +52,45 @@ const SecondaryHolder = () => {
         }));
     };
 
-    const handleSubmit = async () => {
+    const handleCustomerInfoSubmit = async () => {
+        try {
+            setIsSubmitting(true);
+            const primaryCustomerId = location.state?.customer?.customerInfo?.customerId;
+
+            const submitData = {
+                customer_id: secondaryHolder.customerInfo.customerId,
+                first_name: secondaryHolder.customerInfo.firstName,
+                middle_name: secondaryHolder.customerInfo.middleName,
+                last_name: secondaryHolder.customerInfo.lastName,
+                pan: secondaryHolder.customerInfo.panNo,
+                aadhar: secondaryHolder.customerInfo.aadharNo,
+                gender: secondaryHolder.customerInfo.gender,
+                address: secondaryHolder.customerInfo.address,
+                guardian_name: secondaryHolder.customerInfo.fatherOrHusbandName,
+                dob: secondaryHolder.customerInfo.dateOfBirth,
+                mobile_number: secondaryHolder.customerInfo.mobileNo,
+                email: secondaryHolder.customerInfo.emailId,
+                image_base64: secondaryHolder.customerInfo.photo,
+                locker_center_id: primaryCustomerId,
+                parent_customer_id: primaryCustomerId,
+            };
+
+            const result = await dispatch(submitCustomerInfo(submitData)).unwrap();
+
+            if (!result.customerId) {
+                throw new Error('Failed to create secondary holder');
+            }
+
+            toast.success('Secondary holder info saved successfully!');
+            setCurrentStage(HOLDER_STAGES.ATTACHMENTS);
+        } catch (error) {
+            toast.error(error.message || 'Failed to save secondary holder info');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleAttachmentsSubmit = async () => {
         try {
             setIsSubmitting(true);
             const token = localStorage.getItem('authToken');
@@ -83,9 +139,10 @@ const SecondaryHolder = () => {
                             </button>
                             <button
                                 className="next-button"
-                                onClick={() => setCurrentStage(HOLDER_STAGES.ATTACHMENTS)}
+                                onClick={handleCustomerInfoSubmit}
+                                disabled={isSubmitting}
                             >
-                                Next
+                                {isSubmitting ? 'Saving...' : 'Save & Next'}
                             </button>
                         </div>
                     </>
@@ -107,7 +164,7 @@ const SecondaryHolder = () => {
                             </button>
                             <button
                                 className="submit-button"
-                                onClick={handleSubmit}
+                                onClick={handleAttachmentsSubmit}
                             >
                                 Submit
                             </button>
