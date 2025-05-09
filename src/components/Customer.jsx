@@ -167,11 +167,10 @@ const Customer = () => {
                 <div className="fetch-cust-actions">
                     <button type="submit" className="fetch-button" disabled={isSubmitting}>
                         {isSubmitting ? (
-                            <span>Fetching... <FontAwesomeIcon icon={faSpinner} /></span>
+                            <span>Fetching... &nbsp; <FontAwesomeIcon icon={faSpinner} spin /></span>
                         ) : (
                             <span>
-                                Fetch Customer
-                                <FontAwesomeIcon icon={faDownload} />
+                                Fetch Customer &nbsp; <FontAwesomeIcon icon={faDownload} />
                             </span>
                         )}
                     </button>

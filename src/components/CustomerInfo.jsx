@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
 import '../styles/CustomerInfo.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark, faUpload, faCheck, faMessage, faEnvelope } from '@fortawesome/free-solid-svg-icons';
+import { faXmark, faUpload, faCheck, faMessage, faEnvelope, faSms } from '@fortawesome/free-solid-svg-icons';
 import { ValidationService } from '../services/ValidationService';
 import { otpService } from '../services/otpService';
 
@@ -760,7 +760,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                                 className="verify-button"
                                 onClick={() => handleOtpClick('mobile')}
                             >
-                                <FontAwesomeIcon icon={faMessage} /> Verify
+                                <FontAwesomeIcon icon={faSms} /> Verify
                             </button>
                         )}
                     </div>

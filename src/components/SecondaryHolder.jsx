@@ -22,19 +22,19 @@ const SecondaryHolder = () => {
         const fetchSecondaryHolderDetails = async () => {
             try {
                 const secondaryHolderId = secondaryHolder?.customerInfo?.customerId;
-                console.log('Secondary Holder:',);
-
                 if (secondaryHolderId) {
-                    await dispatch(fetchCustomerById(secondaryHolderId)).unwrap();
+                    await dispatch(fetchCustomerById({
+                        customerId: secondaryHolderId,
+                        holderType: HOLDER_TYPES.SECONDARY
+                    })).unwrap();
                 }
             } catch (error) {
                 toast.error('Failed to fetch secondary holder details');
-                console.error('Error:', error);
             }
         };
 
         fetchSecondaryHolderDetails();
-    }, [dispatch, location.state]);
+    }, [dispatch, secondaryHolder?.customerInfo?.customerId]);
 
     const handleCustomerInfoUpdate = (data) => {
         dispatch(updateHolderSection({

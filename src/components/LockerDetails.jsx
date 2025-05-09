@@ -36,25 +36,53 @@ const LockerDetails = () => {
     }, []);
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchInitialData = async () => {
             try {
-                const customerId = primaryHolder?.customerInfo?.customerId;
-                if (customerId) {
-                    await dispatch(fetchLockerDetails(customerId)).unwrap();
+                if (primaryHolder?.customerInfo?.customerId) {
+                    const response = await dispatch(fetchLockerDetails(primaryHolder.customerInfo.customerId)).unwrap();
+
+                    // If plan exists, fetch the plans and set the details
+                    if (response.data.lockers[0]?.plan_id) {
+                        const planId = response.data.lockers[0].plan_id;
+                        const lockerId = response.data.lockers[0].lockerId;
+
+                        // Fetch plans for the locker
+                        const token = localStorage.getItem('authToken');
+                        const plansResponse = await axios.post(
+                            `${API_URL}/lockers/lockers/rent?lockerId=${lockerId}`,
+                            {},
+                            {
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                }
+                            }
+                        );
+
+                        // Find the selected plan and update rent details
+                        const selectedPlan = plansResponse.data.plans.find(
+                            plan => Number(plan.planId) === Number(planId)
+                        );
+
+                        if (selectedPlan) {
+                            dispatch(updateLockerDetails({
+                                rentDetails: {
+                                    deposit: selectedPlan.deposit,
+                                    rent: selectedPlan.baseRent,
+                                    admissionFees: selectedPlan.admissionFees,
+                                    total: selectedPlan.grandTotalAmount
+                                }
+                            }));
+                        }
+                    }
                 }
             } catch (error) {
                 toast.error('Failed to fetch locker details');
-                console.error('Error:', error);
             }
         };
 
-        fetchData();
+        fetchInitialData();
     }, [dispatch, primaryHolder?.customerInfo?.customerId]);
-
-    // const handleUpdate = (data) => {
-    //     dispatch(updateLockerDetails(data));
-    //     dispatch(updateRentDetails(data));
-    // };
 
     const handleSubmit = () => {
         // Add API call for submitting locker and rent details
@@ -63,13 +91,7 @@ const LockerDetails = () => {
 
     return (
         <div className="locker-details-wrapper">
-            {/* <h2>Locker Configuration</h2> */}
             <LockerRentDetails
-                // onUpdate={handleUpdate}
-                // initialData={{
-                //     ...lockerData.lockerDetails,
-                //     ...lockerData.rentDetails
-                // }}
                 centers={centers}
                 isLoadingCenters={isLoadingCenters}
                 holderType="primaryHolder"

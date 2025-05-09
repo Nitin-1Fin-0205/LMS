@@ -21,16 +21,18 @@ const ThirdHolder = () => {
             try {
                 const thirdHolderId = thirdHolder?.customerInfo?.customerId;
                 if (thirdHolderId) {
-                    await dispatch(fetchCustomerById(thirdHolderId)).unwrap();
+                    await dispatch(fetchCustomerById({
+                        customerId: thirdHolderId,
+                        holderType: HOLDER_TYPES.THIRD
+                    })).unwrap();
                 }
             } catch (error) {
                 toast.error('Failed to fetch third holder details');
-                console.error('Error:', error);
             }
         };
 
         fetchThirdHolderDetails();
-    }, [dispatch, location.state]);
+    }, [dispatch, thirdHolder?.customerInfo?.customerId]);
 
     const handleCustomerInfoUpdate = (data) => {
         dispatch(updateHolderSection({

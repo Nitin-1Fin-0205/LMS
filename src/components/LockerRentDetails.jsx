@@ -40,7 +40,7 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
 
             if (response.status === 200 || response.status === 201) {
                 setLockerPlans(response.data.plans || []);
-                toast.success('Plans fetched successfully');
+                // toast.success('Plans fetched successfully');
             }
         } catch (error) {
             console.error('Error fetching plans:', error);
@@ -55,6 +55,28 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
             fetchPlansForLocker(lockerDetails.lockerId);
         }
     }, [lockerDetails.lockerId]);
+
+    useEffect(() => {
+        const fetchPlanAndUpdateRent = async () => {
+            if (lockerDetails?.selectedPlan && lockerPlans.length > 0) {
+                const selectedPlan = lockerPlans.find(plan =>
+                    Number(plan.planId) === Number(lockerDetails.selectedPlan)
+                );
+                if (selectedPlan) {
+                    dispatch(updateLockerDetails({
+                        rentDetails: {
+                            deposit: selectedPlan.deposit,
+                            rent: selectedPlan.baseRent,
+                            admissionFees: selectedPlan.admissionFees,
+                            total: selectedPlan.grandTotalAmount
+                        }
+                    }));
+                }
+            }
+        };
+
+        fetchPlanAndUpdateRent();
+    }, [lockerDetails.selectedPlan, lockerPlans, dispatch]);
 
     const handleLockerAssign = async (locker) => {
         dispatch(updateLockerDetails({
@@ -139,8 +161,9 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                         <input
                             type="text"
                             placeholder="Enter locker key no"
-                            value={lockerDetails.lockerKeyNo || ''}
-                            onChange={(e) => handleInputChange('lockerKeyNo', e.target.value)}
+                            value={lockerDetails.lockerKey || ''}
+                            onChange={(e) => handleInputChange('lockerKey', e.target.value)}
+                            readOnly
                         />
                     </div>
                 </div>

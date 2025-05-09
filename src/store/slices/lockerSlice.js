@@ -7,7 +7,7 @@ const initialState = {
     loading: false,
     error: null,
     lockerDetails: { ...LockerDetailsModel },
-    rentDetails: { ...RentDetailsModel },
+    // rentDetails: { ...RentDetailsModel },
     plans: [],
     lockerData: null,
     mappedLockers: []
@@ -49,12 +49,16 @@ export const fetchLockerMaster = createAsyncThunk(
 
 export const fetchNominees = createAsyncThunk(
     'locker/fetchNominees',
-    async (lockerId, { rejectWithValue }) => {
+    async (customerId, { rejectWithValue }) => {
         try {
             const token = localStorage.getItem('authToken');
-            const response = await axios.get(`${API_URL}/lockers/${lockerId}/nominees`, {
+            const response = await axios.get(`${API_URL}/customers/nominees?customer_id=${customerId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+
+            if (!response.data?.data?.nominees) {
+                throw new Error('No nominees data found');
+            }
             return response.data;
         } catch (error) {
             return rejectWithValue('Failed to fetch nominees');
@@ -64,10 +68,10 @@ export const fetchNominees = createAsyncThunk(
 
 export const addNominee = createAsyncThunk(
     'locker/addNominee',
-    async ({ lockerId, nomineeData }, { rejectWithValue }) => {
+    async ({ customerId, nomineeData }, { rejectWithValue }) => {
         try {
             const token = localStorage.getItem('authToken');
-            const response = await axios.post(`${API_URL}/lockers/${lockerId}/nominees`, nomineeData, {
+            const response = await axios.post(`${API_URL}/customers/nominees?customer_id=${customerId}`, nomineeData, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             return response.data;
@@ -79,15 +83,32 @@ export const addNominee = createAsyncThunk(
 
 export const deleteNominee = createAsyncThunk(
     'locker/deleteNominee',
-    async ({ lockerId, nomineeId }, { rejectWithValue }) => {
+    async ({ customerId, nomineeId }, { rejectWithValue }) => {
         try {
             const token = localStorage.getItem('authToken');
-            await axios.delete(`${API_URL}/lockers/${lockerId}/nominees/${nomineeId}`, {
+            await axios.delete(`${API_URL}/customers/nominees/${nomineeId}?customer_id=${customerId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             return nomineeId;
         } catch (error) {
             return rejectWithValue('Failed to delete nominee');
+        }
+    }
+);
+
+export const updateNominee = createAsyncThunk(
+    'locker/updateNominee',
+    async ({ customerId, nomineeId, nomineeData }, { rejectWithValue }) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.put(
+                `${API_URL}/customers/nominees/${nomineeId}?customer_id=${customerId}`,
+                nomineeData,
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+            return response.data;
+        } catch (error) {
+            return rejectWithValue('Failed to update nominee');
         }
     }
 );
@@ -157,7 +178,13 @@ const lockerSlice = createSlice({
                     lockerId: lockerData.lockerId,
                     center: lockerData.center_id,
                     lockerKey: lockerData.locker_key,
-                    selectedPlan: lockerData.plan_id || 102,
+                    selectedPlan: lockerData.plan_id,
+                    rentDetails: lockerData.rent_details || {
+                        deposit: 0,
+                        rent: 0,
+                        admissionFees: 0,
+                        total: 0
+                    }
                 };
             })
             .addCase(fetchLockerDetails.rejected, (state, action) => {
@@ -166,19 +193,36 @@ const lockerSlice = createSlice({
             })
             .addCase(fetchNominees.fulfilled, (state, action) => {
                 state.loading = false;
-                state.lockerDetails.nominees = action.payload.data || [];
+                state.lockerDetails.nominees = action.payload.data.nominees.map(nominee => ({
+                    ...nominee,
+                    id: nominee.unique_id,
+                }));
             })
             .addCase(addNominee.fulfilled, (state, action) => {
                 state.loading = false;
+                const newNominee = {
+                    ...action.payload.data,
+                    id: action.payload.data.unique_id
+                };
                 state.lockerDetails.nominees = [
                     ...state.lockerDetails.nominees,
-                    action.payload.data
+                    newNominee
                 ];
             })
             .addCase(deleteNominee.fulfilled, (state, action) => {
                 state.loading = false;
                 state.lockerDetails.nominees = state.lockerDetails.nominees.filter(
-                    nominee => nominee.id !== action.payload
+                    nominee => nominee.unique_id !== action.payload
+                );
+            })
+            .addCase(updateNominee.fulfilled, (state, action) => {
+                state.loading = false;
+                const updatedNominee = {
+                    ...action.payload.data,
+                    id: action.payload.data.unique_id
+                };
+                state.lockerDetails.nominees = state.lockerDetails.nominees.map(nominee =>
+                    nominee.unique_id === updatedNominee.unique_id ? updatedNominee : nominee
                 );
             });
     }

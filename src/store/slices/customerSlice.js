@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '../../assets/config';
 import { CustomerFormModel } from '../../models/CustomerModel';
+import { HOLDER_TYPES } from '../../constants/holderConstants';
 
 const initialState = {
     isSubmitting: false,
@@ -103,40 +104,10 @@ export const fetchBiometricData = createAsyncThunk(
     }
 );
 
-
 // This API is used to fetch customer details by ID
 export const fetchCustomerById = createAsyncThunk(
     'customer/fetchById',
-    async (customerId, { rejectWithValue }) => {
-
-        // // TODO: remove this response and use the actual response when the API is ready
-        // // Dummy response data for testing purposes
-        // return {
-        //     "customer_id": 1,
-        //     "customer_code": "97709a61-d13d-4dc0-8d99-38ec101157a0",
-        //     "name": "John Doe",
-        //     "first_name": "John",
-        //     "middle_name": "A.",
-        //     "last_name": "Doe",
-        //     "dob": "1985-07-15",
-        //     "email": "johndoe@example.com",
-        //     "mobile_number": "9876543210",
-        //     "pan": "ABCDE1234F",
-        //     "member_id": "MBR123",
-        //     "gender": "MALE",
-        //     "aadhar": "123456789012",
-        //     "type": "primary",
-        //     "parent_customer_id": null,
-        //     "locker_center_id": 2,
-        //     "guardian": "Jane Doe",
-        //     "address": "123 Main Street, Cityville",
-        //     "secondary_holder_id": 4,
-        //     "third_holder_id": 6,
-        //     "locker_number": "LCK123",
-        //     "locker_id": 10,
-        //     "profile_img": "https://i.pinimg.com/236x/db/1f/9a/db1f9a3eaca4758faae5f83947fa807c.jpg"
-        // };
-
+    async ({ customerId, holderType }, { rejectWithValue }) => {
         try {
             const token = localStorage.getItem('authToken');
             const response = await axios.get(`${API_URL}/customers/details-by-id?customer_id=${customerId}`, {
@@ -150,7 +121,10 @@ export const fetchCustomerById = createAsyncThunk(
                 throw new Error('No customer data found');
             }
 
-            return response.data.data;
+            return {
+                ...response.data.data,
+                holderType
+            };
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch customer details');
         }
@@ -213,7 +187,7 @@ const customerSlice = createSlice({
                     emailId: action.payload.email,
                     mobileNo: action.payload.mobile_number,
                     panNo: action.payload.pan,
-                    gender: action.payload.gender,
+                    gender: action.payload.gender.toUpperCase(),
                     aadharNo: action.payload.aadhar,
                     fatherOrHusbandName: action.payload.guardian,
                     photo: action.payload.profile_img,
@@ -252,9 +226,9 @@ const customerSlice = createSlice({
                 state.isSubmitting = false;
                 state.error = null;
                 const customerData = action.payload;
+                const holderType = customerData.holderType;
 
-                state.form.secondaryHolder.customerInfo = {
-                    ...state.form.secondaryHolder.customerInfo,
+                const customerInfo = {
                     customerId: customerData.customer_id,
                     firstName: customerData.first_name,
                     middleName: customerData.middle_name,
@@ -263,12 +237,22 @@ const customerSlice = createSlice({
                     emailId: customerData.email,
                     mobileNo: customerData.mobile_number,
                     panNo: customerData.pan,
-                    gender: customerData.gender,
+                    gender: customerData.gender.toUpperCase(),
                     aadharNo: customerData.aadhar,
                     fatherOrHusbandName: customerData.guardian,
                     photo: customerData.profile_img,
                     address: customerData.address
                 };
+
+                // Update the correct holder based on holderType
+                if (holderType === HOLDER_TYPES.SECONDARY) {
+                    state.form.secondaryHolder.customerInfo = customerInfo;
+                } else if (holderType === HOLDER_TYPES.THIRD) {
+                    state.form.thirdHolder.customerInfo = customerInfo;
+                }
+                // else {
+                //     state.form.primaryHolder.customerInfo = customerInfo;
+                // }
             })
             .addCase(fetchCustomerById.rejected, (state, action) => {
                 state.isSubmitting = false;
