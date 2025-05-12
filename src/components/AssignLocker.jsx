@@ -230,7 +230,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
             }));
 
         // Rest of the function remains the same
-        const COLUMNS = 5;
+        const COLUMNS = 4;
         const lockerGrid = [];
         let currentRow = [];
 

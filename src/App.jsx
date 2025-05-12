@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { CssBaseline, Box } from '@mui/material';
 import { AuthProvider } from './context/AuthContext';
 import SideNav from './components/SideNav';
@@ -20,94 +20,116 @@ import NotFound from './components/pages/NotFound';
 import SecondaryHolder from './components/SecondaryHolder';
 import ThirdHolder from './components/ThirdHolder';
 import LockerDetails from './components/LockerDetails';
+import Welcome from './components/Welcome';
 
-function App() {
+// Create a wrapper component that uses useLocation
+const AppContent = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+
+    if (token) {
+      localStorage.setItem('authToken', token);
+      navigate(ROUTES.CUSTOMER, { replace: true });
+    }
+  }, [location.search, navigate]);
+
   // Helper function to determine required roles
   const getRequiredRoles = (defaultRoles) => {
     return [ROLES.ADMIN, ...defaultRoles];
   };
 
   return (
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      <SideNav />
+      <Box sx={{
+        flexGrow: 1,
+        paddingLeft: '60px', // Adjust this value based on your SideNav width
+        width: '100%',
+        boxSizing: 'border-box'
+      }}>
+        <Routes>
+          <Route path="/" element={<Welcome />} />
+          <Route path={ROUTES.FORBIDDEN} element={<Forbidden />} />
+
+          <Route path="/*" element={
+            <Routes>
+              {/* Add Customer Route */}
+
+              <Route path={ROUTES.CUSTOMER} element={
+                <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
+                  <Customer />
+                </PrivateRoute>
+              } />
+
+              <Route path={ROUTES.PRIMARY_HOLDER} element={
+                <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
+                  <PrimaryHolder />
+                </PrivateRoute>
+              } />
+
+              {/* <Route path={ROUTES.ADD_CUSTOMER} element={
+                <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
+                  <AddCustomer />
+                </PrivateRoute>
+              } /> */}
+
+              <Route path={ROUTES.CUSTOMERS} element={
+                <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
+                  <CustomerList />
+                </PrivateRoute>
+              } />
+
+              {/* <Route path={`${ROUTES.EDIT_CUSTOMER}/:id`} element={
+                <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
+                  <EditCustomer />
+                </PrivateRoute>
+              } /> */}
+
+              <Route path={ROUTES.ACCESS} element={
+                <PrivateRoute requiredRoles={getRequiredRoles([])}>
+                  <Access />
+                </PrivateRoute>
+              } />
+
+              <Route path={ROUTES.SECONDARY_HOLDER} element={
+                <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
+                  <SecondaryHolder />
+                </PrivateRoute>
+              } />
+
+              <Route path={ROUTES.THIRD_HOLDER} element={
+                <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
+                  <ThirdHolder />
+                </PrivateRoute>
+              } />
+
+              <Route path={ROUTES.LOCKER_DETAILS} element={
+                <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
+                  <LockerDetails />
+                </PrivateRoute>
+              } />
+
+              {/* <Route path={`${ROUTES.EDIT_CUSTOMER}/:customerId`} element={<EditCustomer />} /> */}
+
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          } />
+        </Routes>
+      </Box>
+    </Box>
+  );
+};
+
+function App() {
+  return (
     <AuthProvider>
       <Router>
         <CssBaseline />
-        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-          <SideNav />
-          <Box sx={{
-            flexGrow: 1,
-            paddingLeft: '60px', // Adjust this value based on your SideNav width
-            width: '100%',
-            boxSizing: 'border-box'
-          }}>
-            <Routes>
-              <Route path={ROUTES.FORBIDDEN} element={<Forbidden />} />
-
-              <Route path="/*" element={
-                <Routes>
-                  {/* Add Customer Route */}
-
-                  <Route path={ROUTES.CUSTOMER} element={
-                    <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
-                      <Customer />
-                    </PrivateRoute>
-                  } />
-
-                  <Route path={ROUTES.PRIMARY_HOLDER} element={
-                    <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
-                      <PrimaryHolder />
-                    </PrivateRoute>
-                  } />
-
-                  {/* <Route path={ROUTES.ADD_CUSTOMER} element={
-                    <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
-                      <AddCustomer />
-                    </PrivateRoute>
-                  } /> */}
-
-                  <Route path={ROUTES.CUSTOMERS} element={
-                    <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
-                      <CustomerList />
-                    </PrivateRoute>
-                  } />
-
-                  {/* <Route path={`${ROUTES.EDIT_CUSTOMER}/:id`} element={
-                    <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
-                      <EditCustomer />
-                    </PrivateRoute>
-                  } /> */}
-
-                  <Route path={ROUTES.ACCESS} element={
-                    <PrivateRoute requiredRoles={getRequiredRoles([])}>
-                      <Access />
-                    </PrivateRoute>
-                  } />
-
-                  <Route path={ROUTES.SECONDARY_HOLDER} element={
-                    <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
-                      <SecondaryHolder />
-                    </PrivateRoute>
-                  } />
-
-                  <Route path={ROUTES.THIRD_HOLDER} element={
-                    <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
-                      <ThirdHolder />
-                    </PrivateRoute>
-                  } />
-
-                  <Route path={ROUTES.LOCKER_DETAILS} element={
-                    <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
-                      <LockerDetails />
-                    </PrivateRoute>
-                  } />
-
-                  {/* <Route path={`${ROUTES.EDIT_CUSTOMER}/:customerId`} element={<EditCustomer />} /> */}
-
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              } />
-            </Routes>
-          </Box>
-        </Box>
+        <AppContent />
         <ToastContainer
           position="top-right"
           autoClose={3000}
@@ -121,7 +143,7 @@ function App() {
           theme="light"
         />
       </Router>
-    </AuthProvider >
+    </AuthProvider>
   );
 }
 

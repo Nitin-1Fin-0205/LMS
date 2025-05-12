@@ -118,7 +118,7 @@ const Attachments = ({ onUpdate, initialData, holderType, customerId }) => {
                 {
                     customerId: customerId,
                     documentId: documentData.category,
-                    documentName: documentData.name|| documentData.data.split(',')[0].split('/')[1].split(';')[0],
+                    documentName: documentData.name || documentData.data.split(',')[0].split('/')[1].split(';')[0],
                     documentBase64: documentData.data.split(',')[1]
                 },
                 {
@@ -292,9 +292,9 @@ const Attachments = ({ onUpdate, initialData, holderType, customerId }) => {
                                         </div>
                                         <div className="document-info">
                                             <span className="document-name">{doc.name}</span>
-                                            <span className="document-size">
+                                            {/* <span className="document-size">
                                                 {(doc.size / 1024 / 1024).toFixed(2)} MB
-                                            </span>
+                                            </span> */}
                                         </div>
                                         <div className="document-actions">
                                             <button onClick={() => handlePreview(doc)} title="Preview">

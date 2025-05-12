@@ -5,6 +5,13 @@ import { ROUTES } from '../../constants/routes';
 const PrivateRoute = ({ children, requiredRoles = [] }) => {
     const { auth } = useAuth();
     const location = useLocation();
+    const token = localStorage.getItem('authToken');
+
+    // if (!token) {
+    //     return <Navigate to="/" replace />;
+    // }
+
+    console.log('PrivateRoute', auth);
 
     if (!auth.isAuthenticated) {
         sessionStorage.setItem('redirectPath', location.pathname);

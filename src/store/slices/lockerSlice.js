@@ -127,6 +127,39 @@ export const updateNominee = createAsyncThunk(
     }
 );
 
+export const assignLocker = createAsyncThunk(
+    'locker/assignLocker',
+    async (lockerData, { rejectWithValue }) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.post(
+                `${API_URL}/lockers/assignLocker`,
+                {
+                    customer_id: lockerData.customerId,
+                    locker_id: lockerData.lockerId,
+                    center_id: lockerData.centerId,
+                    plan_id: lockerData.planId,
+                    expiry_date: lockerData.expiryDate,
+                    pay_frequency: lockerData.payFrequency
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (response.status === 200 || response.status === 201) {
+                return response.data;
+            }
+            throw new Error('Failed to assign locker');
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to assign locker');
+        }
+    }
+);
+
 const lockerSlice = createSlice({
     name: 'locker',
     initialState,
@@ -238,6 +271,19 @@ const lockerSlice = createSlice({
                 state.lockerDetails.nominees = state.lockerDetails.nominees.map(nominee =>
                     nominee.unique_id === updatedNominee.unique_id ? updatedNominee : nominee
                 );
+            })
+            .addCase(assignLocker.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(assignLocker.fulfilled, (state, action) => {
+                state.loading = false;
+                state.error = null;
+                // Update locker details after successful assignment if needed
+            })
+            .addCase(assignLocker.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
             });
     }
 });

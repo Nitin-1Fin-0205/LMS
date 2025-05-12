@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import LockerRentDetails from './LockerRentDetails';
-import { updateLockerDetails, updateRentDetails, fetchLockerDetails, fetchNominees } from '../store/slices/lockerSlice';
+import { updateLockerDetails, updateRentDetails, fetchLockerDetails, fetchNominees, assignLocker } from '../store/slices/lockerSlice';
 import { API_URL } from '../assets/config';
 import '../styles/LockerDetails.css';
 
@@ -92,10 +92,30 @@ const LockerDetails = () => {
         fetchInitialData();
     }, [dispatch, primaryHolder?.customerInfo?.customerId]);
 
-    const handleSubmit = () => {
-        // Add API call for submitting locker and rent details
-        navigate(-1);
+    const handleSaveLockerDetails = async () => {
+        try {
+            console.log('Locker Data:', lockerData);
+            const lockerAssignmentData = {
+                customerId: primaryHolder?.customerInfo?.customerId, // Get from customer state
+                lockerId: lockerData?.lockerDetails.lockerId,
+                centerId: lockerData?.lockerDetails?.center,
+                planId: lockerData?.lockerDetails?.selectedPlan,
+                expiryDate: '2024-06-30', //TODO : need to implement this function calculateExpiryDate()
+                payFrequency: 1 //TODO: get from lockerData
+            };
+
+            await dispatch(assignLocker(lockerAssignmentData)).unwrap();
+            toast.success('Locker assigned successfully!');
+            // Additional success handling...
+        } catch (error) {
+            toast.error(error.message || 'Failed to assign locker');
+        }
     };
+
+    // const handleSubmit = () => {
+    //     // Add API call for submitting locker and rent details
+    //     navigate(-1);
+    // };
 
     return (
         <div className="locker-details-wrapper">
@@ -108,7 +128,10 @@ const LockerDetails = () => {
                 <button className="back-button" onClick={() => navigate(-1)}>
                     Back
                 </button>
-                <button className="submit-button" onClick={handleSubmit}>
+                <button className="submit-button"
+                    onClick={handleSaveLockerDetails}
+                    disabled={!lockerData?.lockerDetails?.lockerId || !lockerData?.lockerDetails?.selectedPlan}
+                >
                     Save Changes
                 </button>
             </div>

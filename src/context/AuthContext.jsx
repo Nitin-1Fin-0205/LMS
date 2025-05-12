@@ -9,14 +9,15 @@ export const AuthProvider = ({ children }) => {
     const [auth, setAuth] = useState({
         isAuthenticated: false,
         role: null,
-        isLoading: true
+        isLoading: true,
+        userName: null
     });
 
     const validateToken = async () => {
         const token = localStorage.getItem('authToken');
 
         if (!token) {
-            setAuth({ isAuthenticated: false, role: null, isLoading: false });
+            setAuth({ isAuthenticated: false, role: null, isLoading: false, userName: null });
             return;
         }
 
@@ -25,7 +26,8 @@ export const AuthProvider = ({ children }) => {
             const mockResponse = {
                 data: {
                     valid: true,
-                    role: ROLES.ADMIN
+                    role: ROLES.ADMIN,
+                    name: 'Nitin Gupta',
                 }
             };
             const response = mockResponse;
@@ -40,15 +42,16 @@ export const AuthProvider = ({ children }) => {
                 setAuth({
                     isAuthenticated: true,
                     role: response.data.role,
+                    userName: response.data.name,
                     isLoading: false
                 });
             } else {
                 localStorage.removeItem('authToken');
-                setAuth({ isAuthenticated: false, role: null, isLoading: false });
+                setAuth({ isAuthenticated: false, role: null, isLoading: false, userName: null });
             }
         } catch (error) {
             localStorage.removeItem('authToken');
-            setAuth({ isAuthenticated: false, role: null, isLoading: false });
+            setAuth({ isAuthenticated: false, role: null, isLoading: false, userName: null });
         }
     };
 

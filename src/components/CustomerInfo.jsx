@@ -25,7 +25,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
     const [request_id, setRequestId] = useState(null);
 
     const [customerData, setCustomerData] = useState({
-        photo: '',  // Initialize with empty string instead of null
+        photo: '',
         customerId: '',
         firstName: '',
         middleName: '',
