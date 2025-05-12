@@ -153,6 +153,7 @@ const SecondaryHolder = () => {
                                 holderType="secondaryHolder"
                                 onUpdate={handleAttachmentsUpdate}
                                 initialData={secondaryHolder.attachments}
+                                customerId={secondaryHolder.customerInfo.customerId}
                             />
                         </div>
                         <div className="stage-actions">

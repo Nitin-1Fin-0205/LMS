@@ -148,6 +148,7 @@ const ThirdHolder = () => {
                                 holderType="thirdHolder"
                                 onUpdate={handleAttachmentsUpdate}
                                 initialData={thirdHolder.attachments}
+                                customerId={thirdHolder.customerInfo.customerId}
                             />
                         </div>
                         <div className="stage-actions">

@@ -24,7 +24,7 @@ const AddNominee = ({ isOpen, onClose }) => {
             }
         };
 
-        if (isOpen) {
+        if (isOpen || onClose) {
             fetchNomineesData();
         }
     }, [dispatch, customerId, isOpen]);
@@ -53,6 +53,15 @@ const AddNominee = ({ isOpen, onClose }) => {
         const updatedNominees = nominees.map((nominee, i) => {
             if (i === index) {
                 const updatedNominee = { ...nominee, [field]: value };
+                if (field === 'percentage') {
+                    // Validate percentage input
+                    const newPercentage = Number(value) || 0;
+                    if (newPercentage < 0 || newPercentage > 100) {
+                        // toast.error('Percentage must be between 0 and 100');
+                        return nominee;
+                    }
+                }
+
                 if (field === 'percentage' && nominees.length === 2) {
                     // For two nominees, automatically update the other nominee's percentage
                     const otherIndex = index === 0 ? 1 : 0;
@@ -85,10 +94,10 @@ const AddNominee = ({ isOpen, onClose }) => {
         if (nominees.length < 2) {
             // When adding second nominee, split percentage 50-50
             const updatedNominees = [...nominees];
-            updatedNominees[0].percentage = 50;
+            // updatedNominees[0].percentage = 50;
             setNominees([
                 ...updatedNominees,
-                { name: '', relation: '', dob: '', percentage: 50 }
+                { name: '', relation: '', dob: '', percentage: 0 }
             ]);
         } else {
             toast.error('You can only add up to 2 nominees.');

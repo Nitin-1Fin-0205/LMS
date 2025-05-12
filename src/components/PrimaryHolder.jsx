@@ -230,6 +230,7 @@ const PrimaryHolder = () => {
                                 holderType="primaryHolder"
                                 onUpdate={handleAttachmentsUpdate}
                                 initialData={formData.attachments}
+                                customerId={customerId}
                             />
                         </div>
                         <div className="stage-actions">

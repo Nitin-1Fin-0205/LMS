@@ -71,7 +71,19 @@ export const addNominee = createAsyncThunk(
     async ({ customerId, nomineeData }, { rejectWithValue }) => {
         try {
             const token = localStorage.getItem('authToken');
-            const response = await axios.post(`${API_URL}/customers/nominees?customer_id=${customerId}`, nomineeData, {
+
+            const requestData = {
+                customer_id: customerId,
+                nominees: [
+                    {
+                        name: nomineeData.name,
+                        relation: nomineeData.relation,
+                        dob: nomineeData.dob,
+                        percentage: nomineeData.percentage,
+                    }
+                ]
+            };
+            const response = await axios.post(`${API_URL}/customers/nominees`, requestData, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             return response.data;
@@ -84,9 +96,11 @@ export const addNominee = createAsyncThunk(
 export const deleteNominee = createAsyncThunk(
     'locker/deleteNominee',
     async ({ customerId, nomineeId }, { rejectWithValue }) => {
+
+        console.log('Deleting nominee with ID:', nomineeId, 'for customer ID:', customerId);
         try {
             const token = localStorage.getItem('authToken');
-            await axios.delete(`${API_URL}/customers/nominees/${nomineeId}?customer_id=${customerId}`, {
+            await axios.delete(`${API_URL}/customers/nominees?customer_id=${customerId}&nominee_id=${nomineeId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             return nomineeId;

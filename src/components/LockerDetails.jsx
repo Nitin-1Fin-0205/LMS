@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import LockerRentDetails from './LockerRentDetails';
-import { updateLockerDetails, updateRentDetails, fetchLockerDetails } from '../store/slices/lockerSlice';
+import { updateLockerDetails, updateRentDetails, fetchLockerDetails, fetchNominees } from '../store/slices/lockerSlice';
 import { API_URL } from '../assets/config';
 import '../styles/LockerDetails.css';
 
@@ -75,6 +75,14 @@ const LockerDetails = () => {
                             }));
                         }
                     }
+
+                    // Fetch locker nominees
+                    try {
+                        await dispatch(fetchNominees(primaryHolder?.customerInfo?.customerId)).unwrap();
+                    } catch (error) {
+                        toast.error("failed to fetch nominees")
+                    }
+
                 }
             } catch (error) {
                 toast.error('Failed to fetch locker details');
