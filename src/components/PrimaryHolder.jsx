@@ -197,6 +197,14 @@ const PrimaryHolder = () => {
         return `${baseClass} ${isActive ? 'active' : ''} ${status === STAGE_STATUS.COMPLETED ? 'completed' : ''} ${isLocked ? 'locked' : ''}`;
     };
 
+    const handleNextStage = () => {
+        const nextStage = currentStage === HOLDER_STAGES.CUSTOMER_INFO
+            ? HOLDER_STAGES.ATTACHMENTS
+            : HOLDER_STAGES.BIOMETRIC;
+
+        handleStageTransition(nextStage);
+    };
+
     const renderStage = () => {
         switch (currentStage) {
             case HOLDER_STAGES.CUSTOMER_INFO:
@@ -208,16 +216,25 @@ const PrimaryHolder = () => {
                             holderType="primaryHolder"
                         />
                         <div className="stage-actions">
-                            <button className="back-button" onClick={() => navigate(-1)}>
-                                Back
-                            </button>
-                            <button
-                                className="next-button"
-                                onClick={validateAndSubmitStage}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? 'Saving...' : 'Save & Continue'}
-                            </button>
+                            <div className="action-buttons">
+                                <button className="back-button" onClick={() => navigate(-1)}>
+                                    Back
+                                </button>
+                                <button
+                                    className="save-button"
+                                    onClick={validateAndSubmitStage}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Saving...' : 'Save'}
+                                </button>
+                                <button
+                                    className="next-button"
+                                    onClick={handleNextStage}
+                                    disabled={!customerId}
+                                >
+                                    Next
+                                </button>
+                            </div>
                         </div>
                     </div>
                 );
@@ -234,16 +251,24 @@ const PrimaryHolder = () => {
                             />
                         </div>
                         <div className="stage-actions">
-                            <button className="back-button" onClick={() => setCurrentStage(HOLDER_STAGES.CUSTOMER_INFO)}>
-                                Back
-                            </button>
-                            <button
-                                className="next-button"
-                                onClick={validateAndSubmitStage}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? 'Saving...' : 'Save & Continue'}
-                            </button>
+                            <div className="action-buttons">
+                                <button className="back-button" onClick={() => setCurrentStage(HOLDER_STAGES.CUSTOMER_INFO)}>
+                                    Back
+                                </button>
+                                <button
+                                    className="save-button"
+                                    onClick={validateAndSubmitStage}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Saving...' : 'Save'}
+                                </button>
+                                <button
+                                    className="next-button"
+                                    onClick={handleNextStage}
+                                >
+                                    Next
+                                </button>
+                            </div>
                         </div>
                     </div>
                 );

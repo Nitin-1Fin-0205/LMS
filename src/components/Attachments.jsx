@@ -116,8 +116,8 @@ const Attachments = ({ onUpdate, initialData, holderType, customerId }) => {
             const response = await axios.post(
                 `${API_URL}/customers/document-upload`,
                 {
-                    customerId: customerId,
-                    documentId: documentData.category,
+                    customerId: Number(customerId),
+                    documentId: Number(documentData.category),
                     documentName: documentData.name || documentData.data.split(',')[0].split('/')[1].split(';')[0],
                     documentBase64: documentData.data.split(',')[1]
                 },
@@ -142,10 +142,10 @@ const Attachments = ({ onUpdate, initialData, holderType, customerId }) => {
     const handleFileUpload = async (event) => {
         const files = Array.from(event.target.files);
         const category = selectedCategory;
-        const categoryConfig = documentCategories.find(c => c.key === category);
 
-        if (!categoryConfig.allowMultiple && documents[category].length > 0) {
-            toast.error(`Only one document allowed for ${categoryConfig.label}`);
+        // Safety check for category and documents
+        if (!category || !documents[category]) {
+            toast.error('Please select a valid document category');
             return;
         }
 

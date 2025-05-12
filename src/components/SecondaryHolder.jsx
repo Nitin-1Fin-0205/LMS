@@ -52,7 +52,7 @@ const SecondaryHolder = () => {
         }));
     };
 
-    const handleCustomerInfoSubmit = async () => {
+    const handleSaveCustomerInfo = async () => {
         try {
             setIsSubmitting(true);
             const primaryCustomerId = location.state?.customer?.customerInfo?.customerId;
@@ -82,12 +82,19 @@ const SecondaryHolder = () => {
             }
 
             toast.success('Secondary holder info saved successfully!');
-            setCurrentStage(HOLDER_STAGES.ATTACHMENTS);
         } catch (error) {
             toast.error(error.message || 'Failed to save secondary holder info');
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const handleNext = () => {
+        if (!secondaryHolder.customerInfo.customerId) {
+            toast.error('Please save customer information first');
+            return;
+        }
+        setCurrentStage(HOLDER_STAGES.ATTACHMENTS);
     };
 
     const handleAttachmentsSubmit = async () => {
@@ -131,19 +138,28 @@ const SecondaryHolder = () => {
                             onUpdate={handleCustomerInfoUpdate}
                         />
                         <div className="stage-actions">
-                            <button
-                                className="back-button"
-                                onClick={() => navigate(-1)}
-                            >
-                                Back
-                            </button>
-                            <button
-                                className="next-button"
-                                onClick={handleCustomerInfoSubmit}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? 'Saving...' : 'Save & Next'}
-                            </button>
+                            <div className="action-buttons">
+                                <button
+                                    className="back-button"
+                                    onClick={() => navigate(-1)}
+                                >
+                                    Back
+                                </button>
+                                <button
+                                    className="save-button"
+                                    onClick={handleSaveCustomerInfo}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Saving...' : 'Save'}
+                                </button>
+                                <button
+                                    className="next-button"
+                                    onClick={handleNext}
+                                    disabled={!secondaryHolder.customerInfo.customerId}
+                                >
+                                    Next
+                                </button>
+                            </div>
                         </div>
                     </>
                 ) : (
