@@ -1,0 +1,19 @@
+﻿version: '3.4'
+services:
+  lmsuat:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: '${CONTAINER_NAME}'
+      #image: '${MS_IMG_NM}:${MS_IMG_TAG}'
+    env_file:
+        - .env
+    ports:
+      - '4173:4173'
+    volumes:
+      - '${HOST_ROOT_VOL}/data:/data'
+    networks:
+      docker_network: null
+networks:
+  docker_network:
+    external: true

@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '../../assets/config';
-import { CustomerFormModel } from '../../models/CustomerModel';
 import { HOLDER_TYPES } from '../../constants/holderConstants';
+import { CustomerFormModel } from '../../models/customerModel';
 
 const initialState = {
     isSubmitting: false,
