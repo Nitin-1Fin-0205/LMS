@@ -74,20 +74,20 @@ export const fetchCustomerByPan = createAsyncThunk(
     }
 );
 
-export const fetchCustomerAttachments = createAsyncThunk(
-    'customer/fetchAttachments',
-    async (customerId, { rejectWithValue }) => {
-        try {
-            const token = localStorage.getItem('authToken');
-            const response = await axios.get(`${API_URL}/customers/${customerId}/attachments`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            return response.data;
-        } catch (error) {
-            return rejectWithValue('Failed to fetch attachments');
-        }
-    }
-);
+// export const fetchCustomerAttachments = createAsyncThunk(
+//     'customer/fetchAttachments',
+//     async (customerId, { rejectWithValue }) => {
+//         try {
+//             const token = localStorage.getItem('authToken');
+//             const response = await axios.get(`${API_URL}/customers/${customerId}/attachments`, {
+//                 headers: { 'Authorization': `Bearer ${token}` }
+//             });
+//             return response.data;
+//         } catch (error) {
+//             return rejectWithValue('Failed to fetch attachments');
+//         }
+//     }
+// );
 
 export const fetchBiometricData = createAsyncThunk(
     'customer/fetchBiometric',
@@ -175,10 +175,11 @@ const customerSlice = createSlice({
             .addCase(fetchCustomerByPan.fulfilled, (state, action) => {
                 state.isSubmitting = false;
                 state.error = null;
-
+                state.customerId = action.payload.customer_id;
                 // Map API response to primaryHolder customerInfo
                 state.form.primaryHolder.customerInfo = {
                     ...state.form.primaryHolder.customerInfo,
+                    memberId: action.payload.member_id,
                     customerId: action.payload.customer_id,
                     firstName: action.payload.first_name,
                     middleName: action.payload.middle_name,
@@ -211,9 +212,6 @@ const customerSlice = createSlice({
             .addCase(fetchCustomerByPan.rejected, (state, action) => {
                 state.isSubmitting = false;
                 state.error = action.payload;
-            })
-            .addCase(fetchCustomerAttachments.fulfilled, (state, action) => {
-                state.form.primaryHolder.attachments = action.payload;
             })
             .addCase(fetchBiometricData.fulfilled, (state, action) => {
                 state.form.primaryHolder.biometric = action.payload;
@@ -250,9 +248,6 @@ const customerSlice = createSlice({
                 } else if (holderType === HOLDER_TYPES.THIRD) {
                     state.form.thirdHolder.customerInfo = customerInfo;
                 }
-                // else {
-                //     state.form.primaryHolder.customerInfo = customerInfo;
-                // }
             })
             .addCase(fetchCustomerById.rejected, (state, action) => {
                 state.isSubmitting = false;

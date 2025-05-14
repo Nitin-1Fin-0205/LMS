@@ -19,28 +19,28 @@ export const BiometricModel = {
     fingerprints: []
 };
 
-export const AttachmentsModel = {
-    identityProof: [],
-    addressProof: [],
-    contactDocument: [],
-    otherDocument: []
-};
+// export const AttachmentsModel = {
+//     identityProof: [],
+//     addressProof: [],
+//     contactDocument: [],
+//     otherDocument: []
+// };
 
 
 export const CustomerFormModel = {
     primaryHolder: {
         customerInfo: { ...CustomerInfoModel },
         biometric: { ...BiometricModel },
-        attachments: { ...AttachmentsModel }
+        // attachments: { ...AttachmentsModel }
 
     },
     secondaryHolder: {
         customerInfo: { ...CustomerInfoModel },
-        attachments: { ...AttachmentsModel }
+        // attachments: { ...AttachmentsModel }
     },
     thirdHolder: {
         customerInfo: { ...CustomerInfoModel },
-        attachments: { ...AttachmentsModel }
+        // attachments: { ...AttachmentsModel }
 
     }
 };

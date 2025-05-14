@@ -9,7 +9,7 @@ import Attachments from './Attachments';
 import { API_URL } from '../assets/config';
 import '../styles/PrimaryHolder.css';
 import { useNavigate } from 'react-router-dom';
-import { updateHolderSection, submitCustomerInfo, fetchCustomerAttachments } from '../store/slices/customerSlice';
+import { updateHolderSection, submitCustomerInfo } from '../store/slices/customerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS, HOLDER_STAGES, STAGE_STATUS } from '../constants/holderConstants';
 
 const PrimaryHolder = () => {
@@ -47,24 +47,16 @@ const PrimaryHolder = () => {
         }));
     };
 
-    const handleAttachmentsUpdate = (data) => {
-        dispatch(updateHolderSection({
-            holder: HOLDER_TYPES.PRIMARY,
-            section: HOLDER_SECTIONS.ATTACHMENTS,
-            data
-        }));
-    };
-
     const handleStageTransition = async (newStage) => {
-        // Fetch attachments when moving to attachments stage
-        if (newStage === HOLDER_STAGES.ATTACHMENTS && customerId) {
-            try {
-                await dispatch(fetchCustomerAttachments(customerId)).unwrap();
-            } catch (error) {
-                toast.error('Failed to fetch customer documents');
-                console.error('Error fetching attachments:', error);
-            }
-        }
+        // // Fetch attachments when moving to attachments stage
+        // if (newStage === HOLDER_STAGES.ATTACHMENTS && customerId) {
+        //     try {
+        //         await dispatch(fetchCustomerAttachments(customerId)).unwrap();
+        //     } catch (error) {
+        //         toast.error('Failed to fetch customer documents');
+        //         console.error('Error fetching attachments:', error);
+        //     }
+        // }
         setCurrentStage(newStage);
     };
 
@@ -213,7 +205,6 @@ const PrimaryHolder = () => {
                         <CustomerInfo
                             initialData={formData.customerInfo}
                             onUpdate={handleCustomerInfoUpdate}
-                            holderType="primaryHolder"
                         />
                         <div className="stage-actions">
                             <div className="action-buttons">
@@ -244,8 +235,6 @@ const PrimaryHolder = () => {
                     <div className="stage-container">
                         <div className="attachments-container">
                             <Attachments
-                                holderType="primaryHolder"
-                                onUpdate={handleAttachmentsUpdate}
                                 initialData={formData.attachments}
                                 customerId={customerId}
                             />

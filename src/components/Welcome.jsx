@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import '../styles/Welcome.css';
 
 const Welcome = () => {
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
     const { auth } = useAuth();
     const token = localStorage.getItem('authToken');
 
@@ -26,18 +26,12 @@ const Welcome = () => {
                         'Please provide token to access the system'
                     )}
                 </p>
-                <div className="welcome-info">
-                    <p>
-                        {token ? (
-                            <>
-                                You are logged in as <span style={highlightStyle}>{auth?.role?.toUpperCase()}</span>.
-                                You can access all authorized features.
-                            </>
-                        ) : (
-                            'You will be automatically redirected once a valid token is provided.'
-                        )}
-                    </p>
-                </div>
+                {!token &&
+                    <div className="welcome-info">
+                        <p>You will be automatically redirected once a valid token is provided</p>
+                    </div>
+                }
+
             </div>
         </div>
     );

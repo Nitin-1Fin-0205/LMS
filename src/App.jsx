@@ -26,6 +26,7 @@ import Welcome from './components/Welcome';
 const AppContent = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const token = localStorage.getItem('authToken');
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -44,7 +45,8 @@ const AppContent = () => {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      <SideNav />
+      {/* <SideNav /> */}
+      {token && <SideNav />}
       <Box sx={{
         flexGrow: 1,
         paddingLeft: '60px', // Adjust this value based on your SideNav width
@@ -53,7 +55,7 @@ const AppContent = () => {
       }}>
         <Routes>
           <Route path="/" element={<Welcome />} />
-          <Route path={ROUTES.FORBIDDEN} element={<Forbidden />} />
+          {/* <Route path={ROUTES.FORBIDDEN} element={<Forbidden />} /> */}
 
           <Route path="/*" element={
             <Routes>

@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
 import '../styles/Attachments.css';
 
-const Attachments = ({ onUpdate, initialData, holderType, customerId }) => {
+const Attachments = ({ customerId }) => {
     const [selectedCategory, setSelectedCategory] = useState('identityProof');
     const [documents, setDocuments] = useState(() => ({}));
     const [documentCategories, setDocumentCategories] = useState([]);
@@ -48,14 +48,6 @@ const Attachments = ({ onUpdate, initialData, holderType, customerId }) => {
         fetchDocumentCategories();
     }, []);
 
-    useEffect(() => {
-        if (initialData) {
-            setDocuments(prevDocs => ({
-                ...prevDocs,
-                ...initialData
-            }));
-        }
-    }, [initialData]);
 
     useEffect(() => {
         const fetchExistingDocuments = async () => {

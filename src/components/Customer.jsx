@@ -266,7 +266,7 @@ const Customer = () => {
 
                         <div className="preview-info">
                             <div className="preview-row">
-                                <h4>{primaryHolder.customerInfo.customerName}</h4>
+                                <h4>{primaryHolder.customerInfo.firstName} {primaryHolder.customerInfo.lastName}</h4>
                                 <span className="badge">{primaryHolder.customerInfo.gender}</span>
                             </div>
                             <div className="contact-info">

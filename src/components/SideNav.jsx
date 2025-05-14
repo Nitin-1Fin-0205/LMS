@@ -6,7 +6,8 @@ import {
     faChevronRight,
     faUserPlus,
     faLock,
-    faUsers
+    faUsers,
+    faSignOutAlt
 } from '@fortawesome/free-solid-svg-icons';
 import {
     Drawer,
@@ -18,6 +19,7 @@ import {
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES, TAB_NAMES } from '../constants/routes';
+import { APP_LOGOUT_REDIRECT } from '../assets/config';
 
 const SideNav = () => {
     const navigate = useNavigate();
@@ -41,6 +43,11 @@ const SideNav = () => {
 
     const toggleNav = () => {
         setIsCollapsed(!isCollapsed);
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('authToken');
+        window.location.href = `${APP_LOGOUT_REDIRECT}`;
     };
 
     const listItemSx = {
@@ -159,6 +166,33 @@ const SideNav = () => {
                         {!isCollapsed && <ListItemText primary="Customers" />}
                     </ListItem>
                 </List>
+                <Box sx={{
+                    position: 'absolute',
+                    bottom: 0,
+                    width: '100%',
+                    borderTop: '1px solid #e0e0e0',
+                }}>
+                    <ListItem
+                        onClick={handleLogout}
+                        sx={{
+                            ...listItemSx,
+                            margin: '8px',
+                            '&:hover': {
+                                backgroundColor: '#e74c3c',
+                                color: '#ffffff',
+                            }
+                        }}
+                    >
+                        <ListItemIcon sx={{
+                            color: 'inherit',
+                            minWidth: 35,
+                            marginRight: isCollapsed ? 0 : 2
+                        }}>
+                            <FontAwesomeIcon icon={faSignOutAlt} />
+                        </ListItemIcon>
+                        {!isCollapsed && <ListItemText primary="Logout" />}
+                    </ListItem>
+                </Box>
             </Drawer>
         </>
     );

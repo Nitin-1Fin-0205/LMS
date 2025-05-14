@@ -83,6 +83,9 @@ const LockerDetails = () => {
                         toast.error("failed to fetch nominees")
                     }
 
+                } else {
+                    // If no customerId, navigate back
+                    navigate(-1);
                 }
             } catch (error) {
                 toast.error('Failed to fetch locker details');

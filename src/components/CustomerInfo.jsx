@@ -75,7 +75,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 ...initialData,
                 // Ensure these are never undefined
                 photo: initialData.photo || '',
-                customerId: initialData.customerId || '',
+                customerId: initialData.customerId || null,
                 firstName: initialData.firstName || '',
                 middleName: initialData.middleName || '',
                 lastName: initialData.lastName || '',
