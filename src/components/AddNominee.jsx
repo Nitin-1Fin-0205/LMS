@@ -36,9 +36,9 @@ const AddNominee = ({ isOpen, onClose }) => {
                 name: nominee.name,
                 relation: nominee.relation,
                 dob: nominee.dob,
-                percentage: nominee.percentage || 100 // Default to 100 for single nominee
+                percentage: nominee.percentage || 0
             }))
-            : [{ name: '', relation: '', dob: '', percentage: 100 }]; // Default first nominee to 100%
+            : [{ name: '', relation: '', dob: '', percentage: 100 }];
 
         setNominees(initialNominees);
     }, [existingNominees]);
@@ -54,27 +54,25 @@ const AddNominee = ({ isOpen, onClose }) => {
             if (i === index) {
                 const updatedNominee = { ...nominee, [field]: value };
                 if (field === 'percentage') {
-                    // Validate percentage input
+                    // Validate percentage input is a number
                     const newPercentage = Number(value) || 0;
-                    if (newPercentage < 0 || newPercentage > 100) {
-                        // toast.error('Percentage must be between 0 and 100');
+                    if (newPercentage < 0) {
+                        toast.error('Percentage cannot be negative');
                         return nominee;
                     }
-                }
-
-                if (field === 'percentage' && nominees.length === 2) {
-                    // For two nominees, automatically update the other nominee's percentage
-                    const otherIndex = index === 0 ? 1 : 0;
-                    const newPercentage = Number(value) || 0;
-                    if (newPercentage <= 100) {
-                        // Update other nominee's percentage automatically
-                        nominees[otherIndex].percentage = 100 - newPercentage;
+                    if (newPercentage > 100) {
+                        toast.error('Percentage cannot exceed 100%');
+                        return nominee;
                     }
+
+                    // Just update this nominee's percentage, no auto calculations
+                    updatedNominee.percentage = newPercentage;
                 }
                 return updatedNominee;
             }
             return nominee;
         });
+
         setNominees(updatedNominees);
     };
 
@@ -94,7 +92,6 @@ const AddNominee = ({ isOpen, onClose }) => {
         if (nominees.length < 2) {
             // When adding second nominee, split percentage 50-50
             const updatedNominees = [...nominees];
-            // updatedNominees[0].percentage = 50;
             setNominees([
                 ...updatedNominees,
                 { name: '', relation: '', dob: '', percentage: 0 }
@@ -110,11 +107,19 @@ const AddNominee = ({ isOpen, onClose }) => {
             return;
         }
 
+        // Calculate total percentage across all nominees
+        const totalPercentage = nominees.reduce((sum, n, i) =>
+            i === index ? sum + Number(nominee.percentage || 0) : sum + Number(n.percentage || 0), 0);
+
+        if (totalPercentage > 100) {
+            toast.error('Total nominee percentage cannot exceed 100%');
+            return;
+        }
+
         try {
             if (nominee.unique_id) {
                 await dispatch(updateNominee({
                     customerId,
-                    nomineeId: nominee.unique_id,
                     nomineeData: nominee
                 })).unwrap();
                 toast.success('Nominee updated successfully!');
@@ -198,8 +203,7 @@ const AddNominee = ({ isOpen, onClose }) => {
                                 <div className="form-group">
                                     <label>Percentage<span className="required">*</span></label>
                                     <input
-                                        type="number"
-                                        min="0"
+                                        type="text"
                                         max="100"
                                         value={nominee.percentage || 0}
                                         onChange={(e) => handleInputChange(index, 'percentage', e.target.value)}

@@ -115,9 +115,21 @@ export const updateNominee = createAsyncThunk(
     async ({ customerId, nomineeId, nomineeData }, { rejectWithValue }) => {
         try {
             const token = localStorage.getItem('authToken');
-            const response = await axios.put(
-                `${API_URL}/customers/nominees/${nomineeId}?customer_id=${customerId}`,
-                nomineeData,
+            const requestData = {
+                customer_id: customerId,
+                nominees: [
+                    {
+                        unique_id: nomineeData.unique_id,
+                        name: nomineeData.name,
+                        relation: nomineeData.relation,
+                        dob: nomineeData.dob,
+                        percentage: nomineeData.percentage,
+                    }
+                ]
+            };
+            const response = await axios.post(
+                `${API_URL}/customers/nominees`,
+                requestData,
                 { headers: { 'Authorization': `Bearer ${token}` } }
             );
             return response.data;

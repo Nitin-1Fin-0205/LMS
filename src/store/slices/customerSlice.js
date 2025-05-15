@@ -17,33 +17,6 @@ export const fetchCustomerByPan = createAsyncThunk(
     'customer/fetchByPan',
     async ({ pan, centerId }, { rejectWithValue }) => {
 
-        // // // TODO: remove this response and use the actual response when the API is ready
-        // return {
-        //     "member_id": "MBR1",
-        //     "customer_id": 1,
-        //     "customer_code": "97709a61-d13d-4dc0-8d99-38ec101157a0",
-        //     "name": "string",
-        //     "first_name": "Nitin ",
-        //     "middle_name": "Kishan",
-        //     "last_name": "Gupta",
-        //     "dob": "1990-05-12",
-        //     "email": "nitingupta1906@gmail.com",
-        //     "mobile_number": "9876543210",
-        //     "pan": "ABCPE1234F",
-        //     "gender": "MALE",
-        //     "aadhar": "ABCPE1234F",
-        //     "type": "primary",
-        //     "parent_customer_id": null,
-        //     "locker_center_id": 1,
-        //     "guardian": "Kishan Gupta",
-        //     "address": "gugujh",
-        //     "secondary_holder_id": 3,
-        //     "third_holder_id": 5,
-        //     "locker_number": "",
-        //     "locker_id": null,
-        //     "profile_img": "https://media.istockphoto.com/id/615279718/photo/businesswoman-portrait-on-white.jpg?s=612x612&w=0&k=20&c=Aa2Vy4faAPe9fAE68Z01jej9YqPqy-RbAteIlF3wcjk="
-        // }
-
         try {
             const token = localStorage.getItem('authToken');
             const response = await axios.get(`${API_URL}/customers/details?pan=${pan}&locker_center_id=${centerId}`, {

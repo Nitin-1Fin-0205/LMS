@@ -11,7 +11,6 @@ const Attachments = ({ customerId }) => {
     const [documents, setDocuments] = useState(() => ({}));
     const [documentCategories, setDocumentCategories] = useState([]);
 
-
     useEffect(() => {
         const fetchDocumentCategories = async () => {
             try {
@@ -47,7 +46,6 @@ const Attachments = ({ customerId }) => {
 
         fetchDocumentCategories();
     }, []);
-
 
     useEffect(() => {
         const fetchExistingDocuments = async () => {
@@ -159,13 +157,15 @@ const Attachments = ({ customerId }) => {
                 };
 
                 await uploadDocumentToServer(newDoc);
+                console.log('Document uploaded successfully:', newDoc);
 
                 const updatedDocs = {
                     ...documents,
                     [category]: [...documents[category], newDoc]
                 };
+
                 setDocuments(updatedDocs);
-                onUpdate(updatedDocs);
+                // onUpdate(updatedDocs);
                 toast.success(`Document uploaded successfully`);
             } catch (error) {
                 toast.error(`Failed to upload ${file.name}: ${error.message}`);
@@ -183,6 +183,11 @@ const Attachments = ({ customerId }) => {
     };
 
     const dataURLtoBlob = (dataURL) => {
+        // Handle both remote URLs and base64 data URLs
+        if (dataURL.startsWith('http')) {
+            return dataURL;
+        }
+
         const arr = dataURL.split(',');
         const mime = arr[0].match(/:(.*?);/)[1];
         const bstr = atob(arr[1]);
@@ -207,7 +212,7 @@ const Attachments = ({ customerId }) => {
                 [category]: documents[category].filter(doc => doc.id !== docId)
             };
             setDocuments(updatedDocs);
-            onUpdate(updatedDocs);
+            // onUpdate(updatedDocs);
             toast.success('Document removed successfully');
         } catch (error) {
             toast.error('Failed to remove document');
@@ -230,16 +235,34 @@ const Attachments = ({ customerId }) => {
                 </div>
             );
         }
+
         if (doc.type === 'application/pdf') {
             return <FontAwesomeIcon icon={faFilePdf} size="2x" color="#344767" />;
         }
+
         return <FontAwesomeIcon icon={faFileUpload} size="3x" />;
     };
 
     const handlePreview = (doc) => {
-        setPreviewDoc(doc);
         if (doc.type === 'application/pdf') {
-            window.open(URL.createObjectURL(dataURLtoBlob(doc.data)), '_blank');
+            try {
+                // If it's a remote URL, open it directly
+                if (doc.data.startsWith('http')) {
+                    window.open(doc.data, '_blank');
+                } else {
+                    // For base64 data, convert to blob URL
+                    const blob = dataURLtoBlob(doc.data);
+                    const url = URL.createObjectURL(blob);
+                    window.open(url, '_blank');
+                }
+                // Don't set previewDoc for PDFs since we're opening them in a new tab
+            } catch (error) {
+                console.error('Error previewing PDF:', error);
+                toast.error('Failed to preview PDF');
+            }
+        } else {
+            // Only set preview for non-PDF documents
+            setPreviewDoc(doc);
         }
     };
 
@@ -284,9 +307,6 @@ const Attachments = ({ customerId }) => {
                                         </div>
                                         <div className="document-info">
                                             <span className="document-name">{doc.name}</span>
-                                            {/* <span className="document-size">
-                                                {(doc.size / 1024 / 1024).toFixed(2)} MB
-                                            </span> */}
                                         </div>
                                         <div className="document-actions">
                                             <button onClick={() => handlePreview(doc)} title="Preview">
@@ -304,13 +324,17 @@ const Attachments = ({ customerId }) => {
                 ))}
             </div>
 
-            {previewDoc && previewDoc.type.startsWith('image/') && (
+            {previewDoc && (
                 <div className="preview-modal" onClick={() => setPreviewDoc(null)}>
                     <div className="preview-content">
                         <button className="close-preview">
                             <FontAwesomeIcon icon={faTimes} />
                         </button>
-                        {renderPreview(previewDoc, false)}
+                        {previewDoc.type.startsWith('image/') ? (
+                            renderPreview(previewDoc, false)
+                        ) : (
+                            <div>Unsupported file type</div>
+                        )}
                     </div>
                 </div>
             )}

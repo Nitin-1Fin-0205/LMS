@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { CssBaseline, Box } from '@mui/material';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import SideNav from './components/SideNav';
 import Customer from './components/Customer';
 // import AddCustomer from './components/AddCustomer';
@@ -27,6 +27,7 @@ const AppContent = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const token = localStorage.getItem('authToken');
+  const { validateToken } = useAuth();
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -34,6 +35,7 @@ const AppContent = () => {
 
     if (token) {
       localStorage.setItem('authToken', token);
+      validateToken(); // Only call here, not on every render
       navigate(ROUTES.CUSTOMER, { replace: true });
     }
   }, [location.search, navigate]);
@@ -49,7 +51,7 @@ const AppContent = () => {
       {token && <SideNav />}
       <Box sx={{
         flexGrow: 1,
-        paddingLeft: '60px', // Adjust this value based on your SideNav width
+        paddingLeft: '60px',
         width: '100%',
         boxSizing: 'border-box'
       }}>

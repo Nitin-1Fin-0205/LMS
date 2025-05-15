@@ -18,11 +18,13 @@ const CustomerList = () => {
         pageSize: 10,
         total: 0
     });
+    const [filterModel, setFilterModel] = useState({
+        items: []
+    });
     const navigate = useNavigate();
-    const apiRef = useGridApiRef();
 
     const columns = [
-        { field: 'id', headerName: 'ID', flex: 0.5, minWidth: 80 },
+        { field: 'id', headerName: 'ID', flex: 0.3, minWidth: 40 },
         { field: 'name', headerName: 'Customer Name', flex: 1, minWidth: 180 },
         { field: 'mobileNo', headerName: 'Mobile', flex: 0.8, minWidth: 120 },
         { field: 'email', headerName: 'Email', flex: 1, minWidth: 180 },
@@ -35,14 +37,15 @@ const CustomerList = () => {
             flex: 0.8,
             minWidth: 100,
             valueFormatter: (params) => {
+                if (!params || typeof params.value === 'undefined' || params.value === null) return '-';
                 return params.value ? `₹${params.value.toLocaleString()}` : '-';
             }
         },
         {
             field: 'actions',
             headerName: 'Actions',
-            flex: 0.6,
-            minWidth: 90,
+            flex: 0.8,
+            minWidth: 120,
             renderCell: (params) => (
                 <Button
                     variant="contained"
@@ -59,69 +62,67 @@ const CustomerList = () => {
                         }
                     }}
                 >
-                    Edit
+                    View | Edit
                 </Button>
-            ),
-        },
+            )
+        }
     ];
 
     const fetchCustomers = async () => {
         setLoading(true);
-
         try {
             const token = localStorage.getItem('authToken');
-            // const response = await axios.get(
-            //     `${API_URL}/customers/customers?page_no=${pagination.page}&page_size=${pagination.pageSize}`,
-            //     {
-            //         headers: {
-            //             'Authorization': `Bearer ${token}`,
-            //             'Accept': '*/*'
-            //         }
-            //     }
-            // );
-
-            //Dummy data for testing
             const response = {
                 status: 200,
                 data: {
-                    data: {
-                        customers: [
-                            {
-                                customer_id: 1, first_name: 'Nitin', last_name: 'Gupta', mobile_number: '1234567890',
-                                email: 'nitingupta1906@gmail.com',
-                                pan: 'ABCDE1234F', center_name: 'Main Center', locker_number: 'L001', locker_center_id: 1,
-                                premium: 1500,
-                            },
-                            {
-                                customer_id: 2, first_name: 'Nikhil', last_name: 'Bko', mobile_number: '0987654321',
-                                email: 'jane@ example.com',
-                                pan: 'XYZAB5678C', center_name: 'Branch Center', locker_number: 'L002', locker_center_id: 2,
-                                premium: 1500,
-                            },
-                        ]
-                    }
+                    customers: [
+                        {
+                            customer_id: 1,
+                            first_name: 'Nitin',
+                            last_name: 'Gupta',
+                            mobile_number: '1234567890',
+                            email: 'nitingupta1906@gmail.com',
+                            pan: 'ABCPE1234F',
+                            center_id: 1,
+                            center_name: 'Main Center',
+                            locker_number: 'L001',
+                            locker_center_id: 1,
+                            premium: 1500,
+                        },
+                        {
+                            customer_id: 2,
+                            first_name: 'Nikhil',
+                            last_name: 'Bhosle',
+                            mobile_number: '0987654321',
+                            email: 'nikhil@example.com',
+                            pan: 'XYZAB5678C',
+                            center_id: 2,
+                            center_name: 'Branch Center',
+                            locker_number: 'L002',
+                            locker_center_id: 2,
+                            premium: 1500,
+                        }
+                    ],
+                    total_count: 2
                 }
-            }
+            };
 
-            if (response.status === 200 && response.data.data) {
-                const mappedCustomers = response.data.data.customers.map(customer => ({
+            if (response.status === 200 && response.data) {
+                const mappedCustomers = response.data.customers.map(customer => ({
                     id: customer.customer_id,
-                    name: [customer.first_name, customer.middle_name, customer.last_name]
-                        .filter(Boolean)
-                        .join(' '),
+                    name: [customer.first_name, customer.last_name].filter(Boolean).join(' '),
                     mobileNo: customer.mobile_number || '-',
                     email: customer.email || '-',
                     pan: customer.pan || '-',
+                    centerId: customer.center_id || null,
                     centerName: customer.center_name || '-',
                     lockerNo: customer.locker_number || '-',
-                    centerId: customer.locker_center_id,
                     premium: customer.premium || 0,
                 }));
-
                 setCustomers(mappedCustomers);
                 setPagination(prev => ({
                     ...prev,
-                    total: response.data.data.total_count || 0
+                    total: response.data.total_count || 0
                 }));
             }
         } catch (error) {
@@ -140,25 +141,22 @@ const CustomerList = () => {
         try {
             const customer = customers.find(c => c.id === customerId);
             if (customer) {
+                console.log('Editing customer:', customer);
                 if (!customer.pan || !customer.centerId) {
-                    console.error('Missing required data:', customer);
                     toast.error('Missing required customer data for editing');
                     return;
                 }
-
                 sessionStorage.setItem('editCustomerData', JSON.stringify({
                     pan: customer.pan,
                     center: customer.centerId
                 }));
-
-                console.log('Navigating to edit with data:', JSON.parse(sessionStorage.getItem('editCustomerData')));
                 navigate(ROUTES.CUSTOMER);
             } else {
                 toast.error('Customer not found');
             }
         } catch (error) {
-            console.error('Navigation error:', error);
             toast.error('Failed to navigate to edit page');
+            console.error('Navigation error:', error);
         }
     };
 
@@ -167,40 +165,36 @@ const CustomerList = () => {
         setSearchText(value);
 
         if (!value.trim()) {
-            apiRef.current.setFilterModel({ items: [] });
+            setFilterModel({ items: [] });
             return;
         }
 
         const searchFilter = {
             items: [
                 {
+                    id: 1,
                     field: 'name',
                     operator: 'contains',
                     value: value
                 },
-                {
-                    field: 'lockerNo',
-                    operator: 'contains',
-                    value: value
-                }
-            ],
-            linkOperator: 'or'
+
+            ]
         };
 
-        apiRef.current.setFilterModel(searchFilter);
+        setFilterModel(searchFilter);
     };
 
     const clearSearch = () => {
         setSearchText('');
-        apiRef.current.setFilterModel({ items: [] });
+        setFilterModel({ items: [] });
     };
 
     return (
         <Box sx={{
             height: '100%',
             width: '100%',
-            p: 3,
             backgroundColor: '#f5f7fa',
+            p: 3
         }}>
             <Stack spacing={3}>
                 <Box sx={{
@@ -256,9 +250,10 @@ const CustomerList = () => {
                         rowsPerPageOptions={[10, 25, 50]}
                         disableSelectionOnClick
                         autoHeight
+                        filterModel={filterModel}
+                        onFilterModelChange={(newModel) => setFilterModel(newModel)}
                         sx={{
                             border: 'none',
-                            width: '100%',
                             '.MuiDataGrid-columnHeaders': {
                                 backgroundColor: '#f8fafc',
                                 borderBottom: '2px solid #e2e8f0'
