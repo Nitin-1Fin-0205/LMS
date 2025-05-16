@@ -9,9 +9,9 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
-    margin-bottom: 2rem;
+    margin-bottom: 0.5rem;
     position: relative;
-    padding: 20px 0;
+    /* padding: 20px 0; */
 }
 
 .stage {
@@ -106,6 +106,7 @@
     box-shadow: 
         0 4px 12px rgba(0,0,0,0.1),
         0 8px 24px rgba(0,0,0,0.05);
+    position: relative;
 }
 
 @keyframes fadeSlide {
@@ -179,6 +180,12 @@
 .back-button {
     background: #f5f5f5;
     color: #333;
+    padding: 10px 24px;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .back-button:hover {
@@ -194,4 +201,31 @@
 .form-sections > * {
     flex: 1 1 calc(50% - 10px);
     min-width: 300px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.save-button {
+    padding: 10px 24px;
+    background: var(--success-green);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.save-button:hover {
+    background: var(--success-hover);
+    transform: translateY(-1px);
+}
+
+.save-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
 }

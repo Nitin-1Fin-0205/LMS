@@ -7,32 +7,31 @@ const initialState = {
     loading: false,
     error: null,
     lockerDetails: { ...LockerDetailsModel },
-    rentDetails: { ...RentDetailsModel },
+    // rentDetails: { ...RentDetailsModel },
     plans: [],
     lockerData: null,
     mappedLockers: []
 };
 
-// Add fetchLockerDetails thunk
 export const fetchLockerDetails = createAsyncThunk(
     'locker/fetchDetails',
-    async (lockerId, { rejectWithValue }) => {
+    async (customerId, { rejectWithValue }) => {
         try {
             const token = localStorage.getItem('authToken');
-            const response = await axios.get(`https://newuat.support-backend.onefin.app/lockers/locker-master?lockerCenterId=1`, {
+            const response = await axios.get(`${API_URL}/lockers/locker-details?customer_id=${customerId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (response.status !== 200) {
-                throw new Error('Failed to fetch locker details');
+
+            if (!response.data?.data?.lockers?.[0]) {
+                throw new Error('No locker details found');
             }
             return response.data;
         } catch (error) {
-            return rejectWithValue(error.response?.data || 'Failed to fetch locker details');
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch locker details');
         }
     }
 );
 
-// Add fetchLockerMaster thunk
 export const fetchLockerMaster = createAsyncThunk(
     'locker/fetchMaster',
     async (centerId, { rejectWithValue }) => {
@@ -43,8 +42,132 @@ export const fetchLockerMaster = createAsyncThunk(
             });
             return response.data;
         } catch (error) {
-            // Return error message string instead of object
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch locker master');
+        }
+    }
+);
+
+export const fetchNominees = createAsyncThunk(
+    'locker/fetchNominees',
+    async (customerId, { rejectWithValue }) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.get(`${API_URL}/customers/nominees?customer_id=${customerId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.data?.data?.nominees) {
+                throw new Error('No nominees data found');
+            }
+            return response.data;
+        } catch (error) {
+            return rejectWithValue('Failed to fetch nominees');
+        }
+    }
+);
+
+export const addNominee = createAsyncThunk(
+    'locker/addNominee',
+    async ({ customerId, nomineeData }, { rejectWithValue }) => {
+        try {
+            const token = localStorage.getItem('authToken');
+
+            const requestData = {
+                customer_id: customerId,
+                nominees: [
+                    {
+                        name: nomineeData.name,
+                        relation: nomineeData.relation,
+                        dob: nomineeData.dob,
+                        percentage: nomineeData.percentage,
+                    }
+                ]
+            };
+            const response = await axios.post(`${API_URL}/customers/nominees`, requestData, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return response.data;
+        } catch (error) {
+            return rejectWithValue('Failed to add nominee');
+        }
+    }
+);
+
+export const deleteNominee = createAsyncThunk(
+    'locker/deleteNominee',
+    async ({ customerId, nomineeId }, { rejectWithValue }) => {
+
+        console.log('Deleting nominee with ID:', nomineeId, 'for customer ID:', customerId);
+        try {
+            const token = localStorage.getItem('authToken');
+            await axios.delete(`${API_URL}/customers/nominees?customer_id=${customerId}&nominee_id=${nomineeId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return nomineeId;
+        } catch (error) {
+            return rejectWithValue('Failed to delete nominee');
+        }
+    }
+);
+
+export const updateNominee = createAsyncThunk(
+    'locker/updateNominee',
+    async ({ customerId, nomineeId, nomineeData }, { rejectWithValue }) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const requestData = {
+                customer_id: customerId,
+                nominees: [
+                    {
+                        unique_id: nomineeData.unique_id,
+                        name: nomineeData.name,
+                        relation: nomineeData.relation,
+                        dob: nomineeData.dob,
+                        percentage: nomineeData.percentage,
+                    }
+                ]
+            };
+            const response = await axios.post(
+                `${API_URL}/customers/nominees`,
+                requestData,
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+            return response.data;
+        } catch (error) {
+            return rejectWithValue('Failed to update nominee');
+        }
+    }
+);
+
+export const assignLocker = createAsyncThunk(
+    'locker/assignLocker',
+    async (lockerData, { rejectWithValue }) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.post(
+                `${API_URL}/lockers/assignLocker`,
+                {
+                    customer_id: lockerData.customerId,
+                    locker_id: lockerData.lockerId,
+                    center_id: lockerData.centerId,
+                    plan_id: lockerData.planId,
+                    expiry_date: lockerData.expiryDate,
+                    pay_frequency: lockerData.payFrequency
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (response.status === 200 || response.status === 201) {
+                return response.data;
+            }
+            throw new Error('Failed to assign locker');
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to assign locker');
         }
     }
 );
@@ -67,7 +190,10 @@ const lockerSlice = createSlice({
         updateRentDetails: (state, action) => {
             state.rentDetails = {
                 ...state.rentDetails,
-                ...action.payload
+                deposit: action.payload.deposit,
+                rent: action.payload.rent,
+                admissionFees: action.payload.admissionFees,
+                total: action.payload.total
             };
         },
         setLockerData: (state, action) => {
@@ -94,7 +220,6 @@ const lockerSlice = createSlice({
             })
             .addCase(fetchLockerMaster.rejected, (state, action) => {
                 state.loading = false;
-                // Store error message as string
                 state.error = typeof action.payload === 'string' ? action.payload : 'Failed to load lockers';
             })
             .addCase(fetchLockerDetails.pending, (state) => {
@@ -103,21 +228,72 @@ const lockerSlice = createSlice({
             })
             .addCase(fetchLockerDetails.fulfilled, (state, action) => {
                 state.loading = false;
-                if (action.payload.lockerDetails) {
-                    state.lockerDetails = {
-                        ...state.lockerDetails,
-                        ...action.payload.lockerDetails
-                    };
-                }
-                if (action.payload.rentDetails) {
-                    state.rentDetails = {
-                        ...state.rentDetails,
-                        ...action.payload.rentDetails
-                    };
-                }
-                state.plans = action.payload.plans || [];
+                state.error = null;
+                const lockerData = action.payload.data.lockers[0];
+
+                state.lockerDetails = {
+                    ...state.lockerDetails,
+                    assignedLocker: lockerData.lockerNumber,
+                    lockerId: lockerData.lockerId,
+                    center: lockerData.center_id,
+                    lockerKey: lockerData.locker_key,
+                    selectedPlan: lockerData.plan_id,
+                    rentDetails: lockerData.rent_details || {
+                        deposit: 0,
+                        rent: 0,
+                        admissionFees: 0,
+                        total: 0
+                    }
+                };
             })
             .addCase(fetchLockerDetails.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            .addCase(fetchNominees.fulfilled, (state, action) => {
+                state.loading = false;
+                state.lockerDetails.nominees = action.payload.data.nominees.map(nominee => ({
+                    ...nominee,
+                    id: nominee.unique_id,
+                }));
+            })
+            .addCase(addNominee.fulfilled, (state, action) => {
+                state.loading = false;
+                const newNominee = {
+                    ...action.payload.data,
+                    id: action.payload.data.unique_id
+                };
+                state.lockerDetails.nominees = [
+                    ...state.lockerDetails.nominees,
+                    newNominee
+                ];
+            })
+            .addCase(deleteNominee.fulfilled, (state, action) => {
+                state.loading = false;
+                state.lockerDetails.nominees = state.lockerDetails.nominees.filter(
+                    nominee => nominee.unique_id !== action.payload
+                );
+            })
+            .addCase(updateNominee.fulfilled, (state, action) => {
+                state.loading = false;
+                const updatedNominee = {
+                    ...action.payload.data,
+                    id: action.payload.data.unique_id
+                };
+                state.lockerDetails.nominees = state.lockerDetails.nominees.map(nominee =>
+                    nominee.unique_id === updatedNominee.unique_id ? updatedNominee : nominee
+                );
+            })
+            .addCase(assignLocker.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(assignLocker.fulfilled, (state, action) => {
+                state.loading = false;
+                state.error = null;
+                // Update locker details after successful assignment if needed
+            })
+            .addCase(assignLocker.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             });

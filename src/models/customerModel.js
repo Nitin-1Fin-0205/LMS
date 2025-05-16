@@ -1,43 +1,46 @@
 export const CustomerInfoModel = {
     customerId: null,
-    customerName: '',
+    firstName: '',
+    middleName: '',
+    lastName: '',
     fatherOrHusbandName: '',
     dateOfBirth: '',
     gender: '',
     mobileNo: '',
     emailId: '',
     panNo: '',
-    documentNo: '',
+    aadharNo: '',
     address: '',
     photo: null,
+    aadharNo: null,
 };
 
 export const BiometricModel = {
     fingerprints: []
 };
 
-export const AttachmentsModel = {
-    identityProof: [],
-    addressProof: [],
-    contactDocument: [],
-    otherDocument: []
-};
+// export const AttachmentsModel = {
+//     identityProof: [],
+//     addressProof: [],
+//     contactDocument: [],
+//     otherDocument: []
+// };
 
 
 export const CustomerFormModel = {
     primaryHolder: {
         customerInfo: { ...CustomerInfoModel },
         biometric: { ...BiometricModel },
-        attachments: { ...AttachmentsModel }
+        // attachments: { ...AttachmentsModel }
 
     },
     secondaryHolder: {
         customerInfo: { ...CustomerInfoModel },
-        attachments: { ...AttachmentsModel }
+        // attachments: { ...AttachmentsModel }
     },
     thirdHolder: {
         customerInfo: { ...CustomerInfoModel },
-        attachments: { ...AttachmentsModel }
+        // attachments: { ...AttachmentsModel }
 
     }
 };

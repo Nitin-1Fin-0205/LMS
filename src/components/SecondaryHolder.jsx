@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import CustomerInfo from './CustomerInfo';
 import Attachments from './Attachments';
 import { API_URL } from '../assets/config';
-import { updateHolderSection } from '../store/slices/customerSlice';
+import { updateHolderSection, submitCustomerInfo, fetchCustomerById } from '../store/slices/customerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS, HOLDER_STAGES } from '../constants/holderConstants';
 import '../styles/SecondaryHolder.css';
 
@@ -17,6 +17,24 @@ const SecondaryHolder = () => {
     const customerData = location.state?.customer;
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [currentStage, setCurrentStage] = useState(HOLDER_STAGES.CUSTOMER_INFO);
+
+    useEffect(() => {
+        const fetchSecondaryHolderDetails = async () => {
+            try {
+                const secondaryHolderId = secondaryHolder?.customerInfo?.customerId;
+                if (secondaryHolderId) {
+                    await dispatch(fetchCustomerById({
+                        customerId: secondaryHolderId,
+                        holderType: HOLDER_TYPES.SECONDARY
+                    })).unwrap();
+                }
+            } catch (error) {
+                toast.error('Failed to fetch secondary holder details');
+            }
+        };
+
+        fetchSecondaryHolderDetails();
+    }, [dispatch, secondaryHolder?.customerInfo?.customerId]);
 
     const handleCustomerInfoUpdate = (data) => {
         dispatch(updateHolderSection({
@@ -34,7 +52,52 @@ const SecondaryHolder = () => {
         }));
     };
 
-    const handleSubmit = async () => {
+    const handleSaveCustomerInfo = async () => {
+        try {
+            setIsSubmitting(true);
+            const primaryCustomerId = location.state?.customer?.customerInfo?.customerId;
+
+            const submitData = {
+                customer_id: secondaryHolder.customerInfo.customerId,
+                first_name: secondaryHolder.customerInfo.firstName,
+                middle_name: secondaryHolder.customerInfo.middleName,
+                last_name: secondaryHolder.customerInfo.lastName,
+                pan: secondaryHolder.customerInfo.panNo,
+                aadhar: secondaryHolder.customerInfo.aadharNo,
+                gender: secondaryHolder.customerInfo.gender,
+                address: secondaryHolder.customerInfo.address,
+                guardian_name: secondaryHolder.customerInfo.fatherOrHusbandName,
+                dob: secondaryHolder.customerInfo.dateOfBirth,
+                mobile_number: secondaryHolder.customerInfo.mobileNo,
+                email: secondaryHolder.customerInfo.emailId,
+                image_base64: secondaryHolder.customerInfo.photo,
+                locker_center_id: primaryCustomerId,
+                parent_customer_id: primaryCustomerId,
+            };
+
+            const result = await dispatch(submitCustomerInfo(submitData)).unwrap();
+
+            if (!result.customerId) {
+                throw new Error('Failed to create secondary holder');
+            }
+
+            toast.success('Secondary holder info saved successfully!');
+        } catch (error) {
+            toast.error(error.message || 'Failed to save secondary holder info');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleNext = () => {
+        if (!secondaryHolder.customerInfo.customerId) {
+            toast.error('Please save customer information first');
+            return;
+        }
+        setCurrentStage(HOLDER_STAGES.ATTACHMENTS);
+    };
+
+    const handleAttachmentsSubmit = async () => {
         try {
             setIsSubmitting(true);
             const token = localStorage.getItem('authToken');
@@ -75,18 +138,28 @@ const SecondaryHolder = () => {
                             onUpdate={handleCustomerInfoUpdate}
                         />
                         <div className="stage-actions">
-                            <button
-                                className="back-button"
-                                onClick={() => navigate(-1)}
-                            >
-                                Back
-                            </button>
-                            <button
-                                className="next-button"
-                                onClick={() => setCurrentStage(HOLDER_STAGES.ATTACHMENTS)}
-                            >
-                                Next
-                            </button>
+                            <div className="action-buttons">
+                                <button
+                                    className="back-button"
+                                    onClick={() => navigate(-1)}
+                                >
+                                    Back
+                                </button>
+                                <button
+                                    className="save-button"
+                                    onClick={handleSaveCustomerInfo}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Saving...' : 'Save'}
+                                </button>
+                                <button
+                                    className="next-button"
+                                    onClick={handleNext}
+                                    disabled={!secondaryHolder.customerInfo.customerId}
+                                >
+                                    Next
+                                </button>
+                            </div>
                         </div>
                     </>
                 ) : (
@@ -96,6 +169,7 @@ const SecondaryHolder = () => {
                                 holderType="secondaryHolder"
                                 onUpdate={handleAttachmentsUpdate}
                                 initialData={secondaryHolder.attachments}
+                                customerId={secondaryHolder.customerInfo.customerId}
                             />
                         </div>
                         <div className="stage-actions">
@@ -107,7 +181,7 @@ const SecondaryHolder = () => {
                             </button>
                             <button
                                 className="submit-button"
-                                onClick={handleSubmit}
+                                onClick={handleAttachmentsSubmit}
                             >
                                 Submit
                             </button>

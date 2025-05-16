@@ -3,7 +3,9 @@ import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
 import '../styles/CustomerInfo.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark, faUpload } from '@fortawesome/free-solid-svg-icons';
+import { faXmark, faUpload, faCheck, faMessage, faEnvelope, faSms } from '@fortawesome/free-solid-svg-icons';
+import { ValidationService } from '../services/ValidationService';
+import { otpService } from '../services/otpService';
 
 const CustomerInfo = ({ onUpdate, initialData }) => {
     const [cameraActive, setCameraActive] = useState(false);
@@ -14,11 +16,20 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [isPanFetching, setIsPanFetching] = useState(false);
     const [isPanImageFetching, setIsPanImageFetching] = useState(false);
+    const [showOtpModal, setShowOtpModal] = useState(false);
+    const [otpType, setOtpType] = useState(null);
+    const [resendTimer, setResendTimer] = useState({
+        email: 0,
+        mobile: 0
+    });
+    const [request_id, setRequestId] = useState(null);
 
     const [customerData, setCustomerData] = useState({
-        photo: null,
+        photo: '',
         customerId: '',
-        customerName: '',
+        firstName: '',
+        middleName: '',
+        lastName: '',
         fatherOrHusbandName: '',
         address: '',
         dateOfBirth: '',
@@ -26,9 +37,36 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         panNo: '',
         gender: '',
         emailId: '',
-        documentNo: '',
-        ...initialData
+        aadharNo: '',
+        ...initialData  // Spread initialData after default values
     });
+
+    const [otpVerification, setOtpVerification] = useState({
+        emailOtp: '',
+        mobileOtp: '',
+        isEmailVerified: false,
+        isMobileVerified: false,
+        isEmailOtpSent: false,
+        isMobileOtpSent: false
+    });
+
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
+
+    const validateFile = (file) => {
+        if (!file) return false;
+
+        if (file.size > MAX_FILE_SIZE) {
+            toast.error('File size should not exceed 2MB');
+            return false;
+        }
+
+        if (!file.type.startsWith('image/')) {
+            toast.error('Only image files are allowed');
+            return false;
+        }
+
+        return true;
+    };
 
     useEffect(() => {
         if (initialData) {
@@ -36,9 +74,11 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 ...prev,
                 ...initialData,
                 // Ensure these are never undefined
-                photo: initialData.photo || null,
-                customerId: initialData.customerId || '',
-                customerName: initialData.customerName || '',
+                photo: initialData.photo || '',
+                customerId: initialData.customerId || null,
+                firstName: initialData.firstName || '',
+                middleName: initialData.middleName || '',
+                lastName: initialData.lastName || '',
                 fatherOrHusbandName: initialData.fatherOrHusbandName || '',
                 address: initialData.address || '',
                 dateOfBirth: initialData.dateOfBirth || '',
@@ -46,7 +86,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 panNo: initialData.panNo || '',
                 gender: initialData.gender || '',
                 emailId: initialData.emailId || '',
-                documentNo: initialData.documentNo || ''
+                aadharNo: initialData.aadharNo || ''
             }));
         }
     }, [initialData]);
@@ -54,10 +94,51 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
     const handleInputChange = (field, value) => {
         const updatedData = {
             ...customerData,
-            [field]: value
+            [field]: value || '' // Ensure value is never undefined
         };
         setCustomerData(updatedData);
         onUpdate(updatedData);
+    };
+
+    const handlePanInput = (e) => {
+        const pan = e.target.value.toUpperCase();
+        handleInputChange('panNo', pan);
+
+        // Validate only if PAN has full length
+        if (pan.length === 10) {
+            const validation = ValidationService.isValidPAN(pan);
+            if (!validation.isValid) {
+                toast.error(validation.error);
+            }
+        }
+    };
+
+    const formatAadhar = (value) => {
+        // Remove any non-digits
+        const cleaned = value?.replace(/\D/g, '');
+        // Add spaces after every 4 digits instead of dashes
+        const formatted = cleaned?.replace(/(\d{4})(?=\d)/g, '$1 ');
+        return formatted;
+    };
+
+    const handleAadharInput = (e) => {
+        const input = e.target.value;
+        // Remove any non-digits for validation and storage
+        const numbersOnly = input.replace(/\D/g, '');
+
+        if (numbersOnly === '' || (/^[0-9]+$/.test(numbersOnly) && numbersOnly.length <= 12)) {
+            handleInputChange('aadharNo', numbersOnly);
+
+            // Format with spaces
+            e.target.value = formatAadhar(numbersOnly);
+
+            if (numbersOnly.length === 12) {
+                const validation = ValidationService.validateField('aadhar', numbersOnly);
+                if (!validation.isValid) {
+                    toast.error(validation.error);
+                }
+            }
+        }
     };
 
     const handleFetchPan = async () => {
@@ -83,13 +164,15 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
             const data = await response.json();
             if (response?.status === 201) {
                 setCustomerData(prev => {
+                    const names = data?.name?.split(' ') || ['', '', ''];
                     const updatedData = {
                         ...prev,
                         customerId: data?.customerId || '',
-                        customerName: data?.customerName || '',
+                        firstName: names[0] || '',
+                        middleName: names[1] || '',
+                        lastName: names[2] || '',
                         address: data?.address || '',
-                        dateOfBirth: data?.dateOfBirth || '',
-                        mobileNo: data?.mobileNo || ''
+                        mobileNo: data?.mobileNumber || ''
                     };
                     onUpdate(updatedData);
                     return updatedData;
@@ -130,7 +213,9 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                     const updatedData = {
                         ...prev,
                         panNo: data?.panNo || '',
-                        customerName: data?.name || '',
+                        firstName: data?.name?.split(' ')[0] || '',
+                        middleName: data?.name?.split(' ')[1] || '',
+                        lastName: data?.name?.split(' ')[2] || '',
                         dateOfBirth: data?.dob || '',
                     };
                     onUpdate(updatedData);
@@ -251,7 +336,8 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
     const handleFileUpload = async (event) => {
         await stopCamera(); // Stop the camera if it's active
         const file = event.target.files[0];
-        if (file) {
+
+        if (file && validateFile(file)) {
             setSelectedFile(file);
             setCapturedImage(null);
             const reader = new FileReader();
@@ -286,7 +372,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         setIsDragging(false);
 
         const file = e.dataTransfer.files[0];
-        if (file && file.type.startsWith('image/')) {
+        if (file && validateFile(file)) {
             setSelectedFile(file);
             setCapturedImage(null);
             const reader = new FileReader();
@@ -295,8 +381,6 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
             };
             reader.readAsDataURL(file);
             toast.success('Image uploaded successfully');
-        } else {
-            toast.error('Please drop an image file');
         }
     };
 
@@ -311,6 +395,153 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
             }
         }
     };
+
+    const startResendTimer = (type) => {
+        setResendTimer(prev => ({ ...prev, [type]: 10 }));
+        const timer = setInterval(() => {
+            setResendTimer(prev => {
+                const newTime = prev[type] - 1;
+                if (newTime <= 0) {
+                    clearInterval(timer);
+                }
+                return { ...prev, [type]: Math.max(0, newTime) };
+            });
+        }, 1000);
+    };
+
+    const handleVerifyOtp = async (type) => {
+        try {
+            // const value = type === 'email' ? customerData.emailId : customerData.mobileNo;
+            const otp = type === 'email' ? otpVerification.emailOtp : otpVerification.mobileOtp;
+
+            if (!otp) {
+                toast.error('Please enter OTP');
+                return;
+            }
+
+            await otpService.verifyOtp(request_id, otp);
+            setOtpVerification(prev => ({
+                ...prev,
+                [type === 'email' ? 'isEmailVerified' : 'isMobileVerified']: true
+            }));
+            toast.success(`${type} verified successfully`);
+            setShowOtpModal(false);
+        } catch (error) {
+            toast.error('Invalid OTP');
+        }
+    };
+
+    const handleOtpClick = async (type) => {
+        try {
+            setOtpType(type);
+            const value = type === 'email' ? customerData.emailId : customerData.mobileNo;
+
+            if (type === 'mobile' && (!value || value.length !== 10)) {
+                toast.error('Please enter valid 10-digit mobile number');
+                return;
+            }
+
+            if (type === 'email' && !value) {
+                toast.error('Please enter valid email');
+                return;
+            }
+
+            const response = await (type === 'email'
+                ? otpService.sendEmailOtp(value)
+                : otpService.sendMobileOtp(value)
+            );
+
+            console.log('OTP Response:', response);
+            setRequestId(response?.request_id || null);
+            if (!response?.request_id) {
+                throw new Error('Failed to send OTP');
+            }
+
+            startResendTimer(type);
+            setOtpVerification(prev => ({
+                ...prev,
+                [`is${type === 'email' ? 'Email' : 'Mobile'}OtpSent`]: true
+            }));
+            setShowOtpModal(true);
+            toast.success(`OTP sent to ${type === 'email' ? 'email' : 'mobile'}`);
+        } catch (error) {
+            toast.error(error.message || `Failed to send ${type} OTP`);
+            console.error(`${type} OTP Error:`, error);
+        }
+    };
+
+    const OtpInput = React.memo(({ value, onChange, onEnter }) => {
+        const inputRef = useRef(null);
+
+        useEffect(() => {
+            inputRef.current?.focus();
+        }, []);
+
+        const handleChange = (e) => {
+            const sanitizedValue = e.target.value.replace(/\D/g, '').slice(0, 6);
+            onChange(sanitizedValue);
+        };
+
+        const handleKeyPress = (e) => {
+            if (e.key === 'Enter') {
+                onEnter();
+            }
+        };
+
+        return (
+            <input
+                ref={inputRef}
+                type="text"
+                maxLength={6}
+                placeholder="Enter OTP"
+                value={value}
+                onChange={handleChange}
+                onKeyPress={handleKeyPress}
+                className="otp-input"
+                autoComplete="off"
+            />
+        );
+    });
+
+    const OtpModal = () => (
+        <div className="otp-modal-overlay">
+            <div className="otp-modal">
+                <button
+                    className="modal-close-btn"
+                    onClick={() => setShowOtpModal(false)}
+                >
+                    <FontAwesomeIcon icon={faXmark} />
+                </button>
+                <h3>Verify {otpType === 'email' ? 'Email' : 'Mobile'}</h3>
+                <p>Enter OTP sent to {otpType === 'email' ? customerData.emailId : customerData.mobileNo}</p>
+                <OtpInput
+                    value={otpVerification[`${otpType}Otp`]}
+                    onChange={(value) => setOtpVerification(prev => ({
+                        ...prev,
+                        [`${otpType}Otp`]: value
+                    }))}
+                    onEnter={() => handleVerifyOtp(otpType)}
+                />
+                <div className="otp-actions">
+                    <button
+                        onClick={() => handleVerifyOtp(otpType)}
+                        className="verify-otp-btn"
+                    >
+                        Verify OTP
+                    </button>
+                    <button
+                        onClick={() => handleOtpClick(otpType)}
+                        disabled={resendTimer[otpType] > 0}
+                        className="resend-otp-btn"
+                    >
+                        {resendTimer[otpType] > 0
+                            ? `Resend OTP (${resendTimer[otpType]}s)`
+                            : 'Resend OTP'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <div className="form-section">
@@ -408,15 +639,15 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
             </div>
 
             <div className="customer-info-grid">
-                <div className="form-group full-width pan-group">
+                <div className="form-group pan-group">
                     <label>PAN No<span className='required'>*</span></label>
                     <div className="input-button-group">
                         <input
                             type="text"
                             value={customerData.panNo}
-                            //to uppercase the input value
-                            onChange={(e) => handleInputChange('panNo', e.target.value.toUpperCase())}
-                            placeholder="Enter PAN no"
+                            onChange={handlePanInput}
+                            placeholder="Enter PAN no here"
+                            maxLength={10}
                             required
                         />
                         <div className="pan-actions">
@@ -429,7 +660,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                             </button>
                             <label className="pan-upload-button">
                                 <FontAwesomeIcon icon={faUpload} />
-                                {isPanImageFetching ? 'Processing...' : 'Upload PAN'}
+                                {isPanImageFetching ? 'Processing...' : 'PAN OCR'}
                                 <input
                                     type="file"
                                     accept="image/*"
@@ -452,12 +683,33 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 </div>
 
                 <div className="form-group">
-                    <label>Customer Name<span className='required'>*</span></label>
+                    <label>First Name<span className='required'>*</span></label>
                     <input
                         type="text"
-                        value={customerData.customerName}
-                        onChange={(e) => handleInputChange('customerName', e.target.value)}
-                        placeholder="Enter customer name"
+                        value={customerData.firstName}
+                        onChange={(e) => handleInputChange('firstName', e.target.value)}
+                        placeholder="Enter first name"
+                        required
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label>Middle Name</label>
+                    <input
+                        type="text"
+                        value={customerData.middleName}
+                        onChange={(e) => handleInputChange('middleName', e.target.value)}
+                        placeholder="Enter middle name"
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label>Last Name<span className='required'>*</span></label>
+                    <input
+                        type="text"
+                        value={customerData.lastName}
+                        onChange={(e) => handleInputChange('lastName', e.target.value)}
+                        placeholder="Enter last name"
                         required
                     />
                 </div>
@@ -470,26 +722,6 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                         onChange={(e) => handleInputChange('fatherOrHusbandName', e.target.value)}
                         placeholder="Enter father/husband name"
                         required
-                    />
-                </div>
-
-
-
-                <div className="form-group">
-                    <label>Mobile No<span className='required'>*</span></label>
-                    <input
-                        type="tel"
-                        pattern="[0-9]*"
-                        maxLength="10"
-                        value={customerData.mobileNo}
-                        onChange={handleMobileInput}
-                        placeholder="Enter primary mobile"
-                        required
-                        onKeyPress={(e) => {
-                            if (!/[0-9]/.test(e.key)) {
-                                e.preventDefault();
-                            }
-                        }}
                     />
                 </div>
 
@@ -508,26 +740,72 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 </div>
 
                 <div className="form-group">
+                    <label>Mobile No<span className='required'>*</span></label>
+                    <div className="input-verify-group">
+                        <input
+                            type="tel"
+                            value={customerData.mobileNo}
+                            onChange={handleMobileInput}
+                            placeholder="Enter mobile number"
+                            required
+                            disabled={otpVerification.isMobileVerified}
+                        />
+                        {otpVerification.isMobileVerified ? (
+                            <span className="verified-badge">
+                                <FontAwesomeIcon className='fontIcon' icon={faCheck} bounce={true} style={{ paddingTop: '4px' }} /> Verified
+                            </span>
+                        ) : (
+                            <button
+                                type="button"
+                                className="verify-button"
+                                onClick={() => handleOtpClick('mobile')}
+                            >
+                                <FontAwesomeIcon icon={faSms} /> Verify
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+
+                <div className="form-group">
                     <label>Email ID<span className='required'>*</span></label>
-                    <input
-                        type="email"
-                        value={customerData.emailId}
-                        onChange={(e) => handleInputChange('emailId', e.target.value)}
-                        placeholder="Enter email"
-                        required
-                    />
+                    <div className="input-verify-group">
+                        <input
+                            type="email"
+                            value={customerData.emailId}
+                            onChange={(e) => handleInputChange('emailId', e.target.value)}
+                            placeholder="Enter email"
+                            required
+                            disabled={otpVerification.isEmailVerified}
+                        />
+                        {otpVerification.isEmailVerified ? (
+                            <span className="verified-badge">
+                                <FontAwesomeIcon className='fontIcon' icon={faCheck} bounce={true} style={{ paddingTop: '4px' }} /> Verified
+                            </span>
+                        ) : (
+                            <button
+                                type="button"
+                                className="verify-button"
+                                onClick={() => handleOtpClick('email')}
+                            >
+                                <FontAwesomeIcon icon={faEnvelope} /> Verify
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="form-group">
                     <label>Aadhar No<span className='required'>*</span></label>
                     <input
                         type="text"
-                        value={customerData.documentNo}
-                        onChange={(e) => handleInputChange('documentNo', e.target.value)}
-                        placeholder="Enter Document No"
+                        value={formatAadhar(customerData?.aadharNo)}
+                        onChange={handleAadharInput}
+                        placeholder="Enter Aadhar (e.g., 1234 5678 9012)"
+                        maxLength={14}
                         required
                     />
                 </div>
+
                 <div className="form-group full-width">
                     <label>Address<span className='required'>*</span></label>
                     <textarea
@@ -538,6 +816,8 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                     ></textarea>
                 </div>
             </div>
+
+            {showOtpModal && <OtpModal />}
         </div>
     );
 };

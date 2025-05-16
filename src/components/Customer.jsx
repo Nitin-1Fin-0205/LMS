@@ -11,11 +11,13 @@ import { faUser, faUserPlus, faVault, faFileAlt, faEye, faPhone, faEnvelope, faS
 import { fetchCustomerByPan, resetForm, updateHolderSection } from '../store/slices/customerSlice';
 import { updateLockerDetails, updateRentDetails, clearAllLockerData } from '../store/slices/lockerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS } from '../constants/holderConstants';
+import { ValidationService } from '../services/ValidationService';
 
 const Customer = () => {
     const dispatch = useDispatch();
     const { form, isSubmitting } = useSelector(state => state.customer);
     const primaryHolder = form.primaryHolder;
+    const secondaryHolder = form.secondaryHolder;
     const lockerData = useSelector(state => state.locker);
     const [formData, setFormData] = useState(() => {
         const savedForm = sessionStorage.getItem('customerSearchForm');
@@ -29,6 +31,7 @@ const Customer = () => {
     const [centers, setCenters] = useState([]);
     const navigate = useNavigate();
     const [activeCard, setActiveCard] = useState(null);
+    const [isEditMode, setIsEditMode] = useState(false);
 
     const fetchCenters = async () => {
         try {
@@ -65,87 +68,64 @@ const Customer = () => {
         if (editData) {
             const { pan, center } = JSON.parse(editData);
             setFormData({ pan, center });
-            handleSubmit(new Event('submit'));
+            setIsEditMode(true);
             sessionStorage.removeItem('editCustomerData');
         }
         fetchCenters();
     }, []);
 
     useEffect(() => {
-        sessionStorage.setItem('customerSearchForm', JSON.stringify(formData));
-    }, [formData]);
+        if (isEditMode && formData.pan && formData.center) {
+            handleSubmit();
+            setIsEditMode(false);
+        }
+    }, [formData.pan, formData.center, isEditMode]);
+
+    const handlePanChange = (e) => {
+        const pan = e.target.value.toUpperCase();
+        const validation = ValidationService.isValidPAN(pan);
+
+        if (pan.length === 10 && !validation.isValid) {
+            toast.error(validation.error);
+        }
+
+        setFormData(prev => ({
+            ...prev,
+            pan
+        }));
+    };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        // Validate form data before submission
+        if (e) {
+            e.preventDefault();
+        }
+
         if (!formData.pan || !formData.center) {
-            toast.error('Please fill all required fields');
+            if (e) toast.error('Please fill all required fields');
+            return;
+        }
+
+        const validation = ValidationService.isValidPAN(formData.pan);
+        if (!validation.isValid) {
+            if (e) toast.error(validation.error);
             return;
         }
 
         try {
             const result = await dispatch(fetchCustomerByPan({
-                pan: formData.pan,
+                pan: formData.pan.trim().toUpperCase(),
                 centerId: formData.center
             })).unwrap();
 
-            if (result.primaryHolder) {
-                dispatch(updateHolderSection({
-                    holder: HOLDER_TYPES.PRIMARY,
-                    section: HOLDER_SECTIONS.CUSTOMER_INFO,
-                    data: result.primaryHolder.customerInfo
-                }));
+            sessionStorage.setItem('customerSearchForm', JSON.stringify(formData));
 
-                // Update attachments if they exist
-                if (result.primaryHolder.attachments) {
-                    dispatch(updateHolderSection({
-                        holder: HOLDER_TYPES.PRIMARY,
-                        section: HOLDER_SECTIONS.ATTACHMENTS,
-                        data: result.primaryHolder.attachments
-                    }));
-                }
-
-                // First update locker details with center
-                dispatch(updateLockerDetails({
-                    center: formData.center,
-                    ...result.lockerDetails,
-                }));
-
-                // Then update rent details if they exist
-                if (result.lockerDetails?.rentDetails) {
-                    dispatch(updateRentDetails(result.lockerDetails.rentDetails));
-                }
-
-                toast.success('Customer details fetched successfully');
-            } else {
-                dispatch(updateHolderSection({
-                    holder: HOLDER_TYPES.PRIMARY,
-                    section: HOLDER_SECTIONS.CUSTOMER_INFO,
-                    data: { panNo: formData.pan }
-                }));
-
-                dispatch(updateLockerDetails({
-                    center: formData.center,
-                    assignedLocker: '',
-                    lockerId: '',
-                    lockerSize: '',
-                    lockerKeyNo: '',
-                    remarks: '',
-                    isModalOpen: false,
-                    isNomineeModalOpen: false,
-                    nominees: []
-                }));
-
-                toast.info('No existing customer found. You can add a new customer.');
-            }
         } catch (error) {
             console.error('Error fetching customer details:', error);
-            toast.error('Failed to fetch customer details');
+            if (e) toast.error('Failed to fetch customer details');
         }
     };
 
     const handleReset = () => {
-        // Reset to initial empty values, not undefined
         setFormData({ pan: '', center: '' });
         dispatch(resetForm());
         dispatch(clearAllLockerData());
@@ -159,18 +139,17 @@ const Customer = () => {
                     <label>PAN Number</label>
                     <input
                         type="text"
-                        value={formData.pan || ''} // Ensure value is never undefined
-                        onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            pan: e.target.value
-                        }))}
+                        value={formData.pan || ''}
+                        onChange={handlePanChange}
+                        maxLength={10}
+                        // placeholder="AAAPL1234A"
                         required
                     />
                 </div>
                 <div className="form-group">
                     <label>Locker Center</label>
                     <select
-                        value={formData.center || ''} // Ensure value is never undefined
+                        value={formData.center || ''}
                         onChange={(e) => setFormData(prev => ({
                             ...prev,
                             center: e.target.value
@@ -188,11 +167,10 @@ const Customer = () => {
                 <div className="fetch-cust-actions">
                     <button type="submit" className="fetch-button" disabled={isSubmitting}>
                         {isSubmitting ? (
-                            <span>Fetching... <FontAwesomeIcon icon={faSpinner} /></span>
+                            <span>Fetching... &nbsp; <FontAwesomeIcon icon={faSpinner} spin /></span>
                         ) : (
                             <span>
-                                Fetch Customer
-                                <FontAwesomeIcon icon={faDownload} />
+                                Fetch Customer &nbsp; <FontAwesomeIcon icon={faDownload} />
                             </span>
                         )}
                     </button>
@@ -251,7 +229,7 @@ const Customer = () => {
                 <button
                     className={`card-button ${activeCard === 'third' ? 'active' : ''}`}
                     onClick={handleThirdHolder}
-                    disabled={!primaryHolder?.customerInfo?.customerId}
+                    disabled={!secondaryHolder?.customerInfo?.customerId}
                 >
                     <div className="card-icon">
                         <FontAwesomeIcon icon={faUserPlus} />
@@ -272,7 +250,7 @@ const Customer = () => {
                         </span>
                     </div>
 
-                    <div className="preview-content">
+                    <div className="profile-preview-content">
                         <div className="preview-left">
                             <div className="customer-photo">
                                 {primaryHolder.customerInfo.photo ? (
@@ -288,7 +266,7 @@ const Customer = () => {
 
                         <div className="preview-info">
                             <div className="preview-row">
-                                <h4>{primaryHolder.customerInfo.customerName}</h4>
+                                <h4>{primaryHolder.customerInfo.firstName} {primaryHolder.customerInfo.lastName}</h4>
                                 <span className="badge">{primaryHolder.customerInfo.gender}</span>
                             </div>
                             <div className="contact-info">
@@ -301,6 +279,7 @@ const Customer = () => {
                             </div>
                         </div>
 
+                        {/* Commented out preview-docs section
                         <div className="preview-docs">
                             <h5>Uploaded Documents</h5>
                             <div className="doc-list">
@@ -327,6 +306,7 @@ const Customer = () => {
                                 ))}
                             </div>
                         </div>
+                        */}
                     </div>
                 </div>
             )}

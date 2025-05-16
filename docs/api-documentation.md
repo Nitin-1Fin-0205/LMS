@@ -66,7 +66,7 @@
     "mobileNo": "string",
     "emailId": "string",
     "panNo": "string",
-    "documentNo": "string",
+    "aadharNo": "string",
     "address": "string"
   }
 }
@@ -237,7 +237,7 @@ Notes:
       "mobileNo": "string",
       "emailId": "string",
       "panNo": "string",
-      "documentNo": "string",
+      "aadharNo": "string",
       "address": "string",
       "status": "string"
     },

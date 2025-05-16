@@ -1,19 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import CustomerInfo from './CustomerInfo';
 import Attachments from './Attachments';
-import { API_URL } from '../assets/config';
-import { updateHolderSection } from '../store/slices/customerSlice';
+import { updateHolderSection, submitCustomerInfo, fetchCustomerById } from '../store/slices/customerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS, HOLDER_STAGES } from '../constants/holderConstants';
 import '../styles/SecondaryHolder.css';
 
 const ThirdHolder = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
     const thirdHolder = useSelector(state => state.customer.form.thirdHolder);
     const [currentStage, setCurrentStage] = useState(HOLDER_STAGES.CUSTOMER_INFO);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        const fetchThirdHolderDetails = async () => {
+            try {
+                const thirdHolderId = thirdHolder?.customerInfo?.customerId;
+                if (thirdHolderId) {
+                    await dispatch(fetchCustomerById({
+                        customerId: thirdHolderId,
+                        holderType: HOLDER_TYPES.THIRD
+                    })).unwrap();
+                }
+            } catch (error) {
+                toast.error('Failed to fetch third holder details');
+            }
+        };
+
+        fetchThirdHolderDetails();
+    }, [dispatch, thirdHolder?.customerInfo?.customerId]);
 
     const handleCustomerInfoUpdate = (data) => {
         dispatch(updateHolderSection({
@@ -29,6 +48,51 @@ const ThirdHolder = () => {
             section: HOLDER_SECTIONS.ATTACHMENTS,
             data
         }));
+    };
+
+    const handleSaveCustomerInfo = async () => {
+        try {
+            setIsSubmitting(true);
+            const primaryCustomerId = location.state?.customer?.customerInfo?.customerId;
+
+            const submitData = {
+                customer_id: thirdHolder.customerInfo.customerId,
+                first_name: thirdHolder.customerInfo.firstName,
+                middle_name: thirdHolder.customerInfo.middleName,
+                last_name: thirdHolder.customerInfo.lastName,
+                pan: thirdHolder.customerInfo.panNo,
+                aadhar: thirdHolder.customerInfo.aadharNo,
+                gender: thirdHolder.customerInfo.gender,
+                address: thirdHolder.customerInfo.address,
+                guardian_name: thirdHolder.customerInfo.fatherOrHusbandName,
+                dob: thirdHolder.customerInfo.dateOfBirth,
+                mobile_number: thirdHolder.customerInfo.mobileNo,
+                email: thirdHolder.customerInfo.emailId,
+                image_base64: thirdHolder.customerInfo.photo,
+                locker_center_id: 1,
+                parent_customer_id: primaryCustomerId,
+            };
+
+            const result = await dispatch(submitCustomerInfo(submitData)).unwrap();
+
+            if (!result.customerId) {
+                throw new Error('Failed to create third holder');
+            }
+
+            toast.success('Third holder info saved successfully!');
+        } catch (error) {
+            toast.error(error.message || 'Failed to save third holder info');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleNext = () => {
+        if (!thirdHolder.customerInfo.customerId) {
+            toast.error('Please save customer information first');
+            return;
+        }
+        setCurrentStage(HOLDER_STAGES.ATTACHMENTS);
     };
 
     const handleSubmit = async () => {
@@ -69,12 +133,25 @@ const ThirdHolder = () => {
                             onUpdate={handleCustomerInfoUpdate}
                         />
                         <div className="stage-actions">
-                            <button className="back-button" onClick={() => navigate(-1)}>
-                                Back
-                            </button>
-                            <button className="next-button" onClick={() => setCurrentStage(HOLDER_STAGES.ATTACHMENTS)}>
-                                Next
-                            </button>
+                            <div className="action-buttons">
+                                <button className="back-button" onClick={() => navigate(-1)}>
+                                    Back
+                                </button>
+                                <button
+                                    className="save-button"
+                                    onClick={handleSaveCustomerInfo}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Saving...' : 'Save'}
+                                </button>
+                                <button
+                                    className="next-button"
+                                    onClick={handleNext}
+                                    disabled={!thirdHolder.customerInfo.customerId}
+                                >
+                                    Next
+                                </button>
+                            </div>
                         </div>
                     </>
                 ) : (
@@ -84,6 +161,7 @@ const ThirdHolder = () => {
                                 holderType="thirdHolder"
                                 onUpdate={handleAttachmentsUpdate}
                                 initialData={thirdHolder.attachments}
+                                customerId={thirdHolder.customerInfo.customerId}
                             />
                         </div>
                         <div className="stage-actions">

@@ -5,14 +5,14 @@ import { ROUTES } from '../../constants/routes';
 const PrivateRoute = ({ children, requiredRoles = [] }) => {
     const { auth } = useAuth();
     const location = useLocation();
+    const token = localStorage.getItem('authToken');
 
-    if (!auth.isAuthenticated) {
-        sessionStorage.setItem('redirectPath', location.pathname);
-        return <Navigate to={ROUTES.FORBIDDEN} replace state={{ from: location }} />;
+    if (!token || !auth.isAuthenticated) {
+        return <Navigate to="/" replace />;
     }
 
     if (requiredRoles.length > 0 && !requiredRoles.includes(auth.role)) {
-        return <Navigate to={ROUTES.FORBIDDEN} replace />;
+        return <Navigate to="/" replace />;
     }
 
     return children;

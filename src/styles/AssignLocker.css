@@ -75,11 +75,13 @@
     border-radius: 12px;
     width: 90%;
     max-width: 1200px;
-    max-height: 90vh;
-    overflow-y: auto;
+    height: 90vh; 
     position: relative;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     animation: modalFadeIn 0.3s ease-out;
+    overflow: hidden; 
+    display: flex;
+    flex-direction: column;
 }
 
 @keyframes modalFadeIn {
@@ -122,6 +124,8 @@
     grid-template-columns: minmax(250px, 1fr) minmax(300px, 2fr);
     gap: 20px;
     width: 100%;
+    flex: 1;
+    overflow: hidden; /* Prevent container from scrolling */
 }
 
 .assign-locker-form {
@@ -130,6 +134,8 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    overflow-y: auto; /* Allow form to scroll if needed */
+    padding-right: 10px;
 }
 
 /* Form Actions Section */
@@ -215,33 +221,50 @@
     width: 100%;
     min-width: 300px;
     background-color: #f9f9f9;
-    padding: 10px;
+    padding: 20px;
     border: 1px solid #ccc;
     border-radius: 5px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .cabinet-view h4 {
+    position: sticky;
+    top: 0;
+    background: #f9f9f9;
+    margin: 0;
+    padding: 10px 0;
     text-align: center;
-    margin-bottom: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #344767;
+    border-bottom: 1px solid #eee;
+    z-index: 10;
 }
 
-/* Locker grid styling */
 .locker-grid {
-    max-height: 70vh;
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 10px;
     align-items: center;
-    overflow: auto;
     padding: 10px;
+    overflow-y: auto;
+    min-width: fit-content;
 }
 
 .locker-row {
     display: flex;
-    gap: 5px;
+    gap: 10px;
+    width: 100%;
+    justify-content: center;
+    padding: 0 20px; /* Add padding to prevent edge cropping */
 }
 
 .locker-item {
+    min-width: 150px; /* Set minimum width */
     width: 150px;
     height: 80px;
     position: relative;
@@ -249,11 +272,8 @@
     align-items: center;
     justify-content: center;
     padding: 2px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border-radius: 5px;
+    margin: 0; /* Reset any margins */
+    flex-shrink: 0; /* Prevent shrinking */
 }
 
 .locker-item div {
@@ -361,20 +381,16 @@
     .assign-locker-container {
         grid-template-columns: 1fr;
     }
-
     .assign-locker-modal-content {
         width: 95vw;
         padding: 15px;
     }
-
     .cabinet-view {
         min-width: 100%;
     }
-
     .reserved-lockers-list {
         justify-content: center;
     }
-    
     .reserved-locker-button {
         min-width: 120px;
         text-align: center;

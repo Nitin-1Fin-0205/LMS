@@ -50,6 +50,7 @@ button {
   --primary-dark: #000000;
   --primary-hover: #444444;
   --primary-light: #f0f0f0;
+  --primary-green-background: #48bb78;
   
   /* Background Colors */
   --bg-gradient-light: linear-gradient(145deg, #ffffff, #e6e6e6);

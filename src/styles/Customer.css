@@ -248,10 +248,24 @@
     font-weight: 500;
 }
 
-.preview-content {
+.profile-preview-content {
     display: flex;
     padding: 16px;
     gap: 24px;
+
+    max-width: 90%;
+    max-height: 90vh;
+    position: relative;
+}
+
+
+.profile-preview-content img {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+    background: #fff;
+    padding: 0.2rem;
+    border-radius: 4px;
 }
 
 .preview-left {

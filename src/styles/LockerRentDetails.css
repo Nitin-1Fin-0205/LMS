@@ -129,7 +129,7 @@
 .form-group {
     display: flex;
     flex-direction: row;
-    margin-bottom: 16px;
+    margin-bottom: 5px;
 }
 .form-group label {
     color: #495057;
@@ -178,8 +178,9 @@ input[type="text"][readonly] {
 /* Add Center Button Style */
 .add-center-button {
     padding: 8px;
-    background: var(--primary-dark);
-    color: white;
+    background: var(--primary-green-background);
+    /* background: var(--primary-dark);*/
+    color: white; 
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -194,7 +195,8 @@ input[type="text"][readonly] {
 }
 
 .add-center-button:hover {
-    background: var(--primary-hover);
+    /* background: var(--primary-hover); */
+    background: #38a169;
     transform: translateY(-1px);
 }
 

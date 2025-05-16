@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
-import { updateLockerDetails, updateRentDetails, fetchLockerDetails } from '../store/slices/lockerSlice';
+import { updateLockerDetails, updateRentDetails } from '../store/slices/lockerSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import AssignLocker from './AssignLocker';
@@ -10,7 +10,7 @@ import AddNominee from './AddNominee';
 import '../styles/LockerRentDetails.css';
 import axios from 'axios';
 
-const LockerRentDetails = ({ onUpdate, initialData, centers, isLoadingCenters, holderType }) => {
+const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
     const dispatch = useDispatch();
     const { lockerDetails } = useSelector(state => state.locker);
     const [lockerPlans, setLockerPlans] = useState([]);
@@ -40,7 +40,7 @@ const LockerRentDetails = ({ onUpdate, initialData, centers, isLoadingCenters, h
 
             if (response.status === 200 || response.status === 201) {
                 setLockerPlans(response.data.plans || []);
-                toast.success('Plans fetched successfully');
+                // toast.success('Plans fetched successfully');
             }
         } catch (error) {
             console.error('Error fetching plans:', error);
@@ -56,6 +56,28 @@ const LockerRentDetails = ({ onUpdate, initialData, centers, isLoadingCenters, h
         }
     }, [lockerDetails.lockerId]);
 
+    useEffect(() => {
+        const fetchPlanAndUpdateRent = async () => {
+            if (lockerDetails?.selectedPlan && lockerPlans.length > 0) {
+                const selectedPlan = lockerPlans.find(plan =>
+                    Number(plan.planId) === Number(lockerDetails.selectedPlan)
+                );
+                if (selectedPlan) {
+                    dispatch(updateLockerDetails({
+                        rentDetails: {
+                            deposit: selectedPlan.deposit,
+                            rent: selectedPlan.baseRent,
+                            admissionFees: selectedPlan.admissionFees,
+                            total: selectedPlan.grandTotalAmount
+                        }
+                    }));
+                }
+            }
+        };
+
+        fetchPlanAndUpdateRent();
+    }, [lockerDetails.selectedPlan, lockerPlans, dispatch]);
+
     const handleLockerAssign = async (locker) => {
         dispatch(updateLockerDetails({
             assignedLocker: locker?.locker_number || "",
@@ -63,19 +85,21 @@ const LockerRentDetails = ({ onUpdate, initialData, centers, isLoadingCenters, h
             lockerSize: locker?.size || "",
             isModalOpen: false
         }));
+        console.log("Locker assigned:", locker);
 
-        if (locker?.locker_id) {
-            try {
-                await dispatch(fetchLockerDetails(locker.locker_id)).unwrap();
-            } catch (error) {
-                console.error('Error fetching locker details:', error);
-            }
-        }
+        // if (locker?.locker_id) {
+        //     try {
+        //         await dispatch(fetchLockerDetails(locker.locker_id)).unwrap();
+        //     } catch (error) {
+        //         console.error('Error fetching locker details:', error);
+        //     }
+        // }
     };
 
     const handlePlanSelect = (planId) => {
         const selectedPlan = lockerPlans.find(plan => plan.planId === planId);
         if (selectedPlan) {
+            console.log("Selected plan:", selectedPlan);
             // Update lockerDetails with plan information
             dispatch(updateLockerDetails({
                 selectedPlan: planId,
@@ -137,8 +161,9 @@ const LockerRentDetails = ({ onUpdate, initialData, centers, isLoadingCenters, h
                         <input
                             type="text"
                             placeholder="Enter locker key no"
-                            value={lockerDetails.lockerKeyNo || ''}
-                            onChange={(e) => handleInputChange('lockerKeyNo', e.target.value)}
+                            value={lockerDetails.lockerKey || ''}
+                            onChange={(e) => handleInputChange('lockerKey', e.target.value)}
+                            readOnly
                         />
                     </div>
                 </div>

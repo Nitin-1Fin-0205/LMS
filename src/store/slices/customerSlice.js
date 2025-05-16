@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '../../assets/config';
-import { CustomerFormModel } from '../../models/CustomerModel';
+import { HOLDER_TYPES } from '../../constants/holderConstants';
+import { CustomerFormModel } from '../../models/customerModel';
 
 const initialState = {
     isSubmitting: false,
@@ -11,212 +12,110 @@ const initialState = {
     form: { ...CustomerFormModel }
 };
 
+// This API is used to fetch customer details by PAN number
 export const fetchCustomerByPan = createAsyncThunk(
     'customer/fetchByPan',
     async ({ pan, centerId }, { rejectWithValue }) => {
+
         try {
-            return {
-                primaryHolder: {
-                    customerInfo: {
-                        photo: 'https://t4.ftcdn.net/jpg/02/90/27/39/360_F_290273933_ukYZjDv8nqgpOBcBUo5CQyFcxAzYlZRW.jpg',
-                        customerId: 'CUST001',
-                        customerName: 'John Doe',
-                        fatherOrHusbandName: 'Richard Doe',
-                        dateOfBirth: '1990-01-01',
-                        gender: 'MALE',
-                        mobileNo: '9876543210',
-                        emailId: 'john@example.com',
-                        panNo: pan,
-                        documentNo: 'AADHAR123456',
-                        address: '123 Main Street, City',
-                    },
-                    biometric: {
-                        fingerprints: []
-                    },
-                    attachments: {
-                        identityProof: [{
-                            id: 'doc1',
-                            name: 'PAN Card.pdf',
-                            type: 'application/pdf',
-                            size: 1024 * 1024,
-                            data: 'base64data...',
-                            category: 'identityProof'
-                        }],
-                        addressProof: [{
-                            id: 'doc2',
-                            name: 'Aadhar Card.jpg',
-                            type: 'image/jpeg',
-                            size: 2 * 1024 * 1024,
-                            data: 'base64data...',
-                            category: 'addressProof'
-                        }],
-                        contactDocument: [],
-                        otherDocument: []
-                    }
+            const token = localStorage.getItem('authToken');
+            const response = await axios.get(`${API_URL}/customers/details?pan=${pan}&locker_center_id=${centerId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
                 },
-                lockerDetails: {
-                    lockerId: '1',
-                    assignedLocker: 'TH001',
-                    lockerSize: 'Large',
-                    lockerKeyNo: '123456',
-                    isModalOpen: false,
-                    isNomineeModalOpen: false,
-                    nominees: [
-                        {
-                            name: 'Alice Doe', relation: 'Sister',
-                            dob: '1998-04-04'
-                        },
-                        { name: 'Bob Doe', relation: 'Brother', dob: '2000-05-05' }
-                    ],
-                    rentDetails: {
-                        deposit: '10000',
-                        rent: '500',
-                        admissionFees: '1000',
-                        total: '11500',
-                        selectedPlan: 'Annual Plan',
-                        contractNumber: 'CONTRACT001',
-                        moveInDate: '2023-01-01',
-                        anticipatedMoveOutDate: '2024-01-01'
-                    }
-                },
-                secondaryHolder: {
-                    customerInfo: {
-                        customerId: 'CUST002',
-                        customerName: 'Jane Doe',
-                        fatherOrHusbandName: 'Richard Doe',
-                        dateOfBirth: '1992-02-02',
-                        gender: 'Female',
-                        mobileNo: '9876543211',
-                        emailId: 'jane@example.com',
-                        panNo: 'ABCDE1235F',
-                        documentNo: 'AADHAR123457',
-                        address: '123 Main Street, City',
-                        photo: 'https://media.istockphoto.com/id/615279718/photo/businesswoman-portrait-on-white.jpg?s=612x612&w=0&k=20&c=Aa2Vy4faAPe9fAE68Z01jej9YqPqy-RbAteIlF3wcjk='
-                    },
-                    attachments: {
-                        identityProof: [{
-                            id: 'doc3',
-                            name: 'PAN Card.pdf',
-                            type: 'application/pdf',
-                            size: 1024 * 1024,
-                            data: 'base64data...',
-                            category: 'identityProof'
-                        }],
-                        addressProof: [{
-                            id: 'doc4',
-                            name: 'Aadhar Card.jpg',
-                            type: 'image/jpeg',
-                            size: 2 * 1024 * 1024,
-                            data: 'base64data...',
-                            category: 'addressProof'
-                        }],
-                        contactDocument: [],
-                        otherDocument: []
-                    }
-                },
-                thirdHolder: {
-                    customerInfo: {
-                        customerId: 'CUST003',
-                        customerName: 'Jim Doe',
-                        fatherOrHusbandName: 'Richard Doe',
-                        dateOfBirth: '1995-03-03',
-                        gender: 'Male',
-                        mobileNo: '9876543212',
-                        emailId: 'jim@example.com',
-                        panNo: 'ABCDE1236F',
-                        documentNo: 'AADHAR123458',
-                        address: '123 Main Street, City',
-                        photo: `https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS95oxnB_1Qr8KwPY3VHtBJCim7YQIPBC_VGw&s`
-                    },
-                    attachments: {
-                        identityProof: [{
-                            id: 'doc5',
-                            name: 'PAN Card.pdf',
-                            type: 'application/pdf',
-                            size: 1024 * 1024,
-                            data: 'base64data...',
-                            category: 'identityProof'
-                        }],
-                        addressProof: [{
-                            id: 'doc6',
-                            name: 'Aadhar Card.jpg',
-                            type: 'image/jpeg',
-                            size: 2 * 1024 * 1024,
-                            data: 'base64data...',
-                            category: 'addressProof'
-                        }],
-                        contactDocument: [],
-                        otherDocument: []
-                    }
-                }
-            };
+            });
+
+            if (response.status !== 200 && response.status !== 201) {
+                throw new Error('Failed to fetch customer info');
+            }
+            if (response.data.status_code !== 200) {
+                throw new Error(response.data.message || 'Failed to fetch customer info');
+            }
+            if (!response.data.data) {
+                throw new Error('No customer data found');
+            }
+            if (!response.data.data.member_id) {
+                throw new Error('Invalid member ID');
+            }
+
+            return response.data.data;
+
         } catch (error) {
-            return rejectWithValue(error.response?.data || { message: 'Failed to fetch customer details' });
+            return rejectWithValue('Failed to fetch customer info');
         }
     }
 );
 
-export const submitStageData = createAsyncThunk(
-    'customer/submitStage',
-    async ({ holder, stage, data }, { rejectWithValue }) => {
-        try {
-            // const token = localStorage.getItem('authToken');
-            // const response = await axios.post(
-            //     `${API_URL}${STAGE_ENDPOINTS[stage]}`,
-            //     { holder, data },
-            //     {
-            //         headers: {
-            //             'Authorization': `Bearer ${token}`,
-            //             'Content-Type': 'application/json'
-            //         }
-            //     }
-            // );
+// export const fetchCustomerAttachments = createAsyncThunk(
+//     'customer/fetchAttachments',
+//     async (customerId, { rejectWithValue }) => {
+//         try {
+//             const token = localStorage.getItem('authToken');
+//             const response = await axios.get(`${API_URL}/customers/${customerId}/attachments`, {
+//                 headers: { 'Authorization': `Bearer ${token}` }
+//             });
+//             return response.data;
+//         } catch (error) {
+//             return rejectWithValue('Failed to fetch attachments');
+//         }
+//     }
+// );
 
-            const response = await {
-                status: 200,
-                data: {
-                    customerId: '1',
-                    message: 'Stage data submitted successfully',
-                    holder,
-                    stage,
-                    data
-                }
-            };
+export const fetchBiometricData = createAsyncThunk(
+    'customer/fetchBiometric',
+    async (customerId, { rejectWithValue }) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.get(`${API_URL}/customers/${customerId}/biometric`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             return response.data;
         } catch (error) {
-            return rejectWithValue(error.response?.data || 'Failed to submit stage data');
+            return rejectWithValue('Failed to fetch biometric data');
         }
     }
 );
 
+// This API is used to fetch customer details by ID
+export const fetchCustomerById = createAsyncThunk(
+    'customer/fetchById',
+    async ({ customerId, holderType }, { rejectWithValue }) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.get(`${API_URL}/customers/details-by-id?customer_id=${customerId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.data?.data) {
+                throw new Error('No customer data found');
+            }
+
+            return {
+                ...response.data.data,
+                holderType
+            };
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch customer details');
+        }
+    }
+);
+
+// This API is used to create a new customer or update an existing one
 export const submitCustomerInfo = createAsyncThunk(
     'customer/submitCustomerInfo',
     async (customerData, { rejectWithValue }) => {
         console.log('Submitting customer data:', customerData);
         try {
-            // const token = localStorage.getItem('authToken');
-            // const response = await axios.post(
-            //     `${API_URL}/customers/create`,
-            //     customerData,
-            //     {
-            //         headers: {
-            //             'Authorization': `Bearer ${token}`,
-            //             'Content-Type': 'application/json'
-            //         }
-            //     }
-            // );
-            // // Mock response for testing
-
-            const response = await {
-                status: 200,
-                data: {
-                    customerId: 'CUST001',
-                    message: 'Customer created successfully'
-                }
-            };
-
+            const response = await axios.post(`${API_URL}/customers/add-update/personal-details`, customerData);
             if (response.status === 200 || response.status === 201) {
-                return response.data;
+
+                return {
+                    customerId: response?.data?.data?.customer_id,
+                };
             }
             throw new Error('Failed to create customer');
         } catch (error) {
@@ -230,8 +129,6 @@ const customerSlice = createSlice({
     initialState,
     reducers: {
         updateHolderSection: (state, action) => {
-
-            console.log('Updating holder section:', action.section);
             const { holder, section, data } = action.payload;
             state.form[holder][section] = {
                 ...state.form[holder][section],
@@ -245,35 +142,87 @@ const customerSlice = createSlice({
             .addCase(fetchCustomerByPan.pending, (state) => {
                 state.isSubmitting = true;
                 state.error = null;
+                // Reset all sections of both holders when fetching by PAN
+                state.form.primaryHolder = { ...CustomerFormModel.primaryHolder };
             })
             .addCase(fetchCustomerByPan.fulfilled, (state, action) => {
                 state.isSubmitting = false;
                 state.error = null;
+                state.customerId = action.payload.customer_id;
+                // Map API response to primaryHolder customerInfo
+                state.form.primaryHolder.customerInfo = {
+                    ...state.form.primaryHolder.customerInfo,
+                    memberId: action.payload.member_id,
+                    customerId: action.payload.customer_id,
+                    firstName: action.payload.first_name,
+                    middleName: action.payload.middle_name,
+                    lastName: action.payload.last_name,
+                    dateOfBirth: action.payload.dob,
+                    emailId: action.payload.email,
+                    mobileNo: action.payload.mobile_number,
+                    panNo: action.payload.pan,
+                    gender: action.payload.gender.toUpperCase(),
+                    aadharNo: action.payload.aadhar,
+                    fatherOrHusbandName: action.payload.guardian,
+                    photo: action.payload.profile_img,
+                    customerCode: action.payload.customer_code,
+                    lockerCenterId: action.payload.locker_center_id,
+                    type: action.payload.type,
+                    address: action.payload.address,
+                };
 
-                ['primaryHolder', 'secondaryHolder', 'thirdHolder'].forEach(holder => {
-                    console.log('Holder:', holder, action.payload[holder]);
-                    if (action.payload[holder]) {
-                        Object.keys(action.payload[holder]).forEach(section => {
-                            state.form[holder][section] = {
-                                ...state.form[holder][section],
-                                ...action.payload[holder][section]
-                            };
-                        });
-                    }
-                });
+                state.form.secondaryHolder.customerInfo = {
+                    ...state.form.secondaryHolder.customerInfo,
+                    customerId: action.payload.secondary_holder_id
+                };
+
+                state.form.thirdHolder.customerInfo = {
+                    ...state.form.thirdHolder.customerInfo,
+                    customerId: action.payload.third_holder_id
+                };
+
             })
             .addCase(fetchCustomerByPan.rejected, (state, action) => {
                 state.isSubmitting = false;
                 state.error = action.payload;
             })
-            .addCase(submitStageData.pending, (state) => {
+            .addCase(fetchBiometricData.fulfilled, (state, action) => {
+                state.form.primaryHolder.biometric = action.payload;
+            })
+            .addCase(fetchCustomerById.pending, (state) => {
                 state.isSubmitting = true;
                 state.error = null;
             })
-            .addCase(submitStageData.fulfilled, (state, action) => {
+            .addCase(fetchCustomerById.fulfilled, (state, action) => {
                 state.isSubmitting = false;
+                state.error = null;
+                const customerData = action.payload;
+                const holderType = customerData.holderType;
+
+                const customerInfo = {
+                    customerId: customerData.customer_id,
+                    firstName: customerData.first_name,
+                    middleName: customerData.middle_name,
+                    lastName: customerData.last_name,
+                    dateOfBirth: customerData.dob,
+                    emailId: customerData.email,
+                    mobileNo: customerData.mobile_number,
+                    panNo: customerData.pan,
+                    gender: customerData.gender.toUpperCase(),
+                    aadharNo: customerData.aadhar,
+                    fatherOrHusbandName: customerData.guardian,
+                    photo: customerData.profile_img,
+                    address: customerData.address
+                };
+
+                // Update the correct holder based on holderType
+                if (holderType === HOLDER_TYPES.SECONDARY) {
+                    state.form.secondaryHolder.customerInfo = customerInfo;
+                } else if (holderType === HOLDER_TYPES.THIRD) {
+                    state.form.thirdHolder.customerInfo = customerInfo;
+                }
             })
-            .addCase(submitStageData.rejected, (state, action) => {
+            .addCase(fetchCustomerById.rejected, (state, action) => {
                 state.isSubmitting = false;
                 state.error = action.payload;
             })

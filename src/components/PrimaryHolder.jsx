@@ -9,7 +9,7 @@ import Attachments from './Attachments';
 import { API_URL } from '../assets/config';
 import '../styles/PrimaryHolder.css';
 import { useNavigate } from 'react-router-dom';
-import { updateHolderSection, submitStageData, submitCustomerInfo } from '../store/slices/customerSlice';
+import { updateHolderSection, submitCustomerInfo } from '../store/slices/customerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS, HOLDER_STAGES, STAGE_STATUS } from '../constants/holderConstants';
 
 const PrimaryHolder = () => {
@@ -47,72 +47,35 @@ const PrimaryHolder = () => {
         }));
     };
 
-    const handleAttachmentsUpdate = (data) => {
-        dispatch(updateHolderSection({
-            holder: HOLDER_TYPES.PRIMARY,
-            section: HOLDER_SECTIONS.ATTACHMENTS,
-            data
-        }));
-    };
-
-    const handleSubmit = async () => {
-        try {
-            const token = localStorage.getItem('authToken');
-
-            const submitData = {
-                customerInfo: formData.customerInfo,
-                biometric: formData.biometric
-            };
-
-            const response = await axios.post(
-                `${API_URL}/customers/add`,
-                submitData,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-
-            if (response.status === 200) {
-                toast.success('Primary holder added successfully!');
-                navigate(-1);
-            }
-        } catch (error) {
-            toast.error(error?.response?.data?.message || 'Failed to add primary holder');
-        }
-    };
-
-    const handleStageTransition = () => {
-        switch (currentStage) {
-            case HOLDER_STAGES.CUSTOMER_INFO:
-                setCurrentStage(HOLDER_STAGES.ATTACHMENTS);
-                break;
-            case HOLDER_STAGES.ATTACHMENTS:
-                setCurrentStage(HOLDER_STAGES.BIOMETRIC);
-                break;
-            case HOLDER_STAGES.BIOMETRIC:
-                handleSubmit();
-                break;
-            default:
-                break;
-        }
+    const handleStageTransition = async (newStage) => {
+        // // Fetch attachments when moving to attachments stage
+        // if (newStage === HOLDER_STAGES.ATTACHMENTS && customerId) {
+        //     try {
+        //         await dispatch(fetchCustomerAttachments(customerId)).unwrap();
+        //     } catch (error) {
+        //         toast.error('Failed to fetch customer documents');
+        //         console.error('Error fetching attachments:', error);
+        //     }
+        // }
+        setCurrentStage(newStage);
     };
 
     const validateStageData = (stage) => {
         const data = getStageData(stage);
+        console.log('Validating data for stage:', stage, data);
         switch (stage) {
             case HOLDER_STAGES.CUSTOMER_INFO:
                 const requiredFields = [
-                    'customerName',
+                    'firstName',
+                    'middleName',
+                    'lastName',
                     'fatherOrHusbandName',
                     'dateOfBirth',
                     'gender',
                     'mobileNo',
                     'emailId',
                     'panNo',
-                    'documentNo',
+                    'aadharNo',
                     'address',
                     'photo'
                 ];
@@ -124,14 +87,6 @@ const PrimaryHolder = () => {
                 break;
 
             case HOLDER_STAGES.ATTACHMENTS:
-                // const requiredDocs = ['identityProof', 'addressProof'];
-                // const missingDocs = requiredDocs.filter(docType =>
-                //     !data[docType] || data[docType].length === 0
-                // );
-                // if (missingDocs.length > 0) {
-                //     toast.error(`Please upload required documents: ${missingDocs.join(', ')}`);
-                //     return false;
-                // }
                 break;
 
             case HOLDER_STAGES.BIOMETRIC:
@@ -151,34 +106,49 @@ const PrimaryHolder = () => {
             }
 
             if (currentStage === HOLDER_STAGES.CUSTOMER_INFO) {
-                const result = await dispatch(submitCustomerInfo(formData.customerInfo)).unwrap();
+                const submitData = {
+                    customer_id: formData.customerInfo.customerId,
+                    first_name: `${formData.customerInfo.firstName}`,
+                    middle_name: `${formData.customerInfo.middleName}`,
+                    last_name: `${formData.customerInfo.lastName}`,
+                    pan: formData.customerInfo.panNo,
+                    aadhar: formData.customerInfo.aadharNo,
+                    gender: formData.customerInfo.gender,
+                    address: formData.customerInfo.address,
+                    guardian_name: formData.customerInfo.fatherOrHusbandName,
+                    dob: formData.customerInfo.dateOfBirth,
+                    mobile_number: formData.customerInfo.mobileNo,
+                    email: formData.customerInfo.emailId,
+                    image_base64: formData.customerInfo.photo,
+                    locker_center_id: formData.customerInfo.lockerCenterId,
+                };
+                const result = await dispatch(submitCustomerInfo(submitData)).unwrap();
+
+                console.log('Customer Info Submission Result:', result);
                 if (!result.customerId) {
                     throw new Error('Failed to create customer');
+                } else {
+                    toast.success('Customer details saved successfully!');
+                    setStageStatus(prev => ({
+                        ...prev,
+                        [currentStage]: STAGE_STATUS.COMPLETED
+                    }));
+                    handleStageTransition(HOLDER_STAGES.ATTACHMENTS);
+                    return;
                 }
-            } else if (!customerId) {
+            }
+            if (!customerId) {
                 toast.error('Please complete customer information first');
                 setCurrentStage(HOLDER_STAGES.CUSTOMER_INFO);
                 return;
             }
-
-            // For other stages, include customerId in the payload
-            const stageData = {
-                customerId,
-                ...getStageData(currentStage)
-            };
-
-            await dispatch(submitStageData({
-                holder: HOLDER_TYPES.PRIMARY,
-                stage: currentStage,
-                data: stageData
-            })).unwrap();
 
             setStageStatus(prev => ({
                 ...prev,
                 [currentStage]: STAGE_STATUS.COMPLETED
             }));
 
-            handleStageTransition();
+            handleStageTransition(currentStage === HOLDER_STAGES.ATTACHMENTS ? HOLDER_STAGES.BIOMETRIC : HOLDER_STAGES.CUSTOMER_INFO);
         } catch (error) {
             setStageStatus(prev => ({
                 ...prev,
@@ -202,7 +172,6 @@ const PrimaryHolder = () => {
     };
 
     const validateAndSubmitStage = () => {
-        // Add validation logic here if needed
         submitCurrentStage();
     };
 
@@ -220,6 +189,14 @@ const PrimaryHolder = () => {
         return `${baseClass} ${isActive ? 'active' : ''} ${status === STAGE_STATUS.COMPLETED ? 'completed' : ''} ${isLocked ? 'locked' : ''}`;
     };
 
+    const handleNextStage = () => {
+        const nextStage = currentStage === HOLDER_STAGES.CUSTOMER_INFO
+            ? HOLDER_STAGES.ATTACHMENTS
+            : HOLDER_STAGES.BIOMETRIC;
+
+        handleStageTransition(nextStage);
+    };
+
     const renderStage = () => {
         switch (currentStage) {
             case HOLDER_STAGES.CUSTOMER_INFO:
@@ -228,19 +205,27 @@ const PrimaryHolder = () => {
                         <CustomerInfo
                             initialData={formData.customerInfo}
                             onUpdate={handleCustomerInfoUpdate}
-                            holderType="primaryHolder"
                         />
                         <div className="stage-actions">
-                            <button className="back-button" onClick={() => navigate(-1)}>
-                                Back
-                            </button>
-                            <button
-                                className="next-button"
-                                onClick={validateAndSubmitStage}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? 'Saving...' : 'Save & Continue'}
-                            </button>
+                            <div className="action-buttons">
+                                <button className="back-button" onClick={() => navigate(-1)}>
+                                    Back
+                                </button>
+                                <button
+                                    className="save-button"
+                                    onClick={validateAndSubmitStage}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Saving...' : 'Save'}
+                                </button>
+                                <button
+                                    className="next-button"
+                                    onClick={handleNextStage}
+                                    disabled={!customerId}
+                                >
+                                    Next
+                                </button>
+                            </div>
                         </div>
                     </div>
                 );
@@ -250,22 +235,29 @@ const PrimaryHolder = () => {
                     <div className="stage-container">
                         <div className="attachments-container">
                             <Attachments
-                                holderType="primaryHolder"
-                                onUpdate={handleAttachmentsUpdate}
                                 initialData={formData.attachments}
+                                customerId={customerId}
                             />
                         </div>
                         <div className="stage-actions">
-                            <button className="back-button" onClick={() => setCurrentStage(HOLDER_STAGES.CUSTOMER_INFO)}>
-                                Back
-                            </button>
-                            <button
-                                className="next-button"
-                                onClick={validateAndSubmitStage}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? 'Saving...' : 'Save & Continue'}
-                            </button>
+                            <div className="action-buttons">
+                                <button className="back-button" onClick={() => setCurrentStage(HOLDER_STAGES.CUSTOMER_INFO)}>
+                                    Back
+                                </button>
+                                <button
+                                    className="save-button"
+                                    onClick={validateAndSubmitStage}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Saving...' : 'Save'}
+                                </button>
+                                <button
+                                    className="next-button"
+                                    onClick={handleNextStage}
+                                >
+                                    Next
+                                </button>
+                            </div>
                         </div>
                     </div>
                 );
