@@ -162,3 +162,372 @@
     background: #f7fafc;
     cursor: not-allowed;
 }
+
+.biometric-capture-section {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-header h2 {
+  font-size: 18px;
+  margin: 0;
+  color: #333;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+}
+
+.status-indicator svg {
+  margin-right: 8px;
+}
+
+.status-indicator.checking {
+  background-color: #f0f9ff;
+  color: #0284c7;
+}
+
+.status-indicator.success {
+  background-color: #ecfdf5;
+  color: #059669;
+}
+
+.status-indicator.error {
+  background-color: #fef2f2;
+  color: #dc2626;
+  gap: 10px;
+}
+
+.retry-button {
+  margin-left: 10px;
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.capture-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.finger-selection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.finger-selection label {
+  font-weight: 500;
+  min-width: 100px;
+}
+
+.finger-select {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+}
+
+.fingerprint-box {
+  width: 200px;
+  height: 240px;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  transition: all 0.3s ease;
+  background: #f8fafc;
+  position: relative;
+  overflow: hidden;
+}
+
+.fingerprint-box.captured {
+  background: #ecfdf5;
+  border-color: #10b981;
+}
+
+.fingerprint-box.scanning {
+  background: #eff6ff;
+  border-color: #3b82f6;
+}
+
+.fingerprint-icon-container {
+  position: relative;
+  margin-bottom: 20px;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fingerprint-icon {
+  font-size: 80px;
+  color: #64748b;
+}
+
+.fingerprint-box.captured .fingerprint-icon {
+  color: #10b981;
+}
+
+.fingerprint-box.scanning .fingerprint-icon {
+  color: #3b82f6;
+}
+
+.capture-button {
+  padding: 10px 20px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.capture-button:hover {
+  background-color: #2563eb;
+}
+
+.capture-button:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.fingerprint-details {
+  text-align: center;
+}
+
+.quality-indicator {
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.quality-indicator.excellent {
+  background-color: #10b981;
+  color: white;
+}
+
+.quality-indicator.good {
+  background-color: #22c55e;
+  color: white;
+}
+
+.quality-indicator.fair {
+  background-color: #facc15;
+  color: #1e293b;
+}
+
+.quality-indicator.poor {
+  background-color: #f97316;
+  color: white;
+}
+
+.quality-indicator.very-poor {
+  background-color: #ef4444;
+  color: white;
+}
+
+.timestamp {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.capture-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background-color: #e2e8f0;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #3b82f6;
+  transition: width 0.3s ease;
+}
+
+.required-fingers {
+  margin-bottom: 20px;
+}
+
+.required-fingers h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.finger-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.finger-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.finger-item:hover {
+  background-color: #f1f5f9;
+}
+
+.finger-item.captured {
+  background-color: #ecfdf5;
+  border-color: #10b981;
+}
+
+.check-icon {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #10b981;
+  color: white;
+  border-radius: 50%;
+  padding: 3px;
+  font-size: 10px;
+}
+
+.completion-status {
+  text-align: right;
+  font-size: 14px;
+}
+
+.completion-status .complete {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.completion-status .incomplete {
+  color: #f97316;
+  font-weight: 500;
+}
+
+.captured-summary {
+  margin-top: 20px;
+}
+
+.captured-summary h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.no-data {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.fingerprints-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.fingerprint-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fingerprint-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.fingerprint-item.excellent {
+  border-left: 4px solid #10b981;
+}
+
+.fingerprint-item.good {
+  border-left: 4px solid #22c55e;
+}
+
+.fingerprint-item.fair {
+  border-left: 4px solid #facc15;
+}
+
+.fingerprint-item.poor {
+  border-left: 4px solid #f97316;
+}
+
+.fingerprint-item.very-poor {
+  border-left: 4px solid #ef4444;
+}
+
+.fingerprint-icon-small {
+  font-size: 24px;
+  color: #64748b;
+}
+
+.finger-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.finger-name {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.quality-score {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .fingerprints-grid,
+  .finger-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+}

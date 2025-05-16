@@ -28,15 +28,15 @@ export default defineConfig({
             proxyRes.headers['Access-Control-Allow-Credentials'] = 'true';
             proxyRes.headers['Access-Control-Allow-Methods'] = 'GET,POST,OPTIONS';
             proxyRes.headers['Access-Control-Allow-Headers'] = '*';
-            console.log('Proxy response:', proxyRes.statusCode, req.url);
+            console.log('Proxy response:', proxyRes.statusCode, req.url, res.statusCode);
           });
         }
       }
     }
   },
-  preview: {
-    host: true,
-    allowedHosts: ['uat.lms.onefin.app', 'lms.onefin.app'],
-  },
+  // preview: {
+  //   host: true,
+  //   allowedHosts: ['uat.lms.onefin.app', 'lms.onefin.app'],
+  // },
 });
 
