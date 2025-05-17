@@ -207,15 +207,32 @@ const Attachments = ({ customerId }) => {
         }
 
         try {
+            // Call the API to delete the document from the server
+            const token = localStorage.getItem('authToken');
+            await axios.post(
+                `${API_URL}/customers/unmap-document`,
+                {
+                    customer_id: Number(customerId),
+                    document_id: doc.id
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            // Update local state after successful API call
             const updatedDocs = {
                 ...documents,
-                [category]: documents[category].filter(doc => doc.id !== docId)
+                [category]: documents[category].filter(document => document.id !== docId)
             };
             setDocuments(updatedDocs);
-            // onUpdate(updatedDocs);
             toast.success('Document removed successfully');
         } catch (error) {
-            toast.error('Failed to remove document');
+            console.error('Error deleting document:', error);
+            toast.error(error.response?.data?.message || 'Failed to remove document');
         }
     };
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DataGrid, GridToolbar, useGridApiRef } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
 import { Box, Button, TextField, Stack, InputAdornment } from '@mui/material';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faTimes } from '@fortawesome/free-solid-svg-icons';
@@ -14,13 +14,11 @@ const CustomerList = () => {
     const [loading, setLoading] = useState(false);
     const [searchText, setSearchText] = useState('');
     const [pagination, setPagination] = useState({
-        page: 1,
+        pageNo: 1,
         pageSize: 10,
-        total: 0
+        totalCustomers: 0
     });
-    const [filterModel, setFilterModel] = useState({
-        items: []
-    });
+    const [filterModel, setFilterModel] = useState({ items: [] });
     const navigate = useNavigate();
 
     const columns = [
@@ -29,11 +27,10 @@ const CustomerList = () => {
         { field: 'mobileNo', headerName: 'Mobile', flex: 0.8, minWidth: 120 },
         { field: 'email', headerName: 'Email', flex: 1, minWidth: 180 },
         { field: 'pan', headerName: 'PAN', flex: 0.8, minWidth: 120 },
-        { field: 'centerName', headerName: 'Center', flex: 1, minWidth: 150 },
-        { field: 'lockerNo', headerName: 'Locker No', flex: 0.8, minWidth: 100 },
+        { field: 'lockerNo', headerName: 'Locker No', flex: 1, minWidth: 150 },
         {
             field: 'rent',
-            headerName: 'Premium',
+            headerName: 'Rent',
             flex: 0.8,
             minWidth: 100,
             valueFormatter: (params) => {
@@ -52,7 +49,6 @@ const CustomerList = () => {
                     size="small"
                     onClick={(e) => {
                         e.stopPropagation();
-                        console.log('Edit button clicked for customer:', params.row);
                         handleEdit(params.row.id);
                     }}
                     sx={{
@@ -68,87 +64,63 @@ const CustomerList = () => {
         }
     ];
 
-    const fetchCustomers = async () => {
+    const fetchCustomerList = async () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('authToken');
-            const response = {
-                status: 200,
-                data: {
-                    customers: [
-                        {
-                            customer_id: 1,
-                            first_name: 'Nitin',
-                            last_name: 'Gupta',
-                            mobile_number: '1234567890',
-                            email: 'nitingupta1906@gmail.com',
-                            pan: 'ABCPE1234F',
-                            center_id: 1,
-                            center_name: 'Main Center',
-                            locker_number: 'L001',
-                            locker_center_id: 1,
-                            premium: 1500,
-                        },
-                        {
-                            customer_id: 2,
-                            first_name: 'Nikhil',
-                            last_name: 'Bhosle',
-                            mobile_number: '0987654321',
-                            email: 'nikhil@example.com',
-                            pan: 'XYZAB5678C',
-                            center_id: 2,
-                            center_name: 'Branch Center',
-                            locker_number: 'L002',
-                            locker_center_id: 2,
-                            premium: 1500,
-                        }
-                    ],
-                    total_count: 2
+            const response = await axios.get(`${API_URL}/customers/customers`, {
+                params: {
+                    page_no: pagination.pageNo,
+                    page_size: pagination.pageSize
+                },
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': '*/*'
                 }
-            };
+            });
 
-            if (response.status === 200 && response.data) {
-                const mappedCustomers = response.data.customers.map(customer => ({
+            if (response.data?.data) {
+                // Map the API response to the format expected by DataGrid
+                const mappedCustomers = response.data.data.customers.map(customer => ({
                     id: customer.customer_id,
-                    name: [customer.first_name, customer.last_name].filter(Boolean).join(' '),
+                    name: [customer.first_name, customer.middle_name, customer.last_name].filter(Boolean).join(' '),
                     mobileNo: customer.mobile_number || '-',
                     email: customer.email || '-',
                     pan: customer.pan || '-',
-                    centerId: customer.center_id || null,
-                    centerName: customer.center_name || '-',
                     lockerNo: customer.locker_number || '-',
-                    premium: customer.premium || 0,
+                    rent: customer.rent ? parseFloat(customer.rent) : 0,
                 }));
+
                 setCustomers(mappedCustomers);
                 setPagination(prev => ({
                     ...prev,
-                    total: response.data.total_count || 0
+                    totalCustomers: response.data.data.total || 0
                 }));
             }
         } catch (error) {
-            toast.error('Failed to fetch customers');
             console.error('Error fetching customers:', error);
+            toast.error('Failed to fetch customers');
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchCustomers();
-    }, [pagination.page, pagination.pageSize]);
+        fetchCustomerList();
+    }, [pagination.pageNo, pagination.pageSize]);
 
     const handleEdit = (customerId) => {
         try {
             const customer = customers.find(c => c.id === customerId);
             if (customer) {
                 console.log('Editing customer:', customer);
-                if (!customer.pan || !customer.centerId) {
+                if (!customer.pan) {
                     toast.error('Missing required customer data for editing');
                     return;
                 }
                 sessionStorage.setItem('editCustomerData', JSON.stringify({
                     pan: customer.pan,
-                    center: customer.centerId
+                    center: 1 // Default center ID since it's not in the response
                 }));
                 navigate(ROUTES.CUSTOMER);
             } else {
@@ -177,7 +149,6 @@ const CustomerList = () => {
                     operator: 'contains',
                     value: value
                 },
-
             ]
         };
 
@@ -187,6 +158,14 @@ const CustomerList = () => {
     const clearSearch = () => {
         setSearchText('');
         setFilterModel({ items: [] });
+    };
+
+    const handlePageChange = (newPage) => {
+        setPagination(prev => ({ ...prev, pageNo: newPage + 1 }));
+    };
+
+    const handlePageSizeChange = (newPageSize) => {
+        setPagination(prev => ({ ...prev, pageSize: newPageSize, pageNo: 1 }));
     };
 
     return (
@@ -236,20 +215,22 @@ const CustomerList = () => {
                     backgroundColor: 'white',
                     borderRadius: '8px',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    overflow: 'hidden'
+                    overflow: 'auto',
+                    display: 'flex',
+                    flexDirection: 'column'
                 }}>
                     <DataGrid
                         rows={customers}
                         columns={columns}
                         pageSize={pagination.pageSize}
-                        rowCount={pagination.total}
+                        rowCount={pagination.totalCustomers}
                         loading={loading}
                         paginationMode="server"
-                        onPageChange={(newPage) => setPagination(prev => ({ ...prev, page: newPage + 1 }))}
-                        onPageSizeChange={(newPageSize) => setPagination(prev => ({ ...prev, pageSize: newPageSize }))}
+                        onPageChange={handlePageChange}
+                        onPageSizeChange={handlePageSizeChange}
                         rowsPerPageOptions={[10, 25, 50]}
                         disableSelectionOnClick
-                        autoHeight
+                        autoHeight={false} // Changed from true to false to use container's height
                         filterModel={filterModel}
                         onFilterModelChange={(newModel) => setFilterModel(newModel)}
                         sx={{
@@ -266,7 +247,10 @@ const CustomerList = () => {
                             },
                             '& .MuiDataGrid-main': {
                                 width: '100%'
-                            }
+                            },
+                            flex: 1, // Added to make DataGrid fill the container
+                            width: '100%', // Ensure full width
+                            height: '100%' // Ensure full height of container
                         }}
                     />
                 </Box>
