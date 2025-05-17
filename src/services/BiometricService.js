@@ -7,13 +7,13 @@ const SDK_ENDPOINTS = {
 
 class BiometricService {
     constructor() {
-        // Set the correct base URL for WebAgent
-        this.baseUrl = 'http://localhost:8084'; // BioMini WebAgent default port from your JS
+        // Use the Vite proxy URL instead of direct connection
+        this.baseUrl = '/api'; // This will use the proxy defined in vite.config.js
         this.isInitialized = false;
         this.deviceHandle = null;
         this.pageId = Math.random().toString();
         this.sessionCreated = false;
-        this.debugMode = true; // Enable to see detailed API logs in console
+        this.debugMode = true;
         this.scannerInfos = null;
         this.selectedDeviceIndex = 0;
     }
@@ -219,13 +219,10 @@ class BiometricService {
             this.logDebug('Current cookies before capture:', document.cookie);
 
             // Very important: build URL exactly in the format that works
-            const captureUrl = `${this.baseUrl}/api/captureSingle?sHandle=${this.deviceHandle}&id=${this.pageId}&resetTimer=30000&dummy=${Math.random()}`;
+            const captureUrl = `${this.baseUrl}/captureSingle?sHandle=${this.deviceHandle}&id=${this.pageId}&resetTimer=30000&dummy=${Math.random()}`;
             this.logDebug(`Sending direct request to: ${captureUrl}`);
 
-            // Make direct request following the working pattern
-            const captureResponse = await fetch(captureUrl, {
-                credentials: 'include',
-            });
+            const captureResponse = await fetch(captureUrl);
             const captureData = await captureResponse.json();
 
             if (captureData.retValue !== 0) {
@@ -567,20 +564,19 @@ class BiometricService {
                 await this.initializeDevice();
             }
 
-            // Create/verify session before capture
-            const sessionCreated = await this.createSession();
-            if (!sessionCreated) {
-                throw new Error('Session creation failed');
-            }
+            // // Create/verify session before capture
+            // const sessionCreated = await this.createSession();
+            // if (!sessionCreated) {
+            //     throw new Error('Session creation failed');
+            // }
 
             this.logDebug('Current cookies before capture:', document.cookie);
             this.logDebug(`Capturing with handle: ${this.deviceHandle}, pageId: ${this.pageId}`);
 
             // Step 1: Capture the fingerprint with captureSingle
-            const captureUrl = `${this.baseUrl}/api/captureSingle?dummy=${Math.random()}&sHandle=${this.deviceHandle}&id=${this.pageId}&resetTimer=30000`;
-            const captureResponse = await fetch(captureUrl, {
-                credentials: 'include',
-            });
+            const captureUrl = `${this.baseUrl}/captureSingle?dummy=${Math.random()}&sHandle=${this.deviceHandle}&id=${this.pageId}&resetTimer=30000`;
+
+            const captureResponse = await fetch(captureUrl);
             const captureData = await captureResponse.json();
 
             console.log('Capture response:', captureData);

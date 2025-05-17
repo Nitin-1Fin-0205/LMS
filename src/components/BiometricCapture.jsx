@@ -230,7 +230,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [] }) => {
         if (scannerState.isConnected) {
             return (
                 <div className="status-indicator success">
-                    <FontAwesomeIcon icon={faCheck} /> Device ready: {scannerState.deviceInfo?.DeviceType || "Fingerprint Scanner"}
+                    <FontAwesomeIcon icon={faCheck} /> Device ready: {scannerState.deviceInfo?.DeviceHandle || "Fingerprint Scanner"}
                 </div>
             );
         }

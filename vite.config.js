@@ -5,38 +5,23 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      // Proxy all /api/* requests to BioMini SDK
+      // Simple proxy configuration - only what's needed
       '/api': {
         target: 'http://localhost:8084',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api'),
+        // No need for a rewrite that doesn't change anything
         secure: false,
         configure: (proxy, _options) => {
-          proxy.on('proxyReq', (proxyReq, req, _res) => {
-            // Fix request path and headers
-            proxyReq.removeHeader('origin');
-            proxyReq.removeHeader('referer');
-            console.log('Proxying request:', req.method, req.url, 'to', proxyReq.path);
-          });
-
-          proxy.on('error', (err, req, res) => {
-            console.error('Proxy error:', err);
-          });
-
-          proxy.on('proxyRes', (proxyRes, req, res) => {
+          // Basic logging for debugging
+          proxy.on('proxyRes', (proxyRes, req, _res) => {
+            console.log(`Proxy: ${req.method} ${req.url} -> ${proxyRes.statusCode}`);
+            // Essential CORS headers
             proxyRes.headers['Access-Control-Allow-Origin'] = 'http://localhost:5173';
             proxyRes.headers['Access-Control-Allow-Credentials'] = 'true';
-            proxyRes.headers['Access-Control-Allow-Methods'] = 'GET,POST,OPTIONS';
-            proxyRes.headers['Access-Control-Allow-Headers'] = '*';
-            console.log('Proxy response:', proxyRes.statusCode, req.url, res.statusCode);
           });
         }
       }
     }
-  },
-  // preview: {
-  //   host: true,
-  //   allowedHosts: ['uat.lms.onefin.app', 'lms.onefin.app'],
-  // },
+  }
 });
 
