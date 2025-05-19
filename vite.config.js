@@ -4,12 +4,16 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    cors: {
+      origin: "*",
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      credentials: true
+    },
     proxy: {
-      // Simple proxy configuration - only what's needed
       '/api': {
         target: 'http://localhost:8084',
         changeOrigin: true,
-        // No need for a rewrite that doesn't change anything
         secure: false,
         configure: (proxy, _options) => {
           // Basic logging for debugging
@@ -18,10 +22,15 @@ export default defineConfig({
             // Essential CORS headers
             proxyRes.headers['Access-Control-Allow-Origin'] = 'http://localhost:5173';
             proxyRes.headers['Access-Control-Allow-Credentials'] = 'true';
+            proxyRes.headers['Access-Control-Allow-Methods'] = 'GET,HEAD,PUT,PATCH,POST,DELETE';
+            proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
           });
         }
       }
     }
+  },
+  preview: {
+    allowedHosts: ['uat.lms.onefin.app']
   }
 });
 

@@ -7,8 +7,12 @@ const SDK_ENDPOINTS = {
 
 class BiometricService {
     constructor() {
-        // Use the Vite proxy URL instead of direct connection
-        this.baseUrl = '/api'; // This will use the proxy defined in vite.config.js
+        // Use direct connection to WebAgent in development
+        this.baseUrl = '';
+
+        // Remove the /api from URLs since it's already in the API endpoint
+        this.apiPrefix = '';
+
         this.isInitialized = false;
         this.deviceHandle = null;
         this.pageId = Math.random().toString();
@@ -32,15 +36,15 @@ class BiometricService {
             // Convert params to URLSearchParams
             const queryParams = new URLSearchParams();
 
+            // // Add dummy parameter to prevent caching - exactly as in working URL
+            queryParams.append('dummy', Math.random().toString());
+
             // Add each parameter individually to match exact format of working URL
             if (options.params) {
                 Object.entries(options.params).forEach(([key, value]) => {
                     queryParams.append(key, value);
                 });
             }
-
-            // Add dummy parameter to prevent caching - exactly as in working URL
-            queryParams.append('dummy', Math.random().toString());
 
             // Build the full URL in the same format as the working one
             const fullUrl = `${url}?${queryParams.toString()}`;
@@ -210,19 +214,12 @@ class BiometricService {
         }
 
         try {
-            // // Create/verify session before capture
-            // const sessionCreated = await this.createSession();
-            // if (!sessionCreated) {
-            //     throw new Error('Session creation failed');
-            // }
-
-            this.logDebug('Current cookies before capture:', document.cookie);
-
             // Very important: build URL exactly in the format that works
-            const captureUrl = `${this.baseUrl}/captureSingle?sHandle=${this.deviceHandle}&id=${this.pageId}&resetTimer=30000&dummy=${Math.random()}`;
-            this.logDebug(`Sending direct request to: ${captureUrl}`);
+            const captureUrl = `${this.baseUrl}/api/captureSingle?dummy=${Math.random()}&sHandle=${this.deviceHandle}&id=${this.pageId}&resetTimer=30000`;
 
-            const captureResponse = await fetch(captureUrl);
+            const captureResponse = await fetch(captureUrl, {
+                credentials: 'include',
+            });
             const captureData = await captureResponse.json();
 
             if (captureData.retValue !== 0) {
@@ -312,17 +309,21 @@ class BiometricService {
             sHandle: this.deviceHandle,
             id: this.pageId,
             fileType: fileType, // 1=BMP, 2=ISO19794, 3=WSQ
-            compressionRatio: compressionRatio
+            compressionRatio: compressionRatio,
+            width: 288,
+            height: 300,
         };
 
-        const response = await this.makeRequest('/api/getImageData', { params });
+        const response = await this.makeRequest(`/api/getImageData`, { params });
 
-        if (response.retValue !== 0) {
+        if (response.retValue != 0) {
             throw new Error(response.retString || 'Failed to get image data');
         }
+        console.log('Image data response:', response);
 
         return {
-            imageBase64: response.imageBase64
+            imageBase64: response.imageBase64,
+            retValue: response.retValue,
         };
     }
 
@@ -564,65 +565,59 @@ class BiometricService {
                 await this.initializeDevice();
             }
 
-            // // Create/verify session before capture
-            // const sessionCreated = await this.createSession();
-            // if (!sessionCreated) {
-            //     throw new Error('Session creation failed');
-            // }
+            // Step 1: Direct connection to WebAgent for capture
+            const captureUrl = `${this.baseUrl}/api/captureSingle?dummy=${Math.random()}&sHandle=${this.deviceHandle}&id=${this.pageId}&resetTimer=30000`;
 
-            this.logDebug('Current cookies before capture:', document.cookie);
-            this.logDebug(`Capturing with handle: ${this.deviceHandle}, pageId: ${this.pageId}`);
+            const captureResponse = await fetch(captureUrl, {
+                credentials: 'include',
+            });
 
-            // Step 1: Capture the fingerprint with captureSingle
-            const captureUrl = `${this.baseUrl}/captureSingle?dummy=${Math.random()}&sHandle=${this.deviceHandle}&id=${this.pageId}&resetTimer=30000`;
-
-            const captureResponse = await fetch(captureUrl);
             const captureData = await captureResponse.json();
 
-            console.log('Capture response:', captureData);
+            console.log('Capture FingerPrint response:', captureData);
 
-            if (captureData.retValue !== 0) {
+            if (captureData.retValue != 0) {
                 this.logDebug('Capture failed:', captureData);
                 throw new Error(captureData.retString || 'Capture failed');
             }
 
-            // Step 2: Get the template data from the captured fingerprint
-            const templateResponse = await this.makeRequest('/api/getTemplateData', {
-                params: {
-                    sHandle: this.deviceHandle,
-                    id: this.pageId,
-                    extractEx: 1,
-                    qualityLevel: 60 // Quality threshold
-                }
-            });
+            // // Step 2: Get the template data - use direct connection for this too
+            // const templateResponse = await this.makeRequest(`/api/getTemplateData?dummy=${Math.random()}`, {
+            //     params: {
+            //         sHandle: this.deviceHandle,
+            //         id: this.pageId,
+            //         extractEx: 1,
+            //         qualityLevel: 60 // Quality threshold
+            //     }
+            // });
 
-            if (templateResponse.retValue !== 0) {
-                throw new Error(templateResponse.retString || 'Template extraction failed');
-            }
+            // console.log('Template response:', templateResponse);
+
+            // if (templateResponse.retValue != 0) {
+            //     throw new Error(templateResponse.retString || 'Template extraction failed');
+            // }
+
 
             // Step 3: Get the image data in both formats (WSQ and BMP)
-            const wsqResponse = await this.makeRequest('/api/getImageData', {
-                params: {
-                    sHandle: this.deviceHandle,
-                    id: this.pageId,
-                    fileType: 3, // WSQ format
-                    compressionRatio: 0.75
-                }
-            });
+            const wsqResponse = await this.getImageData(3, 0.75); // WSQ format
+            if (wsqResponse.retValue != 0) {
+                throw new Error(wsqResponse.retString || 'WSQ extraction failed');
+            }
 
-            const imgResponse = await this.makeRequest('/api/getImageData', {
-                params: {
-                    sHandle: this.deviceHandle,
-                    id: this.pageId,
-                    fileType: 1, // BMP format
-                    compressionRatio: 1.0
-                }
-            });
+            console.log('WSQ response:', wsqResponse);
+
+            const imgResponse = await this.getImageData(1, 0.75); // BMP format
+            if (imgResponse.retValue != 0) {
+                throw new Error(imgResponse.retString || 'Image extraction failed');
+            }
+
+            console.log('Image response:', imgResponse);
 
             return {
                 success: true,
-                template: templateResponse.templateBase64,
-                quality: templateResponse.quality || 80,
+                // template: templateResponse.templateBase64,
+                // quality: templateResponse.quality || 80,
+                quality: 70,
                 wsq: wsqResponse.imageBase64,
                 image: imgResponse.imageBase64
             };
