@@ -72,7 +72,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [] }) => {
                 deviceInfo: result.deviceInfo
             });
 
-            toast.success(`Fingerprint device connected: ${result.deviceInfo.DeviceType}`);
+            toast.success(`Fingerprint device connected: ${result.deviceInfo?.ScannerName}`);
         } catch (error) {
             console.error('Failed to initialize device:', error);
             setScannerState({
@@ -230,7 +230,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [] }) => {
         if (scannerState.isConnected) {
             return (
                 <div className="status-indicator success">
-                    <FontAwesomeIcon icon={faCheck} /> Device ready: {scannerState.deviceInfo?.DeviceHandle || "Fingerprint Scanner"}
+                    <FontAwesomeIcon icon={faCheck} /> Device ready: {scannerState.deviceInfo?.ScannerName || "Fingerprint Scanner"}
                 </div>
             );
         }
