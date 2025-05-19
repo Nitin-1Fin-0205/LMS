@@ -105,11 +105,10 @@ const Customer = () => {
             return;
         }
 
-        const validation = ValidationService.isValidPAN(formData.pan);
-        if (!validation.isValid) {
-            if (e) toast.error(validation.error);
-            return;
-        }
+        // Reset all previous customer and locker data before fetching new customer
+        dispatch(resetForm());
+        dispatch(clearAllLockerData());
+        setActiveCard(null);
 
         try {
             const result = await dispatch(fetchCustomerByPan({
