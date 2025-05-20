@@ -6,12 +6,7 @@
 }
 
 .stages-progress {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    margin-bottom: 0.5rem;
-    position: relative;
-    /* padding: 20px 0; */
+    display: none;
 }
 
 .stage {
@@ -99,13 +94,11 @@
 .stage-container {
     animation: fadeSlide 0.5s ease-out;
     transform-origin: top;
-    background: #ffffff;
-    border-radius: 12px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     padding: 16px;
     margin-top: 0;
-    box-shadow: 
-        0 4px 12px rgba(0,0,0,0.1),
-        0 8px 24px rgba(0,0,0,0.05);
     position: relative;
 }
 
@@ -130,16 +123,20 @@
 
 .stage-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     gap: 12px;
     margin-top: 16px;
     padding-top: 16px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #e0e0e0;
 }
 
 .stage-actions button {
-    transform: translateY(0);
-    transition: all 0.3s ease;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
 }
 
 .stage-actions button:hover {
@@ -172,13 +169,13 @@
 
 .next-button:hover,
 .submit-button:hover {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    background-color: #388e3c;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .back-button {
-    background: #f5f5f5;
+    background-color: #f5f5f5;
     color: #333;
     padding: 10px 24px;
     border: none;
@@ -189,7 +186,7 @@
 }
 
 .back-button:hover {
-    background: #e5e5e5;
+    background-color: #e0e0e0;
 }
 
 .form-sections {
@@ -205,12 +202,14 @@
 
 .action-buttons {
     display: flex;
-    gap: 12px;
+    gap: 10px;
+    justify-content: flex-end;
+    width: 100%;
 }
 
 .save-button {
     padding: 10px 24px;
-    background: var(--success-green);
+    background-color: #2196f3;
     color: white;
     border: none;
     border-radius: 4px;
@@ -220,7 +219,7 @@
 }
 
 .save-button:hover {
-    background: var(--success-hover);
+    background-color: #1976d2;
     transform: translateY(-1px);
 }
 

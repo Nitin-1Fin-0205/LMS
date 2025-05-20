@@ -11,6 +11,9 @@ import '../styles/PrimaryHolder.css';
 import { useNavigate } from 'react-router-dom';
 import { updateHolderSection, submitCustomerInfo } from '../store/slices/customerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS, HOLDER_STAGES, STAGE_STATUS } from '../constants/holderConstants';
+import { Box, Typography } from '@mui/material';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheck, faPen, faFileAlt, faFingerprint, faUser, faUserAlt } from '@fortawesome/free-solid-svg-icons';
 
 const PrimaryHolder = () => {
     const location = useLocation();
@@ -194,7 +197,39 @@ const PrimaryHolder = () => {
             ? HOLDER_STAGES.ATTACHMENTS
             : HOLDER_STAGES.BIOMETRIC;
 
+        // Set current stage as completed before moving to next
+        setStageStatus(prev => ({
+            ...prev,
+            [currentStage]: STAGE_STATUS.COMPLETED
+        }));
+
         handleStageTransition(nextStage);
+    };
+
+    const getStageIcon = (stage) => {
+        switch (stage) {
+            case HOLDER_STAGES.CUSTOMER_INFO:
+                return faUserAlt;
+            case HOLDER_STAGES.ATTACHMENTS:
+                return faFileAlt;
+            case HOLDER_STAGES.BIOMETRIC:
+                return faFingerprint;
+            default:
+                return faPen;
+        }
+    };
+
+    const getStageName = (stage) => {
+        switch (stage) {
+            case HOLDER_STAGES.CUSTOMER_INFO:
+                return "Customer Info";
+            case HOLDER_STAGES.ATTACHMENTS:
+                return "Documents";
+            case HOLDER_STAGES.BIOMETRIC:
+                return "Biometric";
+            default:
+                return "";
+        }
     };
 
     const renderStage = () => {
@@ -292,17 +327,91 @@ const PrimaryHolder = () => {
 
     return (
         <div className="primary-holder-container">
-            <div className="stages-progress">
-                <div className={getStageClassName(HOLDER_STAGES.CUSTOMER_INFO)}>
-                    Customer Info {stageStatus[HOLDER_STAGES.CUSTOMER_INFO] === STAGE_STATUS.COMPLETED && '✓'}
-                </div>
-                <div className={getStageClassName(HOLDER_STAGES.ATTACHMENTS)}>
-                    Documents {stageStatus[HOLDER_STAGES.ATTACHMENTS] === STAGE_STATUS.COMPLETED && '✓'}
-                </div>
-                <div className={getStageClassName(HOLDER_STAGES.BIOMETRIC)}>
-                    Biometric {stageStatus[HOLDER_STAGES.BIOMETRIC] === STAGE_STATUS.COMPLETED && '✓'}
-                </div>
-            </div>
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                mb: 4,
+                mt: 2
+            }}>
+                <Box sx={{
+                    display: 'flex',
+                    width: '80%',
+                    justifyContent: 'space-between',
+                    position: 'relative'
+                }}>
+                    {/* Progress bar background */}
+                    <Box sx={{
+                        position: 'absolute',
+                        top: '10px',
+                        left: 0,
+                        right: 0,
+                        height: '4px',
+                        bgcolor: '#e0e0e0',
+                        zIndex: 0
+                    }} />
+
+                    {/* Progress bar fill */}
+                    <Box sx={{
+                        position: 'absolute',
+                        top: '10px',
+                        left: 0,
+                        width: currentStage === HOLDER_STAGES.CUSTOMER_INFO ? '0%' :
+                            currentStage === HOLDER_STAGES.ATTACHMENTS ? '50%' : '100%',
+                        height: '4px',
+                        bgcolor: 'primary.main',
+                        zIndex: 1,
+                        transition: 'width 0.5s ease-in-out'
+                    }} />
+
+                    {/* Stage indicators */}
+                    {[HOLDER_STAGES.CUSTOMER_INFO, HOLDER_STAGES.ATTACHMENTS, HOLDER_STAGES.BIOMETRIC].map((stage, index) => (
+                        <Box
+                            key={stage}
+                            sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                cursor: canNavigateToStage(stage) ? 'pointer' : 'not-allowed',
+                                // opacity: canNavigateToStage(stage) ? 1 : 0.6,
+                            }}
+                            onClick={() => canNavigateToStage(stage) && handleStageTransition(stage)}
+                        >
+                            <Box sx={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: '50%',
+                                bgcolor: currentStage === stage ? 'primary.main' :
+                                    stageStatus[stage] === STAGE_STATUS.COMPLETED ? '#4caf50' : '#e0e0e0',
+                                color: 'white',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 'bold',
+                                zIndex: 2,
+                                transition: 'background-color 0.3s ease'
+                            }}>
+                                {stageStatus[stage] === STAGE_STATUS.COMPLETED ? (
+                                    <FontAwesomeIcon icon={faCheck} size="xs" />
+                                ) : (
+                                    <FontAwesomeIcon icon={getStageIcon(stage)} size="xs" />
+                                )}
+                            </Box>
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    mt: 1,
+                                    fontWeight: currentStage === stage ? 'bold' : 'normal',
+                                    color: currentStage === stage ? 'primary.main' :
+                                        stageStatus[stage] === STAGE_STATUS.COMPLETED ? '#4caf50' : 'text.secondary'
+                                }}
+                            >
+                                {getStageName(stage)}
+                            </Typography>
+                        </Box>
+                    ))}
+                </Box>
+            </Box>
+
             {renderStage()}
         </div>
     );
