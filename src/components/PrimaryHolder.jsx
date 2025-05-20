@@ -268,6 +268,7 @@ const PrimaryHolder = () => {
                         <BiometricCapture
                             onUpdate={handleBiometricUpdate}
                             initialData={formData.biometric}
+                            customerId={customerId}
                         />
                         <div className="stage-actions">
                             <button className="back-button" onClick={() => setCurrentStage(HOLDER_STAGES.ATTACHMENTS)}>

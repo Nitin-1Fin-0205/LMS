@@ -4,6 +4,8 @@ import { faFingerprint, faSync, faCheck, faTimes, faExclamationTriangle } from '
 import '../styles/BiometricCapture.css';
 import BiometricService from '../services/BiometricService';
 import { toast } from 'react-toastify';
+import axios from 'axios';
+import { API_URL } from '../assets/config';
 
 const FINGER_OPTIONS = {
     'right-thumb': 'Right Thumb',
@@ -25,7 +27,7 @@ const QUALITY_THRESHOLDS = {
     poor: 40
 };
 
-const BiometricCapture = ({ onUpdate, initialData, required = [] }) => {
+const BiometricCapture = ({ onUpdate, initialData, required = [], customerId, mode = 'enrollment', onVerify }) => {
     const [fingerprints, setFingerprints] = useState(initialData?.fingerprints || {});
     const [scannerState, setScannerState] = useState({
         isScanning: false,
@@ -41,6 +43,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [] }) => {
     });
     const [captureProgress, setCaptureProgress] = useState(0);
     const [retryCount, setRetryCount] = useState(0);
+    const [verificationResult, setVerificationResult] = useState(null);
 
     const initializeDevice = async () => {
         try {
@@ -162,6 +165,41 @@ const BiometricCapture = ({ onUpdate, initialData, required = [] }) => {
                 }
             };
 
+            // Store fingerprint data in backend
+            try {
+                const token = localStorage.getItem('authToken');
+
+                // Send the fingerprint data to the backend
+                const response = await axios.post(
+                    `${API_URL}/biometrics/capture`,
+                    {
+                        customerId: Number(customerId),
+                        fingerprint: {
+                            template: result.template,
+                            finger: selectedFinger,
+                            fingerName: FINGER_OPTIONS[selectedFinger],
+                            quality: Number(result.quality),
+                            wsq: result.wsq,
+                            templateFormat: 'SUPREMA',
+                            deviceInfo: scannerState.deviceInfo || {}
+                        }
+                    },
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'Accept': '*/*' // Match the accept header from the curl example
+                        }
+                    }
+                );
+
+                console.log('Fingerprint stored in database:', response.data);
+                toast.success(`${FINGER_OPTIONS[selectedFinger]} stored in database`);
+            } catch (apiError) {
+                console.error('Failed to store fingerprint in database:', apiError);
+                toast.error(`Warning: Fingerprint captured but not stored in database: ${apiError.message}`);
+            }
+
             setFingerprints(updatedFingerprints);
 
             // Notify parent component
@@ -177,6 +215,83 @@ const BiometricCapture = ({ onUpdate, initialData, required = [] }) => {
                 if (currentIndex >= 0 && currentIndex < required.length - 1) {
                     setSelectedFinger(required[currentIndex + 1]);
                 }
+            }
+
+        } catch (error) {
+            console.error('Capture failed:', error);
+            toast.error(`Capture failed: ${error.message}`);
+        } finally {
+            setScannerState(prev => ({ ...prev, isScanning: false }));
+            setCaptureProgress(0);
+        }
+    };
+
+    // Handle verification of a fingerprint against the database
+    const handleVerify = async () => {
+        try {
+            // Start capture process
+            setScannerState(prev => ({ ...prev, isScanning: true }));
+            setCaptureProgress(10);
+            setVerificationResult(null);
+
+            // Set progress to simulate feedback
+            const progressInterval = setInterval(() => {
+                setCaptureProgress(prev => {
+                    if (prev >= 90) {
+                        clearInterval(progressInterval);
+                        return 90;
+                    }
+                    return prev + 5;
+                });
+            }, 300);
+
+            // Capture fingerprint
+            const result = await BiometricService.captureFingerprint();
+            clearInterval(progressInterval);
+            setCaptureProgress(100);
+
+            // Send the template to the backend for identification
+            try {
+                const token = localStorage.getItem('authToken');
+
+                // Send the fingerprint data to the backend for identification
+                const response = await axios.post(
+                    `${API_URL}/biometrics/identify`,
+                    {
+                        template: result.template,
+                        quality: Number(result.quality),
+                        templateFormat: 'SUPREMA'
+                    },
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'Accept': '*/*'
+                        }
+                    }
+                );
+
+                console.log('Identification result:', response.data);
+
+                // Store the verification result
+                const identificationResult = response.data;
+                setVerificationResult(identificationResult);
+
+                // Call the onVerify callback if provided
+                if (onVerify) {
+                    onVerify(identificationResult);
+                }
+
+                if (identificationResult.matched) {
+                    toast.success(`Identified customer: ${identificationResult.customerName || identificationResult.customerId}`);
+                } else {
+                    toast.warning('No matching fingerprint found in database');
+                }
+
+            } catch (apiError) {
+                console.error('Failed to identify fingerprint:', apiError);
+                toast.error(`Identification failed: ${apiError.message}`);
+                setVerificationResult({ matched: false, error: apiError.message });
             }
 
         } catch (error) {
@@ -242,117 +357,197 @@ const BiometricCapture = ({ onUpdate, initialData, required = [] }) => {
     const allRequiredCaptured = required.length === 0 ||
         required.every(finger => Boolean(fingerprints[finger]));
 
+    // Render different content based on mode
+    const renderModeContent = () => {
+        if (mode === 'verification') {
+            return (
+                <div className="verification-mode">
+                    <div className={`fingerprint-box ${scannerState.isScanning ? 'scanning' : ''}`}>
+                        <div className="fingerprint-icon-container">
+                            <FontAwesomeIcon
+                                icon={faFingerprint}
+                                className="fingerprint-icon"
+                                pulse={scannerState.isScanning}
+                            />
+                            {captureProgress > 0 && (
+                                <div className="capture-progress">
+                                    <div
+                                        className="progress-bar"
+                                        style={{ width: `${captureProgress}%` }}
+                                    ></div>
+                                </div>
+                            )}
+                        </div>
+
+                        {verificationResult ? (
+                            <div className="verification-result">
+                                {verificationResult.matched ? (
+                                    <div className="success-result">
+                                        <FontAwesomeIcon icon={faCheck} className="check-icon" />
+                                        <div className="result-details">
+                                            <h4>Match Found</h4>
+                                            <p>Customer ID: {verificationResult.customerId}</p>
+                                            {verificationResult.customerName && (
+                                                <p>Name: {verificationResult.customerName}</p>
+                                            )}
+                                            {verificationResult.confidence && (
+                                                <p>Confidence: {verificationResult.confidence}%</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="error-result">
+                                        <FontAwesomeIcon icon={faTimes} className="error-icon" />
+                                        <div className="result-details">
+                                            <h4>No Match Found</h4>
+                                            {verificationResult.error && (
+                                                <p>Error: {verificationResult.error}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <button
+                                    className="verify-button"
+                                    onClick={handleVerify}
+                                    disabled={scannerState.isScanning || !scannerState.isConnected}
+                                >
+                                    Try Again
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                className="verify-button"
+                                onClick={handleVerify}
+                                disabled={scannerState.isScanning || !scannerState.isConnected}
+                            >
+                                {scannerState.isScanning ? 'Scanning...' : 'Verify Fingerprint'}
+                            </button>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // Default enrollment mode content
+        return (
+            <>
+                <div className="capture-container">
+                    <div className="finger-selection">
+                        <label htmlFor="finger-select">Select Finger:</label>
+                        <select
+                            id="finger-select"
+                            className="finger-select"
+                            value={selectedFinger}
+                            onChange={(e) => setSelectedFinger(e.target.value)}
+                            disabled={scannerState.isScanning || !scannerState.isConnected}
+                        >
+                            {Object.entries(FINGER_OPTIONS).map(([key, label]) => (
+                                <option key={key} value={key}>
+                                    {label} {required.includes(key) ? '(Required)' : ''}
+                                    {fingerprints[key] ? ' ✓' : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className={`fingerprint-box ${fingerprints[selectedFinger] ? 'captured' : ''} ${scannerState.isScanning ? 'scanning' : ''}`}>
+                        <div className="fingerprint-icon-container">
+                            <FontAwesomeIcon
+                                icon={faFingerprint}
+                                className="fingerprint-icon"
+                                pulse={scannerState.isScanning}
+                            />
+                            {captureProgress > 0 && (
+                                <div className="capture-progress">
+                                    <div
+                                        className="progress-bar"
+                                        style={{ width: `${captureProgress}%` }}
+                                    ></div>
+                                </div>
+                            )}
+                        </div>
+
+                        {fingerprints[selectedFinger] ? (
+                            <div className="fingerprint-details">
+                                <div className={`quality-indicator ${getQualityClass(fingerprints[selectedFinger].quality)}`}>
+                                    Quality: {fingerprints[selectedFinger].quality}%
+                                </div>
+                                <div className="timestamp">
+                                    Captured: {new Date(fingerprints[selectedFinger].timestamp).toLocaleTimeString()}
+                                </div>
+                            </div>
+                        ) : (
+                            <button
+                                className="capture-button"
+                                onClick={handleCapture}
+                                disabled={scannerState.isScanning || !scannerState.isConnected}
+                            >
+                                {scannerState.isScanning ? 'Scanning...' : 'Capture'}
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {required.length > 0 && (
+                    <div className="required-fingers">
+                        <h3>Required Fingers:</h3>
+                        <div className="finger-grid">
+                            {required.map(finger => (
+                                <div
+                                    key={finger}
+                                    className={`finger-item ${fingerprints[finger] ? 'captured' : ''}`}
+                                    onClick={() => setSelectedFinger(finger)}
+                                >
+                                    <FontAwesomeIcon icon={faFingerprint} />
+                                    <span>{FINGER_OPTIONS[finger]}</span>
+                                    {fingerprints[finger] && <FontAwesomeIcon icon={faCheck} className="check-icon" />}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="completion-status">
+                            {allRequiredCaptured
+                                ? <span className="complete">✓ All required fingerprints captured</span>
+                                : <span className="incomplete">Required fingerprints pending</span>
+                            }
+                        </div>
+                    </div>
+                )}
+
+                <div className="captured-summary">
+                    <h3>Captured Fingerprints ({Object.keys(fingerprints).length})</h3>
+                    {Object.keys(fingerprints).length === 0 ? (
+                        <p className="no-data">No fingerprints captured yet</p>
+                    ) : (
+                        <div className="fingerprints-grid">
+                            {Object.entries(fingerprints).map(([finger, data]) => (
+                                <div
+                                    key={finger}
+                                    className={`fingerprint-item ${getQualityClass(data.quality)}`}
+                                    onClick={() => setSelectedFinger(finger)}
+                                >
+                                    <FontAwesomeIcon icon={faFingerprint} className="fingerprint-icon-small" />
+                                    <div className="finger-details">
+                                        <span className="finger-name">{data.fingerName}</span>
+                                        <span className="quality-score">Quality: {data.quality}%</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </>
+        );
+    };
+
     return (
         <div className="biometric-capture-section">
             <div className="section-header">
-                <h2>Fingerprint Registration</h2>
+                <h2>{mode === 'verification' ? 'Fingerprint Verification' : 'Fingerprint Registration'}</h2>
                 {renderServiceStatus()}
             </div>
 
-            <div className="capture-container">
-                <div className="finger-selection">
-                    <label htmlFor="finger-select">Select Finger:</label>
-                    <select
-                        id="finger-select"
-                        className="finger-select"
-                        value={selectedFinger}
-                        onChange={(e) => setSelectedFinger(e.target.value)}
-                        disabled={scannerState.isScanning || !scannerState.isConnected}
-                    >
-                        {Object.entries(FINGER_OPTIONS).map(([key, label]) => (
-                            <option key={key} value={key}>
-                                {label} {required.includes(key) ? '(Required)' : ''}
-                                {fingerprints[key] ? ' ✓' : ''}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className={`fingerprint-box ${fingerprints[selectedFinger] ? 'captured' : ''} ${scannerState.isScanning ? 'scanning' : ''}`}>
-                    <div className="fingerprint-icon-container">
-                        <FontAwesomeIcon
-                            icon={faFingerprint}
-                            className="fingerprint-icon"
-                            pulse={scannerState.isScanning}
-                        />
-                        {captureProgress > 0 && (
-                            <div className="capture-progress">
-                                <div
-                                    className="progress-bar"
-                                    style={{ width: `${captureProgress}%` }}
-                                ></div>
-                            </div>
-                        )}
-                    </div>
-
-                    {fingerprints[selectedFinger] ? (
-                        <div className="fingerprint-details">
-                            <div className={`quality-indicator ${getQualityClass(fingerprints[selectedFinger].quality)}`}>
-                                Quality: {fingerprints[selectedFinger].quality}%
-                            </div>
-                            <div className="timestamp">
-                                Captured: {new Date(fingerprints[selectedFinger].timestamp).toLocaleTimeString()}
-                            </div>
-                        </div>
-                    ) : (
-                        <button
-                            className="capture-button"
-                            onClick={handleCapture}
-                            disabled={scannerState.isScanning || !scannerState.isConnected}
-                        >
-                            {scannerState.isScanning ? 'Scanning...' : 'Capture'}
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {required.length > 0 && (
-                <div className="required-fingers">
-                    <h3>Required Fingers:</h3>
-                    <div className="finger-grid">
-                        {required.map(finger => (
-                            <div
-                                key={finger}
-                                className={`finger-item ${fingerprints[finger] ? 'captured' : ''}`}
-                                onClick={() => setSelectedFinger(finger)}
-                            >
-                                <FontAwesomeIcon icon={faFingerprint} />
-                                <span>{FINGER_OPTIONS[finger]}</span>
-                                {fingerprints[finger] && <FontAwesomeIcon icon={faCheck} className="check-icon" />}
-                            </div>
-                        ))}
-                    </div>
-                    <div className="completion-status">
-                        {allRequiredCaptured
-                            ? <span className="complete">✓ All required fingerprints captured</span>
-                            : <span className="incomplete">Required fingerprints pending</span>
-                        }
-                    </div>
-                </div>
-            )}
-
-            <div className="captured-summary">
-                <h3>Captured Fingerprints ({Object.keys(fingerprints).length})</h3>
-                {Object.keys(fingerprints).length === 0 ? (
-                    <p className="no-data">No fingerprints captured yet</p>
-                ) : (
-                    <div className="fingerprints-grid">
-                        {Object.entries(fingerprints).map(([finger, data]) => (
-                            <div
-                                key={finger}
-                                className={`fingerprint-item ${getQualityClass(data.quality)}`}
-                                onClick={() => setSelectedFinger(finger)}
-                            >
-                                <FontAwesomeIcon icon={faFingerprint} className="fingerprint-icon-small" />
-                                <div className="finger-details">
-                                    <span className="finger-name">{data.fingerName}</span>
-                                    <span className="quality-score">Quality: {data.quality}%</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+            {renderModeContent()}
         </div>
     );
 };

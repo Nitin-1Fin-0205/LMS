@@ -96,6 +96,8 @@ const CustomerList = () => {
                     ...prev,
                     totalCustomers: response.data.data.total || 0
                 }));
+
+                console.log('Fetched customers', pagination)
             }
         } catch (error) {
             console.error('Error fetching customers:', error);
@@ -160,14 +162,6 @@ const CustomerList = () => {
         setFilterModel({ items: [] });
     };
 
-    const handlePageChange = (newPage) => {
-        setPagination(prev => ({ ...prev, pageNo: newPage + 1 }));
-    };
-
-    const handlePageSizeChange = (newPageSize) => {
-        setPagination(prev => ({ ...prev, pageSize: newPageSize, pageNo: 1 }));
-    };
-
     return (
         <Box sx={{
             height: '100%',
@@ -211,7 +205,7 @@ const CustomerList = () => {
                     />
                 </Box>
                 <Box sx={{
-                    height: 'calc(100vh - 200px)',
+                    height: 'calc(100vh - 100px)',
                     backgroundColor: 'white',
                     borderRadius: '8px',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
@@ -222,17 +216,39 @@ const CustomerList = () => {
                     <DataGrid
                         rows={customers}
                         columns={columns}
-                        pageSize={pagination.pageSize}
-                        rowCount={pagination.totalCustomers}
+                        rowCount={pagination.totalCustomers} // Total count from server
                         loading={loading}
-                        paginationMode="server"
-                        onPageChange={handlePageChange}
-                        onPageSizeChange={handlePageSizeChange}
-                        rowsPerPageOptions={[10, 25, 50]}
-                        disableSelectionOnClick
-                        autoHeight={false} // Changed from true to false to use container's height
+                        paginationMode="server" // This is correct for server-side pagination
+                        pageSizeOptions={[10, 25, 50]}
+
+                        // Use paginationModel instead of deprecated pageSize and page
+                        paginationModel={{
+                            page: pagination.pageNo - 1, // DataGrid uses 0-indexed pages
+                            pageSize: pagination.pageSize
+                        }}
+
+                        // Use onPaginationModelChange instead of separate handlers
+                        onPaginationModelChange={(newModel) => {
+                            setPagination(prev => ({
+                                ...prev,
+                                pageNo: newModel.page + 1, // Convert back to 1-indexed for your API
+                                pageSize: newModel.pageSize
+                            }));
+                        }}
+
                         filterModel={filterModel}
                         onFilterModelChange={(newModel) => setFilterModel(newModel)}
+
+                        // Remove deprecated props that might be causing conflicts
+                        // pageSize={pagination.pageSize}
+                        // page={pagination.pageNo - 1}
+                        // onPageChange={handlePageChange}
+                        // onPageSizeChange={handlePageSizeChange}
+                        // rowsPerPageOptions={[10, 25, 50]}
+
+                        // Keep these props
+                        disableSelectionOnClick
+                        autoHeight={false}
                         sx={{
                             border: 'none',
                             '.MuiDataGrid-columnHeaders': {
@@ -248,9 +264,9 @@ const CustomerList = () => {
                             '& .MuiDataGrid-main': {
                                 width: '100%'
                             },
-                            flex: 1, // Added to make DataGrid fill the container
-                            width: '100%', // Ensure full width
-                            height: '100%' // Ensure full height of container
+                            flex: 1,
+                            width: '100%',
+                            height: '100%'
                         }}
                     />
                 </Box>

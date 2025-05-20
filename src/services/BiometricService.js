@@ -581,21 +581,22 @@ class BiometricService {
                 throw new Error(captureData.retString || 'Capture failed');
             }
 
-            // // Step 2: Get the template data - use direct connection for this too
-            // const templateResponse = await this.makeRequest(`/api/getTemplateData?dummy=${Math.random()}`, {
-            //     params: {
-            //         sHandle: this.deviceHandle,
-            //         id: this.pageId,
-            //         extractEx: 1,
-            //         qualityLevel: 60 // Quality threshold
-            //     }
-            // });
+            // Step 2: Get the template data - use direct connection for this too
+            const templateResponse = await this.makeRequest(`/api/getTemplateData?dummy=${Math.random()}`, {
+                params: {
+                    sHandle: this.deviceHandle,
+                    id: this.pageId,
+                    encrypt: 0,
+                    extractEx: 1,
+                    qualityLevel: 60
+                }
+            });
 
-            // console.log('Template response:', templateResponse);
+            console.log('Template response:', templateResponse);
 
-            // if (templateResponse.retValue != 0) {
-            //     throw new Error(templateResponse.retString || 'Template extraction failed');
-            // }
+            if (templateResponse.retValue != 0) {
+                throw new Error(templateResponse.retString || 'Template extraction failed');
+            }
 
 
             // Step 3: Get the image data in both formats (WSQ and BMP)
@@ -615,9 +616,8 @@ class BiometricService {
 
             return {
                 success: true,
-                // template: templateResponse.templateBase64,
-                // quality: templateResponse.quality || 80,
-                quality: 70,
+                template: templateResponse.templateBase64,
+                quality: templateResponse.quality,
                 wsq: wsqResponse.imageBase64,
                 image: imgResponse.imageBase64
             };
