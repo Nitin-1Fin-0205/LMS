@@ -581,7 +581,7 @@ class BiometricService {
                 throw new Error(captureData.retString || 'Capture failed');
             }
 
-            const thresholdQuality = 60;
+            const thresholdQuality = 80;
 
             // Step 2: Get the template data - use direct connection for this too
             const templateResponse = await this.makeRequest(`/api/getTemplateData?dummy=${Math.random()}`, {

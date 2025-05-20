@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFingerprint, faSync, faCheck, faTimes, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { faFingerprint, faSync, faCheck, faTimes, faExclamationTriangle, faRedo } from '@fortawesome/free-solid-svg-icons';
 import '../styles/BiometricCapture.css';
 import BiometricService from '../services/BiometricService';
 import { toast } from 'react-toastify';
@@ -43,6 +43,71 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
     });
     const [captureProgress, setCaptureProgress] = useState(0);
     const [retryCount, setRetryCount] = useState(0);
+    const [loading, setLoading] = useState(false);
+
+    // Fetch customer's previously captured biometric records
+    const fetchCustomerBiometrics = async () => {
+        if (!customerId) return;
+
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('authToken');
+
+            const response = await axios.get(
+                `${API_URL}/biometrics/customer/${customerId}`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': '*/*'
+                    }
+                }
+            );
+
+            // Check the response structure - the API returns data.biometrics array
+            console.log('API Response:', response.data);
+
+            if (response.data?.data?.biometrics && Array.isArray(response.data.data.biometrics)) {
+                const fetchedFingerprints = {};
+
+                // Map API response to component format
+                response.data.data.biometrics.forEach(record => {
+                    // Use fingerPosition instead of finger
+                    fetchedFingerprints[record.fingerPosition] = {
+                        // These fields aren't included in list response but are needed for UI
+                        template: record.template || '',
+                        wsq: record.wsq || '',
+                        image: record.image || null,
+                        // Fields from actual response
+                        quality: record.quality || 0,
+                        fingerName: record.fingerName || FINGER_OPTIONS[record.fingerPosition],
+                        timestamp: record.createdAt || new Date().toISOString(),
+                        // Additional metadata if needed
+                        id: record.id,
+                        verificationCount: record.verificationCount || 0,
+                        lastVerified: record.lastVerified
+                    };
+                });
+
+                console.log('Mapped fingerprint records:', fetchedFingerprints);
+                setFingerprints(fetchedFingerprints);
+
+                // Notify parent component
+                if (onUpdate) {
+                    onUpdate(fetchedFingerprints);
+                }
+            } else {
+                console.log('No biometric records found or unexpected response format');
+            }
+        } catch (error) {
+            console.error('Error fetching customer biometrics:', error);
+            // Only show toast if there's a real error, not just empty records
+            if (error.response && error.response.status !== 404) {
+                toast.error('Failed to fetch customer biometrics');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const initializeDevice = async () => {
         try {
@@ -74,7 +139,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                 deviceInfo: result.deviceInfo
             });
 
-            toast.success(`Fingerprint device connected: ${result.deviceInfo?.ScannerName}`);
+            // toast.success(`Fingerprint device connected: ${result.deviceInfo?.ScannerName}`);
         } catch (error) {
             console.error('Failed to initialize device:', error);
             setScannerState({
@@ -89,9 +154,14 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
         }
     };
 
-    // Initialize device on component mount
+    // Initialize device and fetch biometrics on component mount
     useEffect(() => {
         initializeDevice();
+
+        // Fetch customer biometrics if customerId is provided
+        if (customerId) {
+            fetchCustomerBiometrics();
+        }
 
         // Cleanup on component unmount
         return () => {
@@ -99,7 +169,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                 .then(() => BiometricService.cleanupSession())
                 .catch(console.error);
         };
-    }, []);
+    }, [customerId]); // Re-fetch when customerId changes
 
     const getQualityClass = useCallback((quality) => {
         if (quality >= QUALITY_THRESHOLDS.excellent) return 'excellent';
@@ -225,6 +295,11 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
         }
     };
 
+    const handleUpdateFingerprint = (finger) => {
+        setSelectedFinger(finger);
+        handleCapture();
+    };
+
     const renderServiceStatus = () => {
         if (!serviceStatus.checked) {
             return (
@@ -286,110 +361,136 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                 {renderServiceStatus()}
             </div>
 
-            <div className="capture-container">
-                <div className="finger-selection">
-                    <label htmlFor="finger-select">Select Finger:</label>
-                    <select
-                        id="finger-select"
-                        className="finger-select"
-                        value={selectedFinger}
-                        onChange={(e) => setSelectedFinger(e.target.value)}
-                        disabled={scannerState.isScanning || !scannerState.isConnected}
-                    >
-                        {Object.entries(FINGER_OPTIONS).map(([key, label]) => (
-                            <option key={key} value={key}>
-                                {label} {required.includes(key) ? '(Required)' : ''}
-                                {fingerprints[key] ? ' ✓' : ''}
-                            </option>
-                        ))}
-                    </select>
+            {loading ? (
+                <div className="loading-container">
+                    <FontAwesomeIcon icon={faSync} spin /> Loading fingerprint records...
                 </div>
+            ) : (
+                <>
+                    <div className="capture-container">
+                        <div className="finger-selection">
+                            <label htmlFor="finger-select">Select Finger:</label>
+                            <select
+                                id="finger-select"
+                                className="finger-select"
+                                value={selectedFinger}
+                                onChange={(e) => setSelectedFinger(e.target.value)}
+                                disabled={scannerState.isScanning || !scannerState.isConnected}
+                            >
+                                {Object.entries(FINGER_OPTIONS).map(([key, label]) => (
+                                    <option key={key} value={key}>
+                                        {label} {required.includes(key) ? '(Required)' : ''}
+                                        {fingerprints[key] ? ' ✓' : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
-                <div className={`fingerprint-box ${fingerprints[selectedFinger] ? 'captured' : ''} ${scannerState.isScanning ? 'scanning' : ''}`}>
-                    <div className="fingerprint-icon-container">
-                        <FontAwesomeIcon
-                            icon={faFingerprint}
-                            className="fingerprint-icon"
-                            pulse={scannerState.isScanning}
-                        />
-                        {captureProgress > 0 && (
-                            <div className="capture-progress">
-                                <div
-                                    className="progress-bar"
-                                    style={{ width: `${captureProgress}%` }}
-                                ></div>
+                        <div className={`fingerprint-box ${fingerprints[selectedFinger] ? 'captured' : ''} ${scannerState.isScanning ? 'scanning' : ''}`}>
+                            <div className="fingerprint-icon-container">
+                                <FontAwesomeIcon
+                                    icon={faFingerprint}
+                                    className="fingerprint-icon"
+                                    pulse={scannerState.isScanning}
+                                />
+                                {captureProgress > 0 && (
+                                    <div className="capture-progress">
+                                        <div
+                                            className="progress-bar"
+                                            style={{ width: `${captureProgress}%` }}
+                                        ></div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {fingerprints[selectedFinger] ? (
+                                <div className="fingerprint-details">
+                                    <div className={`quality-indicator ${getQualityClass(fingerprints[selectedFinger].quality)}`}>
+                                        Quality: {fingerprints[selectedFinger].quality}%
+                                    </div>
+                                    <div className="timestamp">
+                                        Captured: {new Date(fingerprints[selectedFinger].timestamp).toLocaleTimeString()}
+                                    </div>
+                                    {/* <button 
+                                        className="update-button" 
+                                        onClick={() => handleCapture()}
+                                        disabled={scannerState.isScanning || !scannerState.isConnected}
+                                        title="Update this fingerprint"
+                                    >
+                                        <FontAwesomeIcon icon={faRedo} /> Update
+                                    </button> */}
+                                </div>
+                            ) : (
+                                <button
+                                    className="capture-button"
+                                    onClick={handleCapture}
+                                    disabled={scannerState.isScanning || !scannerState.isConnected}
+                                >
+                                    {scannerState.isScanning ? 'Scanning...' : 'Capture'}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {required.length > 0 && (
+                        <div className="required-fingers">
+                            <h3>Required Fingers:</h3>
+                            <div className="finger-grid">
+                                {required.map(finger => (
+                                    <div
+                                        key={finger}
+                                        className={`finger-item ${fingerprints[finger] ? 'captured' : ''}`}
+                                        onClick={() => setSelectedFinger(finger)}
+                                    >
+                                        <FontAwesomeIcon icon={faFingerprint} />
+                                        <span>{FINGER_OPTIONS[finger]}</span>
+                                        {fingerprints[finger] && <FontAwesomeIcon icon={faCheck} className="check-icon" />}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="completion-status">
+                                {allRequiredCaptured
+                                    ? <span className="complete">✓ All required fingerprints captured</span>
+                                    : <span className="incomplete">Required fingerprints pending</span>
+                                }
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="captured-summary">
+                        <h3>Captured Fingerprints ({Object.keys(fingerprints).length})</h3>
+                        {Object.keys(fingerprints).length === 0 ? (
+                            <p className="no-data">No fingerprints captured yet</p>
+                        ) : (
+                            <div className="fingerprints-grid">
+                                {Object.entries(fingerprints).map(([finger, data]) => (
+                                    <div
+                                        key={finger}
+                                        className={`fingerprint-item ${getQualityClass(data.quality)}`}
+                                        onClick={() => setSelectedFinger(finger)}
+                                    >
+                                        <FontAwesomeIcon icon={faFingerprint} className="fingerprint-icon-small" />
+                                        <div className="finger-details">
+                                            <span className="finger-name">{data.fingerName}</span>
+                                            <span className="quality-score">Quality: {data.quality}%</span>
+                                        </div>
+                                        <button
+                                            className="update-icon"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleUpdateFingerprint(finger);
+                                            }}
+                                            title="Update this fingerprint"
+                                        >
+                                            <FontAwesomeIcon icon={faRedo} />
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>
-
-                    {fingerprints[selectedFinger] ? (
-                        <div className="fingerprint-details">
-                            <div className={`quality-indicator ${getQualityClass(fingerprints[selectedFinger].quality)}`}>
-                                Quality: {fingerprints[selectedFinger].quality}%
-                            </div>
-                            <div className="timestamp">
-                                Captured: {new Date(fingerprints[selectedFinger].timestamp).toLocaleTimeString()}
-                            </div>
-                        </div>
-                    ) : (
-                        <button
-                            className="capture-button"
-                            onClick={handleCapture}
-                            disabled={scannerState.isScanning || !scannerState.isConnected}
-                        >
-                            {scannerState.isScanning ? 'Scanning...' : 'Capture'}
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {required.length > 0 && (
-                <div className="required-fingers">
-                    <h3>Required Fingers:</h3>
-                    <div className="finger-grid">
-                        {required.map(finger => (
-                            <div
-                                key={finger}
-                                className={`finger-item ${fingerprints[finger] ? 'captured' : ''}`}
-                                onClick={() => setSelectedFinger(finger)}
-                            >
-                                <FontAwesomeIcon icon={faFingerprint} />
-                                <span>{FINGER_OPTIONS[finger]}</span>
-                                {fingerprints[finger] && <FontAwesomeIcon icon={faCheck} className="check-icon" />}
-                            </div>
-                        ))}
-                    </div>
-                    <div className="completion-status">
-                        {allRequiredCaptured
-                            ? <span className="complete">✓ All required fingerprints captured</span>
-                            : <span className="incomplete">Required fingerprints pending</span>
-                        }
-                    </div>
-                </div>
+                </>
             )}
-
-            <div className="captured-summary">
-                <h3>Captured Fingerprints ({Object.keys(fingerprints).length})</h3>
-                {Object.keys(fingerprints).length === 0 ? (
-                    <p className="no-data">No fingerprints captured yet</p>
-                ) : (
-                    <div className="fingerprints-grid">
-                        {Object.entries(fingerprints).map(([finger, data]) => (
-                            <div
-                                key={finger}
-                                className={`fingerprint-item ${getQualityClass(data.quality)}`}
-                                onClick={() => setSelectedFinger(finger)}
-                            >
-                                <FontAwesomeIcon icon={faFingerprint} className="fingerprint-icon-small" />
-                                <div className="finger-details">
-                                    <span className="finger-name">{data.fingerName}</span>
-                                    <span className="quality-score">Quality: {data.quality}%</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
         </div>
     );
 };

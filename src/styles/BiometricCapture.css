@@ -531,3 +531,55 @@
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   }
 }
+
+/* .update-button {
+    background-color: #2196f3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    margin-top: 10px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: background-color 0.2s;
+}
+
+.update-button:hover:not(:disabled) {
+    background-color: #0d8bf2;
+}
+
+.update-button:disabled {
+    background-color: #bbdefb;
+    cursor: not-allowed;
+} */
+
+.update-icon {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.7;
+    color: #2196f3;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.fingerprint-item {
+    position: relative; /* Add this to position the update icon */
+}
+
+.update-icon:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
