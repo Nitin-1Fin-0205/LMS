@@ -7,7 +7,9 @@ import {
     faUserPlus,
     faLock,
     faUsers,
-    faSignOutAlt
+    faSignOutAlt,
+    faFingerprint,
+    faPersonWalking
 } from '@fortawesome/free-solid-svg-icons';
 import {
     Drawer,
@@ -152,7 +154,7 @@ const SideNav = () => {
                         {!isCollapsed && <ListItemText primary="Access" />}
                     </ListItem>
                     <ListItem
-                        selected={activeTab === TAB_NAMES.ACCESS}
+                        selected={activeTab === TAB_NAMES.CUSTOMER}
                         onClick={() => handleTabChange(TAB_NAMES.CUSTOMER, ROUTES.CUSTOMERS)}
                         sx={listItemSx}
                     >
@@ -164,6 +166,21 @@ const SideNav = () => {
                             <FontAwesomeIcon icon={faUsers} />
                         </ListItemIcon>
                         {!isCollapsed && <ListItemText primary="Customers" />}
+                    </ListItem>
+                    {/* Customer Visit Navigation Item */}
+                    <ListItem
+                        selected={activeTab === 'CUSTOMER_VISIT'}
+                        onClick={() => handleTabChange('CUSTOMER_VISIT', ROUTES.CUSTOMER_VISIT)}
+                        sx={listItemSx}
+                    >
+                        <ListItemIcon sx={{
+                            color: 'inherit',
+                            minWidth: 35,
+                            marginRight: isCollapsed ? 0 : 2
+                        }}>
+                            <FontAwesomeIcon icon={faPersonWalking} />
+                        </ListItemIcon>
+                        {!isCollapsed && <ListItemText primary="Customer Visit" />}
                     </ListItem>
                 </List>
                 <Box sx={{

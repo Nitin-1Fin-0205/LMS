@@ -4,9 +4,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { Box, Typography } from '@mui/material';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faUserAlt, faFileAlt } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faUserAlt, faFileAlt, faFingerprint } from '@fortawesome/free-solid-svg-icons';
 import CustomerInfo from './CustomerInfo';
 import Attachments from './Attachments';
+import BiometricCapture from './BiometricCapture';
 import { API_URL } from '../assets/config';
 import { updateHolderSection, submitCustomerInfo, fetchCustomerById } from '../store/slices/customerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS, HOLDER_STAGES, STAGE_STATUS } from '../constants/holderConstants';
@@ -22,7 +23,8 @@ const SecondaryHolder = () => {
     const [currentStage, setCurrentStage] = useState(HOLDER_STAGES.CUSTOMER_INFO);
     const [stageStatus, setStageStatus] = useState({
         [HOLDER_STAGES.CUSTOMER_INFO]: STAGE_STATUS.NOT_STARTED,
-        [HOLDER_STAGES.ATTACHMENTS]: STAGE_STATUS.NOT_STARTED
+        [HOLDER_STAGES.ATTACHMENTS]: STAGE_STATUS.NOT_STARTED,
+        [HOLDER_STAGES.BIOMETRIC]: STAGE_STATUS.NOT_STARTED
     });
 
     useEffect(() => {
@@ -59,6 +61,14 @@ const SecondaryHolder = () => {
         }));
     };
 
+    const handleBiometricUpdate = (data) => {
+        dispatch(updateHolderSection({
+            holder: HOLDER_TYPES.SECONDARY,
+            section: HOLDER_SECTIONS.BIOMETRIC,
+            data
+        }));
+    };
+
     const handleSaveCustomerInfo = async () => {
         try {
             setIsSubmitting(true);
@@ -82,7 +92,13 @@ const SecondaryHolder = () => {
                 parent_customer_id: primaryCustomerId,
             };
 
-            const result = await dispatch(submitCustomerInfo(submitData)).unwrap();
+            const result = await dispatch(submitCustomerInfo({
+                customerData: submitData,
+                holderType: HOLDER_TYPES.SECONDARY
+            })).unwrap();
+
+            // Log and verify the customerId was returned
+            console.log('Secondary Holder created/updated with ID:', result.customerId);
 
             if (!result.customerId) {
                 throw new Error('Failed to create secondary holder');
@@ -102,6 +118,8 @@ const SecondaryHolder = () => {
                 return faUserAlt;
             case HOLDER_STAGES.ATTACHMENTS:
                 return faFileAlt;
+            case HOLDER_STAGES.BIOMETRIC:
+                return faFingerprint;
             default:
                 return faUserAlt;
         }
@@ -113,6 +131,8 @@ const SecondaryHolder = () => {
                 return "Customer Info";
             case HOLDER_STAGES.ATTACHMENTS:
                 return "Documents";
+            case HOLDER_STAGES.BIOMETRIC:
+                return "Biometric Data";
             default:
                 return "";
         }
@@ -128,11 +148,19 @@ const SecondaryHolder = () => {
             toast.error('Please save customer information first');
             return;
         }
+
+        // Set current stage as complete
         setStageStatus(prev => ({
             ...prev,
-            [HOLDER_STAGES.CUSTOMER_INFO]: STAGE_STATUS.COMPLETED
+            [currentStage]: STAGE_STATUS.COMPLETED
         }));
-        setCurrentStage(HOLDER_STAGES.ATTACHMENTS);
+
+        // Move to next stage based on current stage
+        if (currentStage === HOLDER_STAGES.CUSTOMER_INFO) {
+            setCurrentStage(HOLDER_STAGES.ATTACHMENTS);
+        } else if (currentStage === HOLDER_STAGES.ATTACHMENTS) {
+            setCurrentStage(HOLDER_STAGES.BIOMETRIC);
+        }
     };
 
     const handleAttachmentsSubmit = async () => {
@@ -184,20 +212,21 @@ const SecondaryHolder = () => {
                         zIndex: 0
                     }} />
 
-                    {/* Progress bar fill */}
+                    {/* Progress bar fill - updated for 3 stages */}
                     <Box sx={{
                         position: 'absolute',
                         top: '10px',
                         left: 0,
-                        width: currentStage === HOLDER_STAGES.CUSTOMER_INFO ? '0%' : '100%',
+                        width: currentStage === HOLDER_STAGES.CUSTOMER_INFO ? '0%' :
+                            currentStage === HOLDER_STAGES.ATTACHMENTS ? '50%' : '100%',
                         height: '4px',
                         bgcolor: 'primary.main',
                         zIndex: 1,
                         transition: 'width 0.5s ease-in-out'
                     }} />
 
-                    {/* Stage indicators */}
-                    {[HOLDER_STAGES.CUSTOMER_INFO, HOLDER_STAGES.ATTACHMENTS].map((stage, index) => (
+                    {/* Stage indicators - updated to include biometric */}
+                    {[HOLDER_STAGES.CUSTOMER_INFO, HOLDER_STAGES.ATTACHMENTS, HOLDER_STAGES.BIOMETRIC].map((stage, index) => (
                         <Box
                             key={stage}
                             sx={{
@@ -215,7 +244,7 @@ const SecondaryHolder = () => {
                                 borderRadius: '50%',
                                 bgcolor: currentStage === stage ? 'primary.main' :
                                     stageStatus[stage] === STAGE_STATUS.COMPLETED ? '#4caf50' : '#e0e0e0',
-                                color: 'white',
+                                color: stageStatus[stage] === STAGE_STATUS.COMPLETED ? '#10b981' : 'white',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -277,7 +306,7 @@ const SecondaryHolder = () => {
                             </div>
                         </div>
                     </>
-                ) : (
+                ) : currentStage === HOLDER_STAGES.ATTACHMENTS ? (
                     <>
                         <div className="attachments-container">
                             <Attachments
@@ -291,6 +320,29 @@ const SecondaryHolder = () => {
                             <button
                                 className="back-button"
                                 onClick={() => setCurrentStage(HOLDER_STAGES.CUSTOMER_INFO)}
+                            >
+                                Back
+                            </button>
+                            <button
+                                className="next-button"
+                                onClick={handleNext}
+                                disabled={!secondaryHolder.customerInfo.customerId}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <BiometricCapture
+                            onUpdate={handleBiometricUpdate}
+                            initialData={secondaryHolder.biometric}
+                            customerId={secondaryHolder.customerInfo.customerId}
+                        />
+                        <div className="stage-actions">
+                            <button
+                                className="back-button"
+                                onClick={() => setCurrentStage(HOLDER_STAGES.ATTACHMENTS)}
                             >
                                 Back
                             </button>

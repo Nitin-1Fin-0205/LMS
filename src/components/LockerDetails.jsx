@@ -88,7 +88,8 @@ const LockerDetails = () => {
                     navigate(-1);
                 }
             } catch (error) {
-                toast.error('Failed to fetch locker details');
+                // toast.error('Failed to fetch locker details');
+                console.log('Error fetching locker details:', error);
             }
         };
 

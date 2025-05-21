@@ -80,7 +80,8 @@ const PrimaryHolder = () => {
                     'panNo',
                     'aadharNo',
                     'address',
-                    'photo'
+                    'photo',
+                    'lockerCenterId'
                 ];
                 const missingFields = requiredFields.filter(field => !data[field]);
                 if (missingFields.length > 0) {
@@ -123,9 +124,9 @@ const PrimaryHolder = () => {
                     mobile_number: formData.customerInfo.mobileNo,
                     email: formData.customerInfo.emailId,
                     image_base64: formData.customerInfo.photo,
-                    locker_center_id: formData.customerInfo.lockerCenterId,
+                    locker_center_id: formData.customerInfo.lockerCenterId || 1, //TODO: remove this Hardcoded value
                 };
-                const result = await dispatch(submitCustomerInfo(submitData)).unwrap();
+                const result = await dispatch(submitCustomerInfo({ customerData: submitData, holderType: HOLDER_TYPES.PRIMARY })).unwrap();
 
                 console.log('Customer Info Submission Result:', result);
                 if (!result.customerId) {
@@ -381,8 +382,8 @@ const PrimaryHolder = () => {
                                 height: 24,
                                 borderRadius: '50%',
                                 bgcolor: currentStage === stage ? 'primary.main' :
-                                    stageStatus[stage] === STAGE_STATUS.COMPLETED ? '#4caf50' : '#e0e0e0',
-                                color: 'white',
+                                    stageStatus[stage] === STAGE_STATUS.COMPLETED ? '#d1fae5' : '#e0e0e0',
+                                color: stageStatus[stage] === STAGE_STATUS.COMPLETED ? '#10b981' : 'white',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',

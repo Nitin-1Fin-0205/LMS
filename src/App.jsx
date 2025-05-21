@@ -21,6 +21,7 @@ import SecondaryHolder from './components/SecondaryHolder';
 import ThirdHolder from './components/ThirdHolder';
 import LockerDetails from './components/LockerDetails';
 import Welcome from './components/Welcome';
+import CustomerVisit from './components/CustomerVisit';
 
 // Create a wrapper component that uses useLocation
 const AppContent = () => {
@@ -114,6 +115,12 @@ const AppContent = () => {
               <Route path={ROUTES.LOCKER_DETAILS} element={
                 <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
                   <LockerDetails />
+                </PrivateRoute>
+              } />
+
+              <Route path={ROUTES.CUSTOMER_VISIT} element={
+                <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
+                  <CustomerVisit />
                 </PrivateRoute>
               } />
 

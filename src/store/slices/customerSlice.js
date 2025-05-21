@@ -107,14 +107,15 @@ export const fetchCustomerById = createAsyncThunk(
 // This API is used to create a new customer or update an existing one
 export const submitCustomerInfo = createAsyncThunk(
     'customer/submitCustomerInfo',
-    async (customerData, { rejectWithValue }) => {
-        console.log('Submitting customer data:', customerData);
+    async ({ customerData, holderType }, { rejectWithValue }) => {
+        console.log('Submitting customer data:', customerData, holderType);
         try {
             const response = await axios.post(`${API_URL}/customers/add-update/personal-details`, customerData);
             if (response.status === 200 || response.status === 201) {
 
                 return {
                     customerId: response?.data?.data?.customer_id,
+                    holderType
                 };
             }
             throw new Error('Failed to create customer');
@@ -226,10 +227,33 @@ const customerSlice = createSlice({
                 state.isSubmitting = false;
                 state.error = action.payload;
             })
+            .addCase(submitCustomerInfo.pending, (state) => {
+                state.isSubmitting = true;
+                state.error = null;
+            })
             .addCase(submitCustomerInfo.fulfilled, (state, action) => {
                 state.isSubmitting = false;
-                state.customerId = action.payload.customerId;
-                state.isCustomerCreated = true;
+
+                // Get the customerId and holderType from the action payload
+                const { customerId, holderType } = action.payload;
+
+                console.log('Customer ID:', customerId);
+                console.log('Holder Type:', holderType);
+
+                // Update customerId in the appropriate holder section based on holderType
+
+                if (holderType === HOLDER_TYPES.PRIMARY) {
+                    state.customerId = customerId;
+                    state.form.primaryHolder.customerInfo.customerId = customerId;
+                } else if (holderType === HOLDER_TYPES.SECONDARY) {
+                    state.form.secondaryHolder.customerInfo.customerId = customerId;
+                } else if (holderType === HOLDER_TYPES.THIRD) {
+                    state.form.thirdHolder.customerInfo.customerId = customerId;
+                }
+            })
+            .addCase(submitCustomerInfo.rejected, (state, action) => {
+                state.isSubmitting = false;
+                state.error = action.payload;
             });
     }
 });
