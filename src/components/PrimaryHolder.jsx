@@ -81,7 +81,6 @@ const PrimaryHolder = () => {
                     'aadharNo',
                     'address',
                     'photo',
-                    'lockerCenterId'
                 ];
                 const missingFields = requiredFields.filter(field => !data[field]);
                 if (missingFields.length > 0) {

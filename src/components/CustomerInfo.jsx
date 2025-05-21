@@ -339,10 +339,13 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
 
         if (file && validateFile(file)) {
             setSelectedFile(file);
-            setCapturedImage(null);
+
+            // Read the file as data URL and set it in both states
             const reader = new FileReader();
             reader.onload = (e) => {
-                handleInputChange('photo', e.target.result);
+                const imageDataUrl = e.target.result;
+                setCapturedImage(imageDataUrl);
+                handleInputChange('photo', imageDataUrl);
             };
             reader.readAsDataURL(file);
             toast.success('Image uploaded successfully');
@@ -374,10 +377,13 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         const file = e.dataTransfer.files[0];
         if (file && validateFile(file)) {
             setSelectedFile(file);
-            setCapturedImage(null);
+
+            // Read the file as data URL and set it in both states
             const reader = new FileReader();
             reader.onload = (e) => {
-                handleInputChange('photo', e.target.result);
+                const imageDataUrl = e.target.result;
+                setCapturedImage(imageDataUrl);
+                handleInputChange('photo', imageDataUrl);
             };
             reader.readAsDataURL(file);
             toast.success('Image uploaded successfully');
@@ -575,7 +581,9 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                                 />
                             </label>
                         </p>
-                        {selectedFile && (
+
+                        {/* Show file name only when no image preview is available */}
+                        {selectedFile && !capturedImage && (
                             <div className="selected-file">
                                 <span>{selectedFile.name}</span>
                                 <button
@@ -626,10 +634,10 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
 
                     {capturedImage && (
                         <div className="captured-image-container">
-                            <h5>Captured Image</h5>
+                            <h5>{selectedFile ? "Uploaded Image" : "Captured Image"}</h5>
                             <img
                                 src={capturedImage}
-                                alt="Captured"
+                                alt={selectedFile ? "Uploaded" : "Captured"}
                                 className="captured-image"
                             />
                             <button onClick={resetCapturedImage} className="camera-button">Reset</button>
