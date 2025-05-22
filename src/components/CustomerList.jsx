@@ -34,8 +34,9 @@ const CustomerList = () => {
             flex: 0.8,
             minWidth: 100,
             valueFormatter: (params) => {
-                if (!params || typeof params.value === 'undefined' || params.value === null) return '-';
-                return params.value ? `₹${params.value.toLocaleString()}` : '-';
+                console.log('Rent value:', params);
+                if (!params) return '-';
+                return params ? `₹${params.toLocaleString()}` : '-';
             }
         },
         {
