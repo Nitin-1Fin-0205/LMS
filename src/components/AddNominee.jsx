@@ -36,7 +36,7 @@ const AddNominee = ({ isOpen, onClose }) => {
                 name: nominee.name,
                 relation: nominee.relation,
                 dob: nominee.dob,
-                percentage: nominee.percentage || 0
+                percentage: nominee.ownership_percentage || 0
             }))
             : [{ name: '', relation: '', dob: '', percentage: 100 }];
 

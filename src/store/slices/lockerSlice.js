@@ -79,7 +79,7 @@ export const addNominee = createAsyncThunk(
                         name: nomineeData.name,
                         relation: nomineeData.relation,
                         dob: nomineeData.dob,
-                        percentage: nomineeData.percentage,
+                        ownership_percentage: nomineeData.percentage,
                     }
                 ]
             };
@@ -123,7 +123,7 @@ export const updateNominee = createAsyncThunk(
                         name: nomineeData.name,
                         relation: nomineeData.relation,
                         dob: nomineeData.dob,
-                        percentage: nomineeData.percentage,
+                        ownership_percentage: nomineeData.percentage,
                     }
                 ]
             };

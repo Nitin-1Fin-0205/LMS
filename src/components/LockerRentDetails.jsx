@@ -224,9 +224,28 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                         <div className="nominee-cards">
                             {lockerDetails.nominees.map((nominee, index) => (
                                 <div key={index} className="nominee-card">
-                                    <h4>Name: {nominee.name}</h4>
-                                    <p>Relation: {nominee.relation}</p>
-                                    <p>DOB: {nominee.dob}</p>
+                                    <div className="nominee-header">
+                                        <div className="nominee-avatar">
+                                            {nominee?.name?.charAt(0).toUpperCase()}
+                                        </div>
+                                        <h4 className="nominee-name">{nominee.name}</h4>
+                                    </div>
+                                    <div className="nominee-details">
+                                        <div className="nominee-info-row">
+                                            <span><strong>Relation:</strong> {nominee.relation}</span>
+                                            <span><strong>DOB:</strong> {nominee.dob}</span>
+                                        </div>
+                                        <div className="nominee-ownership-compact">
+                                            <span className="ownership-label">Ownership:</span>
+                                            <div className="ownership-bar-container">
+                                                <div
+                                                    className="ownership-bar"
+                                                    style={{ width: `${nominee.ownership_percentage}%` }}
+                                                ></div>
+                                                <span className="ownership-percentage">{nominee.ownership_percentage}%</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
                         </div>
