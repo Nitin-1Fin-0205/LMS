@@ -230,6 +230,23 @@
     height: 100%;
 }
 
+.cabinet-view-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0; /* Important for proper flex behavior with scrolling */
+}
+
+.cabinet-view-scroll {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 500px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    background: #f9f9f9;
+}
+
 .cabinet-view h4 {
     position: sticky;
     top: 0;
@@ -245,35 +262,48 @@
 }
 
 .locker-grid {
-    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    align-items: center;
-    padding: 10px;
-    overflow-y: auto;
     min-width: fit-content;
+    align-items:center
 }
 
 .locker-row {
     display: flex;
+    flex-wrap: nowrap;
     gap: 10px;
-    width: 100%;
-    justify-content: center;
-    padding: 0 20px; /* Add padding to prevent edge cropping */
 }
 
 .locker-item {
-    min-width: 150px; /* Set minimum width */
+    min-width: 150px; 
     width: 150px;
     height: 80px;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2px;
-    margin: 0; /* Reset any margins */
-    flex-shrink: 0; /* Prevent shrinking */
+    /* padding: 2px; */
+    margin: 0; 
+    flex-shrink: 0; 
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor:pointer;
+}
+
+.locker-item.locker-small {
+    width: 70px;
+    height: 70px;
+}
+
+.locker-item.locker-medium {
+    width: 120px;
+    height: 90px;
+}
+
+.locker-item.locker-large {
+    width: 200px;
+    height: 100px;
 }
 
 .locker-item div {
@@ -288,7 +318,7 @@
 
 .locker-number {
     position: absolute;
-    left: 30px;
+    left: 35px;
     top: 50%;
     transform: translateY(-50%);
     font-size: 9px;
@@ -300,7 +330,8 @@
 
 .locker-item.selected {
     color: #fff;
-    border-color: #000;
+    border-color: #000 !important;
+    box-shadow: 0 0 0 2px #0002;
 }
 
 .locker-item:hover {
@@ -394,5 +425,15 @@
     .reserved-locker-button {
         min-width: 120px;
         text-align: center;
+    }
+}
+
+@media (max-width: 992px) {
+    .assign-locker-container {
+        flex-direction: column;
+    }
+    
+    .cabinet-view-scroll {
+        max-height: 400px;
     }
 }

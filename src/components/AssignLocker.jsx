@@ -180,7 +180,7 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
                 </div>
                 {selectedLocker && (
                     <div className="selected-locker-info" style={{ marginTop: '1rem' }}>
-                        <span style={{ color: '#ff69b4', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                        <span style={{ color: '#10B981', fontWeight: 'bold', fontSize: '0.95rem' }}>
                             Selected Locker: {selectedLocker.locker_number} ({selectedLocker.size})
                         </span>
                     </div>
@@ -226,11 +226,12 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
                 locker_number: locker.locker_name,
                 status: locker.status,
                 size: sizeData.size,
-                locker_id: locker.locker_id
+                locker_id: locker.locker_id,
+                locker_key: locker.key_number
             }));
 
         // Rest of the function remains the same
-        const COLUMNS = 4;
+        const COLUMNS = selectedSize === LOCKER_SIZES.SMALL ? 5 : selectedSize === LOCKER_SIZES.MEDIUM ? 3 : 2;
         const lockerGrid = [];
         let currentRow = [];
 
@@ -259,7 +260,8 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
                 locker_number: locker.locker_number,
                 locker_id: locker.locker_id,
                 size: locker.size,
-                status: locker.status
+                status: locker.status,
+                locker_key: locker.locker_key
             });
         }
     };
@@ -277,6 +279,17 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
         setError({ message: null, code: null });
         setRetryCount(0);
         fetchLockerData();
+    };
+
+    // Add a function to determine locker width class based on size
+    const getLockerWidthClass = (size) => {
+        if (!size) return '';
+        switch (size) {
+            case LOCKER_SIZES.SMALL: return 'locker-small';
+            case LOCKER_SIZES.MEDIUM: return 'locker-medium';
+            case LOCKER_SIZES.LARGE: return 'locker-large';
+            default: return '';
+        }
     };
 
     const getLockerSvg = (locker, isSelected) => {
@@ -336,31 +349,33 @@ const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
                 <div className="assign-locker-container">
                     {renderForm()}
                     {/* Right Side: Cabinet View */}
-                    <div className="cabinet-view">
+                    <div className="cabinet-view-container">
                         <h4>Cabinet View</h4>
-                        <div className="locker-grid">
-                            {cabinetView.map((row, rowIndex) => (
-                                <div key={rowIndex} className="locker-row">
-                                    {row.map((locker, colIndex) => (
-                                        <button
-                                            key={colIndex}
-                                            className={`locker-item ${selectedLocker?.locker_number === locker.locker_number ? 'selected' : ''
-                                                } ${locker.status !== LOCKER_STATUS.AVAILABLE ? 'occupied' : ''}`}
-                                            onClick={() => handleLockerClick(locker)}
-                                            disabled={locker.status !== LOCKER_STATUS.AVAILABLE}
-                                            {...(locker.status !== LOCKER_STATUS.AVAILABLE && {
-                                                'data-status': getStatusText(locker.status)
-                                            })}
-                                        >
-                                            <div dangerouslySetInnerHTML={{
-                                                __html: getLockerSvg(locker,
-                                                    selectedLocker?.locker_number === locker.locker_number)
-                                            }} />
-                                            <span className="locker-number">{locker.locker_number}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            ))}
+                        <div className="cabinet-view-scroll">
+                            <div className="locker-grid">
+                                {cabinetView.map((row, rowIndex) => (
+                                    <div key={rowIndex} className="locker-row">
+                                        {row.map((locker, colIndex) => (
+                                            <button
+                                                key={colIndex}
+                                                className={`locker-item ${getLockerWidthClass(locker.size)} ${selectedLocker?.locker_number === locker.locker_number ? 'selected' : ''} 
+                                                    ${locker.status !== LOCKER_STATUS.AVAILABLE ? 'occupied' : ''}`}
+                                                onClick={() => handleLockerClick(locker)}
+                                                disabled={locker.status !== LOCKER_STATUS.AVAILABLE}
+                                                {...(locker.status !== LOCKER_STATUS.AVAILABLE && {
+                                                    'data-status': getStatusText(locker.status)
+                                                })}
+                                            >
+                                                <div dangerouslySetInnerHTML={{
+                                                    __html: getLockerSvg(locker,
+                                                        selectedLocker?.locker_number === locker.locker_number)
+                                                }} />
+                                                <span className="locker-number">{locker.locker_number}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>

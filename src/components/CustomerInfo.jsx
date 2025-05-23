@@ -38,6 +38,9 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         gender: '',
         emailId: '',
         aadharNo: '',
+        city: '',
+        state: '',
+        statecode: '',
         ...initialData  // Spread initialData after default values
     });
 
@@ -98,6 +101,30 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         };
         setCustomerData(updatedData);
         onUpdate(updatedData);
+    };
+
+    // Add DOB validation handler
+    const handleDobChange = (e) => {
+        const value = e.target.value;
+
+        if (value) {
+            const year = value.split('-')[0];
+
+            if (year.length > 4) {
+                return;
+            }
+
+            // Additional validation: Ensure date is not in the future
+            const selectedDate = new Date(value);
+            const today = new Date();
+
+            if (selectedDate > today) {
+                toast.error('Date of birth cannot be in the future');
+                return;
+            }
+        }
+
+        handleInputChange('dateOfBirth', value);
     };
 
     const handlePanInput = (e) => {
@@ -549,6 +576,11 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         </div>
     );
 
+    const handleStateCodeInput = (e) => {
+        const value = e.target.value.replace(/\D/g, ''); // Only digits
+        handleInputChange('statecode', value);
+    };
+
     return (
         <div className="form-section">
             <h2>Customer Information</h2>
@@ -685,7 +717,8 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                     <input
                         type="date"
                         value={customerData.dateOfBirth}
-                        onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                        onChange={(e) => handleDobChange(e)}
+                        max={new Date().toISOString().split('T')[0]} // Restricts to today and earlier
                         required
                     />
                 </div>
@@ -702,7 +735,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 </div>
 
                 <div className="form-group">
-                    <label>Middle Name</label>
+                    <label>Middle Name<span className='required'>*</span></label>
                     <input
                         type="text"
                         value={customerData.middleName}
@@ -823,10 +856,43 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                         required
                     ></textarea>
                 </div>
+
+                <div className="form-group">
+                    <label>City<span className='required'>*</span></label>
+                    <input
+                        type="text"
+                        value={customerData.city}
+                        onChange={(e) => handleInputChange('city', e.target.value)}
+                        placeholder="Enter city"
+                        required
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label>State<span className='required'>*</span></label>
+                    <input
+                        type="text"
+                        value={customerData.state}
+                        onChange={(e) => handleInputChange('state', e.target.value)}
+                        placeholder="Enter state"
+                        required
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label>State Code<span className='required'>*</span></label>
+                    <input
+                        type="text"
+                        value={customerData.statecode}
+                        onChange={handleStateCodeInput}
+                        placeholder="Enter state code"
+                        required
+                    />
+                </div>
             </div>
 
             {showOtpModal && <OtpModal />}
-        </div>
+        </div >
     );
 };
 

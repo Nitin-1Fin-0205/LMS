@@ -162,7 +162,7 @@
 .customer-info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px;
+  column-gap: 16px;
   margin-top: 16px;
   padding: 16px;
 }

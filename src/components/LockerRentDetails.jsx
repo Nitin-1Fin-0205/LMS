@@ -83,6 +83,7 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
             assignedLocker: locker?.locker_number || "",
             lockerId: locker?.locker_id || null,
             lockerSize: locker?.size || "",
+            lockerKey: locker?.locker_key || "",
             isModalOpen: false
         }));
         console.log("Locker assigned:", locker);

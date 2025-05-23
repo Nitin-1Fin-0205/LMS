@@ -104,7 +104,7 @@ const LockerDetails = () => {
                 lockerId: lockerData?.lockerDetails.lockerId,
                 centerId: lockerData?.lockerDetails?.center,
                 planId: lockerData?.lockerDetails?.selectedPlan,
-                expiryDate: '2024-06-30', //TODO : need to implement this function calculateExpiryDate()
+                expiryDate: '2024-06-30', //TODO : need to implement this function
                 payFrequency: 1 //TODO: get from lockerData
             };
 

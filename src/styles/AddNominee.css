@@ -75,8 +75,8 @@
 
 .nominee-fields-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 5px;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
 }
 
 .nominee-fields-grid .form-group input {
@@ -175,6 +175,133 @@
 
 .save-nominee-button:hover {
     background: #2563eb;
+}
+
+/* Form validation error styles */
+.input-error {
+    border: 1px solid #dc3545 !important;
+        font-size: 10px;
+    font-weight: 600;
+    background-color: #fff8f8;
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 10px;
+    font-weight: 600;
+    display: block;
+}
+
+.percentage-error-banner {
+    background-color: #fff8f8;
+    color: #dc3545;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    border: 1px solid #dc3545;
+    text-align: center;
+    font-weight: 500;
+}
+
+.nominee-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.helper-text {
+    display: block;
+    color: #6c757d;
+    font-size: 11px;
+    margin-top: 3px;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.save-nominees-button {
+    padding: 10px 20px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.save-nominees-button:hover {
+    background: #218838;
+}
+
+.save-nominees-button:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.percentage-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.percentage-symbol {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #495057;
+}
+
+.percentage-input-container input {
+    padding-right: 25px;
+}
+
+.file-upload-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.file-upload-label {
+    display: inline-block;
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    cursor: pointer;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    transition: background-color 0.2s;
+}
+
+.file-upload-label:hover {
+    background-color: #e9ecef;
+}
+
+.helper-text.important {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+.remove-file-button {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    padding: 5px;
+    font-size: 16px;
+}
+
+.remove-file-button:hover {
+    color: #c82333;
 }
 
 @keyframes modalFadeIn {
