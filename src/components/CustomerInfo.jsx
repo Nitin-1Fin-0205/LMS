@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
 import '../styles/CustomerInfo.css';
@@ -8,24 +8,7 @@ import { ValidationService } from '../services/ValidationService';
 import { otpService } from '../services/otpService';
 
 const CustomerInfo = ({ onUpdate, initialData }) => {
-    const [cameraActive, setCameraActive] = useState(false);
-    const [capturedImage, setCapturedImage] = useState(initialData?.photo || null);
-    const videoRef = useRef(null);
-    const canvasRef = useRef(null);
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [isDragging, setIsDragging] = useState(false);
-    const [isPanFetching, setIsPanFetching] = useState(false);
-    const [isPanImageFetching, setIsPanImageFetching] = useState(false);
-    const [showOtpModal, setShowOtpModal] = useState(false);
-    const [otpType, setOtpType] = useState(null);
-    const [resendTimer, setResendTimer] = useState({
-        email: 0,
-        mobile: 0
-    });
-    const [request_id, setRequestId] = useState(null);
-
     const [customerData, setCustomerData] = useState({
-        photo: '',
         customerId: '',
         firstName: '',
         middleName: '',
@@ -41,9 +24,8 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         city: '',
         state: '',
         statecode: '',
-        ...initialData  // Spread initialData after default values
+        ...initialData
     });
-
     const [otpVerification, setOtpVerification] = useState({
         emailOtp: '',
         mobileOtp: '',
@@ -52,33 +34,19 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         isEmailOtpSent: false,
         isMobileOtpSent: false
     });
-
-    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
-
-    const validateFile = (file) => {
-        if (!file) return false;
-
-        if (file.size > MAX_FILE_SIZE) {
-            toast.error('File size should not exceed 2MB');
-            return false;
-        }
-
-        if (!file.type.startsWith('image/')) {
-            toast.error('Only image files are allowed');
-            return false;
-        }
-
-        return true;
-    };
+    const [isPanFetching, setIsPanFetching] = useState(false);
+    const [isPanImageFetching, setIsPanImageFetching] = useState(false);
+    const [showOtpModal, setShowOtpModal] = useState(false);
+    const [otpType, setOtpType] = useState(null);
+    const [resendTimer, setResendTimer] = useState({ email: 0, mobile: 0 });
+    const [request_id, setRequestId] = useState(null);
 
     useEffect(() => {
         if (initialData) {
             setCustomerData(prev => ({
                 ...prev,
                 ...initialData,
-                // Ensure these are never undefined
-                photo: initialData.photo || '',
-                customerId: initialData.customerId || null,
+                customerId: initialData.customerId || '',
                 firstName: initialData.firstName || '',
                 middleName: initialData.middleName || '',
                 lastName: initialData.lastName || '',
@@ -97,7 +65,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
     const handleInputChange = (field, value) => {
         const updatedData = {
             ...customerData,
-            [field]: value || '' // Ensure value is never undefined
+            [field]: value || ''
         };
         setCustomerData(updatedData);
         onUpdate(updatedData);
@@ -584,100 +552,6 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
     return (
         <div className="form-section">
             <h2>Customer Information</h2>
-
-            {/* Wrap photo related sections in photo-section div */}
-            <div className="photo-section">
-                {/* Photo upload section */}
-                <div className="photo-webcam-card">
-                    <div
-                        className={`photo-upload-area ${isDragging ? 'dragging' : ''}`}
-                        onDragEnter={handleDragEnter}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                    >
-                        <img
-                            src="src/assets/icons/dragprofile.png"
-                            alt="Upload Icon"
-                            className="upload-icon"
-                        />
-                        <p>
-                            Drag & drop photo or{' '}
-                            <label className="browse-link">
-                                Browse
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleFileUpload}
-                                    style={{ display: 'none' }}
-                                />
-                            </label>
-                        </p>
-
-                        {/* Show file name only when no image preview is available */}
-                        {selectedFile && !capturedImage && (
-                            <div className="selected-file">
-                                <span>{selectedFile.name}</span>
-                                <button
-                                    onClick={() => {
-                                        setSelectedFile(null);
-                                        setCapturedImage(null);
-                                        handleInputChange('photo', null);
-                                    }}
-                                    className="remove-file"
-                                >
-                                    <FontAwesomeIcon icon={faXmark} />
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                    {!cameraActive && !capturedImage && (
-                        <button onClick={startCamera} className="use-webcamera-button">
-                            Use Webcam
-                        </button>
-                    )}
-                </div>
-
-                {/* Camera and captured image section */}
-                <div>
-                    {cameraActive && (
-                        <div className="camera-container">
-                            <video
-                                ref={videoRef}
-                                autoPlay
-                                playsInline
-                                muted
-                                className="camera-video"
-                            />
-                            <canvas
-                                ref={canvasRef}
-                                style={{ display: 'none' }}
-                            />
-                            <div className="camera-controls">
-                                <button onClick={captureImage} className="camera-button">
-                                    Capture Image
-                                </button>
-                                <button onClick={stopCamera} className="camera-button stop">
-                                    Stop Camera
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {capturedImage && (
-                        <div className="captured-image-container">
-                            <h5>{selectedFile ? "Uploaded Image" : "Captured Image"}</h5>
-                            <img
-                                src={capturedImage}
-                                alt={selectedFile ? "Uploaded" : "Captured"}
-                                className="captured-image"
-                            />
-                            <button onClick={resetCapturedImage} className="camera-button">Reset</button>
-                        </div>
-                    )}
-                </div>
-            </div>
-
             <div className="customer-info-grid">
                 <div className="form-group pan-group">
                     <label>PAN No<span className='required'>*</span></label>

@@ -9,15 +9,7 @@ import { API_URL } from '../assets/config';
 
 const FINGER_OPTIONS = {
     'right-thumb': 'Right Thumb',
-    'right-index': 'Right Index',
-    'right-middle': 'Right Middle',
-    'right-ring': 'Right Ring',
-    'right-little': 'Right Little',
-    'left-thumb': 'Left Thumb',
-    'left-index': 'Left Index',
-    'left-middle': 'Left Middle',
-    'left-ring': 'Left Ring',
-    'left-little': 'Left Little'
+    'left-thumb': 'Left Thumb'
 };
 
 const QUALITY_THRESHOLDS = {
@@ -313,7 +305,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
             return (
                 <div className="status-indicator error">
                     <FontAwesomeIcon icon={faTimes} /> Biometric service not available
-                    <button className="retry-button" onClick={initializeDevice}>
+                    <button className="error-retry-button" onClick={initializeDevice}>
                         <FontAwesomeIcon icon={faSync} /> Retry
                     </button>
                 </div>
@@ -332,7 +324,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
             return (
                 <div className="status-indicator error">
                     <FontAwesomeIcon icon={faExclamationTriangle} /> {scannerState.error}
-                    <button className="retry-button" onClick={initializeDevice}>
+                    <button className="error-retry-button" onClick={initializeDevice}>
                         <FontAwesomeIcon icon={faSync} /> Retry
                     </button>
                 </div>
@@ -357,9 +349,10 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
     return (
         <div className="biometric-capture-section">
             <div className="section-header">
-                <h2>Fingerprint Registration</h2>
-                {renderServiceStatus()}
+                <FontAwesomeIcon icon={faFingerprint} className="section-title-icon" />
+                <h2 className="section-title">Fingerprint Registration</h2>
             </div>
+            {renderServiceStatus()}
 
             {loading ? (
                 <div className="loading-container">
@@ -386,48 +379,72 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                             </select>
                         </div>
 
-                        <div className={`fingerprint-box ${fingerprints[selectedFinger] ? 'captured' : ''} ${scannerState.isScanning ? 'scanning' : ''}`}>
-                            <div className="fingerprint-icon-container">
-                                <FontAwesomeIcon
-                                    icon={faFingerprint}
-                                    className="fingerprint-icon"
-                                    pulse={scannerState.isScanning}
-                                />
-                                {captureProgress > 0 && (
-                                    <div className="capture-progress">
-                                        <div
-                                            className="progress-bar"
-                                            style={{ width: `${captureProgress}%` }}
-                                        ></div>
+                        <div className="fingerprint-capture-area">
+                            <div className={`fingerprint-box ${fingerprints[selectedFinger] ? 'captured' : ''} ${scannerState.isScanning ? 'scanning' : ''}`}>
+                                <div className="fingerprint-icon-container">
+                                    <FontAwesomeIcon
+                                        icon={faFingerprint}
+                                        className="fingerprint-icon"
+                                        pulse={scannerState.isScanning}
+                                    />
+                                    {captureProgress > 0 && (
+                                        <div className="capture-progress">
+                                            <div
+                                                className="progress-bar"
+                                                style={{ width: `${captureProgress}%` }}
+                                            ></div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {fingerprints[selectedFinger] ? (
+                                    <div className="fingerprint-details">
+                                        <div className={`quality-indicator ${getQualityClass(fingerprints[selectedFinger].quality)}`}>
+                                            Quality: {fingerprints[selectedFinger].quality}%
+                                        </div>
+                                        <div className="timestamp">
+                                            Captured: {new Date(fingerprints[selectedFinger].timestamp).toLocaleTimeString()}
+                                        </div>
                                     </div>
+                                ) : (
+                                    <button
+                                        className="capture-button"
+                                        onClick={handleCapture}
+                                        disabled={scannerState.isScanning || !scannerState.isConnected}
+                                    >
+                                        {scannerState.isScanning ? 'Scanning...' : 'Capture'}
+                                    </button>
                                 )}
                             </div>
 
-                            {fingerprints[selectedFinger] ? (
-                                <div className="fingerprint-details">
-                                    <div className={`quality-indicator ${getQualityClass(fingerprints[selectedFinger].quality)}`}>
-                                        Quality: {fingerprints[selectedFinger].quality}%
-                                    </div>
-                                    <div className="timestamp">
-                                        Captured: {new Date(fingerprints[selectedFinger].timestamp).toLocaleTimeString()}
-                                    </div>
-                                    {/* <button 
-                                        className="update-button" 
-                                        onClick={() => handleCapture()}
-                                        disabled={scannerState.isScanning || !scannerState.isConnected}
-                                        title="Update this fingerprint"
-                                    >
-                                        <FontAwesomeIcon icon={faRedo} /> Update
-                                    </button> */}
+                            {/* Only show the captured fingerprints preview if there are fingerprints */}
+                            {Object.keys(fingerprints).length > 0 && (
+                                <div className="captured-fingerprints-preview">
+                                    <div className="captured-preview-title">Captured Fingerprints</div>
+                                    {Object.entries(fingerprints).map(([finger, data]) => (
+                                        <div
+                                            key={finger}
+                                            className={`captured-preview-item ${selectedFinger === finger ? 'selected' : ''}`}
+                                            onClick={() => setSelectedFinger(finger)}
+                                        >
+                                            <FontAwesomeIcon icon={faFingerprint} className="fingerprint-icon-small" />
+                                            <div className="finger-details">
+                                                <span className="finger-name">{data.fingerName}</span>
+                                                <span className="quality-score">Quality: {data.quality}%</span>
+                                            </div>
+                                            <button
+                                                className="update-icon"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleUpdateFingerprint(finger);
+                                                }}
+                                                title="Update this fingerprint"
+                                            >
+                                                <FontAwesomeIcon icon={faRedo} />
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
-                            ) : (
-                                <button
-                                    className="capture-button"
-                                    onClick={handleCapture}
-                                    disabled={scannerState.isScanning || !scannerState.isConnected}
-                                >
-                                    {scannerState.isScanning ? 'Scanning...' : 'Capture'}
-                                </button>
                             )}
                         </div>
                     </div>
@@ -456,39 +473,6 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                             </div>
                         </div>
                     )}
-
-                    <div className="captured-summary">
-                        <h3>Captured Fingerprints ({Object.keys(fingerprints).length})</h3>
-                        {Object.keys(fingerprints).length === 0 ? (
-                            <p className="no-data">No fingerprints captured yet</p>
-                        ) : (
-                            <div className="fingerprints-grid">
-                                {Object.entries(fingerprints).map(([finger, data]) => (
-                                    <div
-                                        key={finger}
-                                        className={`fingerprint-item ${getQualityClass(data.quality)}`}
-                                        onClick={() => setSelectedFinger(finger)}
-                                    >
-                                        <FontAwesomeIcon icon={faFingerprint} className="fingerprint-icon-small" />
-                                        <div className="finger-details">
-                                            <span className="finger-name">{data.fingerName}</span>
-                                            <span className="quality-score">Quality: {data.quality}%</span>
-                                        </div>
-                                        <button
-                                            className="update-icon"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleUpdateFingerprint(finger);
-                                            }}
-                                            title="Update this fingerprint"
-                                        >
-                                            <FontAwesomeIcon icon={faRedo} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
                 </>
             )}
         </div>

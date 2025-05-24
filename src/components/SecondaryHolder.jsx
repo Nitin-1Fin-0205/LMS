@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { Box, Typography } from '@mui/material';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faUserAlt, faFileAlt, faFingerprint } from '@fortawesome/free-solid-svg-icons';
 import CustomerInfo from './CustomerInfo';
 import Attachments from './Attachments';
 import BiometricCapture from './BiometricCapture';
+import CustomerKYCSection from './CustomerKYCSection';
+import StagesProgress from './StagesProgress';
 import { API_URL } from '../assets/config';
 import { updateHolderSection, submitCustomerInfo, fetchCustomerById } from '../store/slices/customerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS, HOLDER_STAGES, STAGE_STATUS } from '../constants/holderConstants';
@@ -18,7 +17,6 @@ const SecondaryHolder = () => {
     const secondaryHolder = useSelector(state => state.customer.form.secondaryHolder);
     const location = useLocation();
     const navigate = useNavigate();
-    const customerData = location.state?.customer;
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [currentStage, setCurrentStage] = useState(HOLDER_STAGES.CUSTOMER_INFO);
     const [stageStatus, setStageStatus] = useState({
@@ -112,30 +110,133 @@ const SecondaryHolder = () => {
         }
     };
 
-    const getStageIcon = (stage) => {
+    const handleStageTransition = async (newStage) => {
+        setCurrentStage(newStage);
+    };
+
+    const validateStageData = (stage) => {
+        const data = getStageData(stage);
+        console.log('Validating data for stage:', stage, data);
         switch (stage) {
             case HOLDER_STAGES.CUSTOMER_INFO:
-                return faUserAlt;
+                const requiredFields = [
+                    'firstName',
+                    'middleName',
+                    'lastName',
+                    'fatherOrHusbandName',
+                    'dateOfBirth',
+                    'gender',
+                    'mobileNo',
+                    'emailId',
+                    'panNo',
+                    'aadharNo',
+                    'address',
+                    'photo',
+                ];
+                const missingFields = requiredFields.filter(field => !data[field]);
+                if (missingFields.length > 0) {
+                    toast.error(`Please fill in required fields: ${missingFields[0]}`);
+                    return false;
+                }
+                break;
+
             case HOLDER_STAGES.ATTACHMENTS:
-                return faFileAlt;
+                break;
+
             case HOLDER_STAGES.BIOMETRIC:
-                return faFingerprint;
-            default:
-                return faUserAlt;
+                if (!data.fingerprints || data.fingerprints.length === 0) {
+                    toast.error('Please capture fingerprints');
+                    return false;
+                }
+                break;
+        }
+        return true;
+    };
+
+    const submitCurrentStage = async () => {
+        try {
+            if (!validateStageData(currentStage)) {
+                return;
+            }
+
+            if (currentStage === HOLDER_STAGES.CUSTOMER_INFO) {
+                const primaryCustomerId = location.state?.customer?.customerInfo?.customerId;
+                const submitData = {
+                    customer_id: secondaryHolder.customerInfo.customerId,
+                    first_name: secondaryHolder.customerInfo.firstName,
+                    middle_name: secondaryHolder.customerInfo.middleName,
+                    last_name: secondaryHolder.customerInfo.lastName,
+                    pan: secondaryHolder.customerInfo.panNo,
+                    aadhar: secondaryHolder.customerInfo.aadharNo,
+                    gender: secondaryHolder.customerInfo.gender,
+                    address: secondaryHolder.customerInfo.address,
+                    guardian_name: secondaryHolder.customerInfo.fatherOrHusbandName,
+                    dob: secondaryHolder.customerInfo.dateOfBirth,
+                    mobile_number: secondaryHolder.customerInfo.mobileNo,
+                    email: secondaryHolder.customerInfo.emailId,
+                    image_base64: secondaryHolder.customerInfo.photo,
+                    locker_center_id: 1,
+                    parent_customer_id: primaryCustomerId,
+                };
+
+                const result = await dispatch(submitCustomerInfo({
+                    customerData: submitData,
+                    holderType: HOLDER_TYPES.SECONDARY
+                })).unwrap();
+
+                if (!result.customerId) {
+                    throw new Error('Failed to create secondary holder');
+                } else {
+                    toast.success('Secondary holder info saved successfully!');
+                    setStageStatus(prev => ({
+                        ...prev,
+                        [currentStage]: STAGE_STATUS.COMPLETED
+                    }));
+                    handleStageTransition(HOLDER_STAGES.ATTACHMENTS);
+                    return;
+                }
+            }
+
+            if (!secondaryHolder.customerInfo.customerId) {
+                toast.error('Please complete customer information first');
+                setCurrentStage(HOLDER_STAGES.CUSTOMER_INFO);
+                return;
+            }
+
+            if (currentStage === HOLDER_STAGES.BIOMETRIC) {
+                await handleSubmitFinal();
+            }
+
+            setStageStatus(prev => ({
+                ...prev,
+                [currentStage]: STAGE_STATUS.COMPLETED
+            }));
+
+            handleStageTransition(currentStage === HOLDER_STAGES.ATTACHMENTS ? HOLDER_STAGES.BIOMETRIC : HOLDER_STAGES.CUSTOMER_INFO);
+        } catch (error) {
+            setStageStatus(prev => ({
+                ...prev,
+                [currentStage]: STAGE_STATUS.ERROR
+            }));
+            toast.error(error.message || `Failed to save ${currentStage} data`);
         }
     };
 
-    const getStageName = (stage) => {
+    const getStageData = (stage) => {
         switch (stage) {
             case HOLDER_STAGES.CUSTOMER_INFO:
-                return "Customer Info";
-            case HOLDER_STAGES.ATTACHMENTS:
-                return "Documents";
+                return secondaryHolder.customerInfo;
             case HOLDER_STAGES.BIOMETRIC:
-                return "Biometric Data";
+                return secondaryHolder.biometric;
+            case HOLDER_STAGES.ATTACHMENTS:
+                return secondaryHolder.attachments;
             default:
-                return "";
+                return {};
         }
+    };
+
+    const validateAndSubmitStage = () => {
+        submitCurrentStage();
     };
 
     const canNavigateToStage = (stage) => {
@@ -143,27 +244,7 @@ const SecondaryHolder = () => {
         return secondaryHolder?.customerInfo?.customerId;
     };
 
-    const handleNext = () => {
-        if (!secondaryHolder.customerInfo.customerId) {
-            toast.error('Please save customer information first');
-            return;
-        }
-
-        // Set current stage as complete
-        setStageStatus(prev => ({
-            ...prev,
-            [currentStage]: STAGE_STATUS.COMPLETED
-        }));
-
-        // Move to next stage based on current stage
-        if (currentStage === HOLDER_STAGES.CUSTOMER_INFO) {
-            setCurrentStage(HOLDER_STAGES.ATTACHMENTS);
-        } else if (currentStage === HOLDER_STAGES.ATTACHMENTS) {
-            setCurrentStage(HOLDER_STAGES.BIOMETRIC);
-        }
-    };
-
-    const handleAttachmentsSubmit = async () => {
+    const handleSubmitFinal = async () => {
         try {
             setIsSubmitting(true);
             const token = localStorage.getItem('authToken');
@@ -181,102 +262,17 @@ const SecondaryHolder = () => {
             navigate(-1); // Go back to previous page
         } catch (error) {
             toast.error('Failed to add secondary holder');
+            throw error;
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    return (
-        <div className="secondary-holder-container">
-            {/* Modern progress bar UI */}
-            <Box sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                mb: 4,
-                mt: 2
-            }}>
-                <Box sx={{
-                    display: 'flex',
-                    width: '80%',
-                    justifyContent: 'space-between',
-                    position: 'relative'
-                }}>
-                    {/* Progress bar background */}
-                    <Box sx={{
-                        position: 'absolute',
-                        top: '10px',
-                        left: 0,
-                        right: 0,
-                        height: '4px',
-                        bgcolor: '#e0e0e0',
-                        zIndex: 0
-                    }} />
-
-                    {/* Progress bar fill - updated for 3 stages */}
-                    <Box sx={{
-                        position: 'absolute',
-                        top: '10px',
-                        left: 0,
-                        width: currentStage === HOLDER_STAGES.CUSTOMER_INFO ? '0%' :
-                            currentStage === HOLDER_STAGES.ATTACHMENTS ? '50%' : '100%',
-                        height: '4px',
-                        bgcolor: 'primary.main',
-                        zIndex: 1,
-                        transition: 'width 0.5s ease-in-out'
-                    }} />
-
-                    {/* Stage indicators - updated to include biometric */}
-                    {[HOLDER_STAGES.CUSTOMER_INFO, HOLDER_STAGES.ATTACHMENTS, HOLDER_STAGES.BIOMETRIC].map((stage, index) => (
-                        <Box
-                            key={stage}
-                            sx={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                cursor: canNavigateToStage(stage) ? 'pointer' : 'not-allowed',
-                                opacity: canNavigateToStage(stage) ? 1 : 0.6,
-                            }}
-                            onClick={() => canNavigateToStage(stage) && setCurrentStage(stage)}
-                        >
-                            <Box sx={{
-                                width: 24,
-                                height: 24,
-                                borderRadius: '50%',
-                                bgcolor: currentStage === stage ? 'primary.main' :
-                                    stageStatus[stage] === STAGE_STATUS.COMPLETED ? '#4caf50' : '#e0e0e0',
-                                color: stageStatus[stage] === STAGE_STATUS.COMPLETED ? '#10b981' : 'white',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: 'bold',
-                                zIndex: 2,
-                                transition: 'background-color 0.3s ease'
-                            }}>
-                                {stageStatus[stage] === STAGE_STATUS.COMPLETED ? (
-                                    <FontAwesomeIcon icon={faCheck} size="xs" />
-                                ) : (
-                                    <FontAwesomeIcon icon={getStageIcon(stage)} size="xs" />
-                                )}
-                            </Box>
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    mt: 1,
-                                    fontWeight: currentStage === stage ? 'bold' : 'normal',
-                                    color: currentStage === stage ? 'primary.main' :
-                                        stageStatus[stage] === STAGE_STATUS.COMPLETED ? '#4caf50' : 'text.secondary'
-                                }}
-                            >
-                                {getStageName(stage)}
-                            </Typography>
-                        </Box>
-                    ))}
-                </Box>
-            </Box>
-
-            <div className="stage-container">
-                {currentStage === HOLDER_STAGES.CUSTOMER_INFO ? (
-                    <>
+    const renderStage = () => {
+        switch (currentStage) {
+            case HOLDER_STAGES.CUSTOMER_INFO:
+                return (
+                    <div className="stage-container">
                         <CustomerInfo
                             initialData={secondaryHolder.customerInfo}
                             onUpdate={handleCustomerInfoUpdate}
@@ -291,23 +287,26 @@ const SecondaryHolder = () => {
                                 </button>
                                 <button
                                     className="save-button"
-                                    onClick={handleSaveCustomerInfo}
+                                    onClick={validateAndSubmitStage}
                                     disabled={isSubmitting}
                                 >
                                     {isSubmitting ? 'Saving...' : 'Save'}
                                 </button>
                                 <button
                                     className="next-button"
-                                    onClick={handleNext}
+                                    onClick={() => handleStageTransition(HOLDER_STAGES.ATTACHMENTS)}
                                     disabled={!secondaryHolder.customerInfo.customerId}
                                 >
                                     Next
                                 </button>
                             </div>
                         </div>
-                    </>
-                ) : currentStage === HOLDER_STAGES.ATTACHMENTS ? (
-                    <>
+                    </div>
+                );
+
+            case HOLDER_STAGES.ATTACHMENTS:
+                return (
+                    <div className="stage-container">
                         <div className="attachments-container">
                             <Attachments
                                 holderType="secondaryHolder"
@@ -317,28 +316,35 @@ const SecondaryHolder = () => {
                             />
                         </div>
                         <div className="stage-actions">
-                            <button
-                                className="back-button"
-                                onClick={() => setCurrentStage(HOLDER_STAGES.CUSTOMER_INFO)}
-                            >
-                                Back
-                            </button>
-                            <button
-                                className="next-button"
-                                onClick={handleNext}
-                                disabled={!secondaryHolder.customerInfo.customerId}
-                            >
-                                Next
-                            </button>
+                            <div className="action-buttons">
+                                <button
+                                    className="back-button"
+                                    onClick={() => setCurrentStage(HOLDER_STAGES.CUSTOMER_INFO)}
+                                >
+                                    Back
+                                </button>
+                                <button
+                                    className="save-button"
+                                    onClick={validateAndSubmitStage}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Saving...' : 'Save'}
+                                </button>
+                                <button
+                                    className="next-button"
+                                    onClick={() => handleStageTransition(HOLDER_STAGES.BIOMETRIC)}
+                                >
+                                    Next
+                                </button>
+                            </div>
                         </div>
-                    </>
-                ) : (
-                    <>
-                        <BiometricCapture
-                            onUpdate={handleBiometricUpdate}
-                            initialData={secondaryHolder.biometric}
-                            customerId={secondaryHolder.customerInfo.customerId}
-                        />
+                    </div>
+                );
+
+            case HOLDER_STAGES.BIOMETRIC:
+                return (
+                    <div className="stage-container">
+                        <CustomerKYCSection customerId={secondaryHolder.customerInfo.customerId} />
                         <div className="stage-actions">
                             <button
                                 className="back-button"
@@ -348,14 +354,30 @@ const SecondaryHolder = () => {
                             </button>
                             <button
                                 className="submit-button"
-                                onClick={handleAttachmentsSubmit}
+                                onClick={validateAndSubmitStage}
+                                disabled={isSubmitting || !canNavigateToStage(currentStage)}
                             >
-                                Submit
+                                {isSubmitting ? 'Submitting...' : 'Submit'}
                             </button>
                         </div>
-                    </>
-                )}
-            </div>
+                    </div>
+                );
+
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <div className="secondary-holder-container">
+            <StagesProgress
+                currentStage={currentStage}
+                stageStatus={stageStatus}
+                onStageClick={handleStageTransition}
+                canNavigateToStage={canNavigateToStage}
+            />
+
+            {renderStage()}
         </div>
     );
 };
