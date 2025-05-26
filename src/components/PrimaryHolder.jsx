@@ -10,7 +10,7 @@ import StagesProgress from './StagesProgress';
 import { API_URL } from '../assets/config';
 import '../styles/PrimaryHolder.css';
 import { useNavigate } from 'react-router-dom';
-import { updateHolderSection, submitCustomerInfo } from '../store/slices/customerSlice';
+import { updateHolderSection, submitCustomerInfo, fetchCustomerById } from '../store/slices/customerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS, HOLDER_STAGES, STAGE_STATUS } from '../constants/holderConstants';
 
 const PrimaryHolder = () => {
@@ -21,11 +21,40 @@ const PrimaryHolder = () => {
     const isSubmitting = useSelector(state => state.customer.isSubmitting);
     const { customerId, isCustomerCreated } = useSelector(state => state.customer);
     const [currentStage, setCurrentStage] = useState(HOLDER_STAGES.CUSTOMER_INFO);
+    const [loading, setLoading] = useState(false);
     const [stageStatus, setStageStatus] = useState({
         [HOLDER_STAGES.CUSTOMER_INFO]: STAGE_STATUS.NOT_STARTED,
         [HOLDER_STAGES.ATTACHMENTS]: STAGE_STATUS.NOT_STARTED,
         [HOLDER_STAGES.BIOMETRIC]: STAGE_STATUS.NOT_STARTED
     });
+
+    // Fetch primary holder details when component mounts or customerId changes
+    useEffect(() => {
+        const fetchPrimaryHolderDetails = async () => {
+            try {
+                if (customerId) {
+                    setLoading(true);
+                    await dispatch(fetchCustomerById({
+                        customerId,
+                        holderType: HOLDER_TYPES.PRIMARY
+                    })).unwrap();
+
+                    // Update stage status to completed for customer info if we have a customer ID
+                    setStageStatus(prev => ({
+                        ...prev,
+                        [HOLDER_STAGES.CUSTOMER_INFO]: STAGE_STATUS.COMPLETED
+                    }));
+                }
+            } catch (error) {
+                console.error('Error fetching primary holder details:', error);
+                toast.error('Failed to fetch customer details');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPrimaryHolderDetails();
+    }, [dispatch, customerId]);
 
     useEffect(() => {
         // Log form data when it changes
@@ -280,7 +309,13 @@ const PrimaryHolder = () => {
                 canNavigateToStage={canNavigateToStage}
             />
 
-            {renderStage()}
+            {loading ? (
+                <div className="loading-container">
+                    <p>Loading customer details...</p>
+                </div>
+            ) : (
+                renderStage()
+            )}
         </div>
     );
 };

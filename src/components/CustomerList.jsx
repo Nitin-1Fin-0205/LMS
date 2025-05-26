@@ -34,7 +34,6 @@ const CustomerList = () => {
             flex: 0.8,
             minWidth: 100,
             valueFormatter: (params) => {
-                console.log('Rent value:', params);
                 if (!params) return '-';
                 return params ? `₹${params.toLocaleString()}` : '-';
             }

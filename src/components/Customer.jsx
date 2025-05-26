@@ -12,12 +12,14 @@ import { fetchCustomerByPan, resetForm, updateHolderSection } from '../store/sli
 import { updateLockerDetails, updateRentDetails, clearAllLockerData } from '../store/slices/lockerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS } from '../constants/holderConstants';
 import { ValidationService } from '../services/ValidationService';
+import CustomerDetailsOverlay from './CustomerDetailsOverlay';
 
 const Customer = () => {
     const dispatch = useDispatch();
     const { form, isSubmitting } = useSelector(state => state.customer);
     const primaryHolder = form.primaryHolder;
     const secondaryHolder = form.secondaryHolder;
+    const thirdHolder = form.thirdHolder;
     const lockerData = useSelector(state => state.locker);
     const [formData, setFormData] = useState(() => {
         const savedForm = sessionStorage.getItem('customerSearchForm');
@@ -32,6 +34,7 @@ const Customer = () => {
     const navigate = useNavigate();
     const [activeCard, setActiveCard] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
+    const [showDetailOverlay, setShowDetailOverlay] = useState(false);
 
     const fetchCenters = async () => {
         try {
@@ -129,6 +132,10 @@ const Customer = () => {
         dispatch(resetForm());
         dispatch(clearAllLockerData());
         sessionStorage.removeItem('customerSearchForm');
+    };
+
+    const toggleDetailOverlay = () => {
+        setShowDetailOverlay(!showDetailOverlay);
     };
 
     return (
@@ -244,9 +251,18 @@ const Customer = () => {
                 <div className="customer-preview">
                     <div className="preview-header">
                         <h3>Customer Details</h3>
-                        <span className="customer-status">
-                            {primaryHolder.customerInfo.status || 'Active'}
-                        </span>
+                        <div className="preview-actions">
+                            <button
+                                className="view-details-btn"
+                                onClick={toggleDetailOverlay}
+                                title="View Full Details"
+                            >
+                                <FontAwesomeIcon icon={faEye} />
+                            </button>
+                            <span className="customer-status">
+                                {primaryHolder.customerInfo.status || 'Active'}
+                            </span>
+                        </div>
                     </div>
 
                     <div className="profile-preview-content">
@@ -309,6 +325,13 @@ const Customer = () => {
                     </div>
                 </div>
             )}
+
+            {/* Using the updated CustomerDetailsOverlay component with API fetching */}
+            <CustomerDetailsOverlay
+                show={showDetailOverlay}
+                onClose={toggleDetailOverlay}
+                customerId={primaryHolder?.customerInfo?.customerId}
+            />
         </div>
     );
 };
