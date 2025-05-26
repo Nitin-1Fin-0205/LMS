@@ -30,7 +30,7 @@ const StagesProgress = ({
             case HOLDER_STAGES.ATTACHMENTS:
                 return "Documents";
             case HOLDER_STAGES.BIOMETRIC:
-                return "Biometric";
+                return "Photo Biometric";
             default:
                 return "";
         }
@@ -69,10 +69,8 @@ const StagesProgress = ({
         <Box sx={{
             display: 'flex',
             justifyContent: 'center',
-            mb: 4,
-            mt: 2,
-            pt: 1,
-            pb: 3
+            pb: 1,
+            mb: 2,
         }}>
             <Box sx={{
                 display: 'flex',
@@ -170,13 +168,13 @@ const StagesProgress = ({
                                 sx={{
                                     mt: 1.5,
                                     fontWeight: isActive ? 600 : 500,
-                                    fontSize: '0.875rem',
+                                    fontSize: '0.8rem',
                                     color: isActive ? '#3b82f6' :
                                         isCompleted ? '#10b981' :
                                             '#6b7280',
                                     transition: 'color 0.3s ease',
                                     textAlign: 'center',
-                                    maxWidth: 90
+                                    maxWidth: 120,
                                 }}
                             >
                                 {getStageName(stage)}

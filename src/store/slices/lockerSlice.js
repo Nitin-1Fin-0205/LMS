@@ -66,33 +66,6 @@ export const fetchNominees = createAsyncThunk(
     }
 );
 
-export const addNominee = createAsyncThunk(
-    'locker/addNominee',
-    async ({ customerId, nomineeData }, { rejectWithValue }) => {
-        try {
-            const token = localStorage.getItem('authToken');
-
-            const requestData = {
-                customer_id: customerId,
-                nominees: [
-                    {
-                        name: nomineeData.name,
-                        relation: nomineeData.relation,
-                        dob: nomineeData.dob,
-                        ownership_percentage: nomineeData.percentage,
-                    }
-                ]
-            };
-            const response = await axios.post(`${API_URL}/customers/nominees`, requestData, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            return response.data;
-        } catch (error) {
-            return rejectWithValue('Failed to add nominee');
-        }
-    }
-);
-
 export const deleteNominee = createAsyncThunk(
     'locker/deleteNominee',
     async ({ customerId, nomineeId }, { rejectWithValue }) => {
@@ -110,34 +83,6 @@ export const deleteNominee = createAsyncThunk(
     }
 );
 
-export const updateNominee = createAsyncThunk(
-    'locker/updateNominee',
-    async ({ customerId, nomineeId, nomineeData }, { rejectWithValue }) => {
-        try {
-            const token = localStorage.getItem('authToken');
-            const requestData = {
-                customer_id: customerId,
-                nominees: [
-                    {
-                        unique_id: nomineeData.unique_id,
-                        name: nomineeData.name,
-                        relation: nomineeData.relation,
-                        dob: nomineeData.dob,
-                        ownership_percentage: nomineeData.percentage,
-                    }
-                ]
-            };
-            const response = await axios.post(
-                `${API_URL}/customers/nominees`,
-                requestData,
-                { headers: { 'Authorization': `Bearer ${token}` } }
-            );
-            return response.data;
-        } catch (error) {
-            return rejectWithValue('Failed to update nominee');
-        }
-    }
-);
 
 export const assignLocker = createAsyncThunk(
     'locker/assignLocker',
@@ -172,6 +117,32 @@ export const assignLocker = createAsyncThunk(
     }
 );
 
+// Add new thunk for updating nominees
+export const updateNominees = createAsyncThunk(
+    'locker/updateNominees',
+    async ({ customerId, nominees }, { rejectWithValue }) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.post(
+                `${API_URL}/customers/nominees`,
+                {
+                    customer_id: customerId,
+                    nominees: nominees
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to update nominees');
+        }
+    }
+);
+
 const lockerSlice = createSlice({
     name: 'locker',
     initialState,
@@ -198,9 +169,6 @@ const lockerSlice = createSlice({
         },
         setLockerData: (state, action) => {
             state.lockerData = action.payload;
-        },
-        updateNominees: (state, action) => {
-            state.lockerDetails.nominees = action.payload;
         },
         clearAllLockerData: (state) => {
             Object.assign(state, initialState);
@@ -257,31 +225,10 @@ const lockerSlice = createSlice({
                     id: nominee.unique_id,
                 }));
             })
-            .addCase(addNominee.fulfilled, (state, action) => {
-                state.loading = false;
-                const newNominee = {
-                    ...action.payload.data,
-                    id: action.payload.data.unique_id
-                };
-                state.lockerDetails.nominees = [
-                    ...state.lockerDetails.nominees,
-                    newNominee
-                ];
-            })
             .addCase(deleteNominee.fulfilled, (state, action) => {
                 state.loading = false;
                 state.lockerDetails.nominees = state.lockerDetails.nominees.filter(
                     nominee => nominee.unique_id !== action.payload
-                );
-            })
-            .addCase(updateNominee.fulfilled, (state, action) => {
-                state.loading = false;
-                const updatedNominee = {
-                    ...action.payload.data,
-                    id: action.payload.data.unique_id
-                };
-                state.lockerDetails.nominees = state.lockerDetails.nominees.map(nominee =>
-                    nominee.unique_id === updatedNominee.unique_id ? updatedNominee : nominee
                 );
             })
             .addCase(assignLocker.pending, (state) => {
@@ -296,6 +243,19 @@ const lockerSlice = createSlice({
             .addCase(assignLocker.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+            })
+            .addCase(updateNominees.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(updateNominees.fulfilled, (state, action) => {
+                state.loading = false;
+                state.error = null;
+                state.lockerDetails.nominees = action.payload.data.nominees;
+            })
+            .addCase(updateNominees.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
             });
     }
 });
@@ -305,7 +265,6 @@ export const {
     updateLockerDetails,
     updateRentDetails,
     setLockerData,
-    updateNominees,
     clearAllLockerData
 } = lockerSlice.actions;
 

@@ -76,12 +76,13 @@
 }
 
 .nominee-card {
-    background: white;
+    background: #f8fafc;
     border-radius: 6px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-    padding: 8px 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    padding: 12px;
     width: calc(50% - 6px);
     transition: transform 0.2s;
+    border: 1px solid #e2e8f0;
 }
 
 .nominee-card:hover {
@@ -180,6 +181,58 @@
     width: 25px;
     text-align: right;
     color: #3498db;
+}
+
+.nominee-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.nominee-info-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.info-label {
+    color: #3498db;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.info-value {
+    color: #334155;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: right;
+}
+
+.nominee-proof {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.proof-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #3b82f6;
+    font-size: 13px;
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: #eff6ff;
+}
+
+.proof-link:hover {
+    background: #dbeafe;
+    text-decoration: underline;
 }
 
 @media (max-width: 768px) {

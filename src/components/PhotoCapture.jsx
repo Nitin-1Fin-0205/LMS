@@ -15,6 +15,7 @@ const PhotoCapture = ({ customerId }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
+    const [isSaveEnabled, setIsSaveEnabled] = useState(false);
 
     // Fetch existing profile image on component mount
     useEffect(() => {
@@ -39,10 +40,12 @@ const PhotoCapture = ({ customerId }) => {
                 if (response.data?.data?.profileImage?.link) {
                     const imageUrl = response.data.data.profileImage.link;
                     setCapturedImage(imageUrl);
+                    setIsSaveEnabled(false);  // Disable save when loading existing image
                     console.log('Fetched existing profile image:', imageUrl);
                 } else {
                     console.log('No profile image found in response');
                 }
+
             } catch (error) {
                 console.log('No existing profile image found or error fetching:', error);
                 // Don't show error toast as this might be a normal case
@@ -101,6 +104,7 @@ const PhotoCapture = ({ customerId }) => {
             const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
             setCapturedImage(imageDataUrl);
             setSelectedFile(null);
+            setIsSaveEnabled(true);  // Enable save when new image captured
             toast.success('Image captured successfully');
             stopCamera();
         } else {
@@ -110,6 +114,7 @@ const PhotoCapture = ({ customerId }) => {
     const resetCapturedImage = () => {
         setCapturedImage(null);
         setSelectedFile(null);
+        setIsSaveEnabled(true);  // Enable save when image is reset
     };
     const handleFileUpload = async (event) => {
         await stopCamera();
@@ -120,6 +125,7 @@ const PhotoCapture = ({ customerId }) => {
             reader.onload = (e) => {
                 const imageDataUrl = e.target.result;
                 setCapturedImage(imageDataUrl);
+                setIsSaveEnabled(true);  // Enable save when new file uploaded
             };
             reader.readAsDataURL(file);
             toast.success('Image uploaded successfully');
@@ -300,7 +306,7 @@ const PhotoCapture = ({ customerId }) => {
             <button
                 className="camera-button submit-photo-btn"
                 onClick={handleSubmit}
-                disabled={loading || !capturedImage || initialLoading}
+                disabled={loading || !capturedImage || initialLoading || !isSaveEnabled}
             >
                 <span className="submit-photo-text">
                     {loading ? 'Uploading...' : 'Save Profile Photo'}

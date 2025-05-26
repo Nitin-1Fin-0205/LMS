@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
 import '../styles/CustomerInfo.css';
@@ -40,6 +40,8 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
     const [otpType, setOtpType] = useState(null);
     const [resendTimer, setResendTimer] = useState({ email: 0, mobile: 0 });
     const [request_id, setRequestId] = useState(null);
+    const [validationErrors, setValidationErrors] = useState({});
+    const [touched, setTouched] = useState({});
 
     useEffect(() => {
         if (initialData) {
@@ -57,11 +59,34 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 panNo: initialData.panNo || '',
                 gender: initialData.gender || '',
                 emailId: initialData.emailId || '',
-                aadharNo: initialData.aadharNo || ''
+                aadharNo: initialData.aadharNo || '',
+                city: initialData.city || '',
+                state: initialData.state || '',
+                statecode: initialData.statecode || ''
             }));
         }
     }, [initialData]);
 
+    // Add validation helper
+    const validateField = (name, value) => {
+        if (!value || value.trim() === '') {
+            return 'This field is required';
+        }
+        switch (name) {
+            case 'mobileNo':
+                return value.length !== 10 ? 'Mobile number must be 10 digits' : '';
+            case 'emailId':
+                return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? 'Invalid email format' : '';
+            case 'panNo':
+                return !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(value) ? 'Invalid PAN format' : '';
+            case 'aadharNo':
+                return value.length !== 12 ? 'Aadhar number must be 12 digits' : '';
+            default:
+                return '';
+        }
+    };
+
+    // Update handle input change
     const handleInputChange = (field, value) => {
         const updatedData = {
             ...customerData,
@@ -69,6 +94,31 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         };
         setCustomerData(updatedData);
         onUpdate(updatedData);
+
+        // Validate field
+        if (touched[field]) {
+            setValidationErrors(prev => ({
+                ...prev,
+                [field]: validateField(field, value)
+            }));
+        }
+    };
+
+    // Add blur handler
+    const handleBlur = (field) => {
+        setTouched(prev => ({
+            ...prev,
+            [field]: true
+        }));
+        setValidationErrors(prev => ({
+            ...prev,
+            [field]: validateField(field, customerData[field])
+        }));
+    };
+
+    // Update input class helper
+    const getInputClassName = (fieldName) => {
+        return `form-input ${touched[fieldName] && validationErrors[fieldName] ? 'error' : ''}`;
     };
 
     // Add DOB validation handler
@@ -560,10 +610,15 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                             type="text"
                             value={customerData.panNo}
                             onChange={handlePanInput}
+                            onBlur={() => handleBlur('panNo')}
+                            className={getInputClassName('panNo')}
                             placeholder="Enter PAN no here"
                             maxLength={10}
                             required
                         />
+                        {touched.panNo && validationErrors.panNo && (
+                            <div className="error-message">{validationErrors.panNo}</div>
+                        )}
                         <div className="pan-actions">
                             <button
                                 className="fetch-pan-button"
@@ -603,9 +658,14 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                         type="text"
                         value={customerData.firstName}
                         onChange={(e) => handleInputChange('firstName', e.target.value)}
+                        onBlur={() => handleBlur('firstName')}
+                        className={getInputClassName('firstName')}
                         placeholder="Enter first name"
                         required
                     />
+                    {touched.firstName && validationErrors.firstName && (
+                        <div className="error-message">{validationErrors.firstName}</div>
+                    )}
                 </div>
 
                 <div className="form-group">
@@ -624,9 +684,14 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                         type="text"
                         value={customerData.lastName}
                         onChange={(e) => handleInputChange('lastName', e.target.value)}
+                        onBlur={() => handleBlur('lastName')}
+                        className={getInputClassName('lastName')}
                         placeholder="Enter last name"
                         required
                     />
+                    {touched.lastName && validationErrors.lastName && (
+                        <div className="error-message">{validationErrors.lastName}</div>
+                    )}
                 </div>
 
                 <div className="form-group">
@@ -655,16 +720,33 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 </div>
 
                 <div className="form-group">
+                    <label>Aadhar No<span className='required'>*</span></label>
+                    <input
+                        type="text"
+                        value={formatAadhar(customerData?.aadharNo)}
+                        onChange={handleAadharInput}
+                        placeholder="Enter Aadhar (e.g., 1234 5678 9012)"
+                        maxLength={14}
+                        required
+                    />
+                </div>
+
+                <div className="form-group mobile-group">
                     <label>Mobile No<span className='required'>*</span></label>
                     <div className="input-verify-group">
                         <input
                             type="tel"
                             value={customerData.mobileNo}
                             onChange={handleMobileInput}
+                            onBlur={() => handleBlur('mobileNo')}
+                            className={getInputClassName('mobileNo')}
                             placeholder="Enter mobile number"
                             required
                             disabled={otpVerification.isMobileVerified}
                         />
+                        {touched.mobileNo && validationErrors.mobileNo && (
+                            <div className="error-message">{validationErrors.mobileNo}</div>
+                        )}
                         {otpVerification.isMobileVerified ? (
                             <span className="verified-badge">
                                 <FontAwesomeIcon className='fontIcon' icon={faCheck} bounce={true} style={{ paddingTop: '4px' }} /> Verified
@@ -682,17 +764,22 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 </div>
 
 
-                <div className="form-group">
+                <div className="form-group email-group">
                     <label>Email ID<span className='required'>*</span></label>
                     <div className="input-verify-group">
                         <input
                             type="email"
                             value={customerData.emailId}
                             onChange={(e) => handleInputChange('emailId', e.target.value)}
+                            onBlur={() => handleBlur('emailId')}
+                            className={getInputClassName('emailId')}
                             placeholder="Enter email"
                             required
                             disabled={otpVerification.isEmailVerified}
                         />
+                        {touched.emailId && validationErrors.emailId && (
+                            <div className="error-message">{validationErrors.emailId}</div>
+                        )}
                         {otpVerification.isEmailVerified ? (
                             <span className="verified-badge">
                                 <FontAwesomeIcon className='fontIcon' icon={faCheck} bounce={true} style={{ paddingTop: '4px' }} /> Verified
@@ -709,17 +796,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                     </div>
                 </div>
 
-                <div className="form-group">
-                    <label>Aadhar No<span className='required'>*</span></label>
-                    <input
-                        type="text"
-                        value={formatAadhar(customerData?.aadharNo)}
-                        onChange={handleAadharInput}
-                        placeholder="Enter Aadhar (e.g., 1234 5678 9012)"
-                        maxLength={14}
-                        required
-                    />
-                </div>
+
 
                 <div className="form-group full-width">
                     <label>Address<span className='required'>*</span></label>

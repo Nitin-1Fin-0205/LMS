@@ -419,6 +419,30 @@ input:disabled {
   cursor: not-allowed;
 }
 
+/* Error Styles */
+.form-input.error {
+    border-color: #ff4444;
+    background-color: #fff8f8;
+}
+
+.error-message {
+    color: #ff4444;
+    font-size: 0.8rem;
+    margin-top: 4px;
+}
+
+.form-group input:invalid,
+.form-group select:invalid,
+.form-group textarea:invalid {
+    border-color: #ff4444;
+}
+
+/* Add focus styles to show when field is being edited */
+.form-input.error:focus {
+    border-color: #ff4444;
+    box-shadow: 0 0 0 2px rgba(255, 68, 68, 0.2);
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
   .customer-info-grid {

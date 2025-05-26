@@ -1,3 +1,5 @@
+import { HOLDER_STAGES } from '../constants/holderConstants';
+
 export const ValidationService = {
     // PAN Card Validation for Individual Category
     isValidPAN: (pan) => {
@@ -48,20 +50,6 @@ export const ValidationService = {
         return nameRegex.test(name);
     },
 
-    // Age Validation (Calculate from DOB)
-    isValidAge: (dob, minAge = 18) => {
-        const birthDate = new Date(dob);
-        const today = new Date();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-        }
-
-        return age >= minAge;
-    },
-
     // Pin Code Validation (Indian)
     isValidPinCode: (pincode) => {
         const pincodeRegex = /^[1-9][0-9]{5}$/;
@@ -93,12 +81,6 @@ export const ValidationService = {
                 return ValidationService.isValidName(value)
                     ? { isValid: true }
                     : { isValid: false, error: 'Name should only contain letters' };
-
-            case 'dob':
-                return ValidationService.isValidAge(value)
-                    ? { isValid: true }
-                    : { isValid: false, error: 'Age should be 18 or above' };
-
             default:
                 return { isValid: true };
         }
@@ -119,5 +101,53 @@ export const ValidationService = {
         });
 
         return { isValid, errors };
+    },
+
+    // Stage Data Validation
+    validateStageData: (stage, data) => {
+        if (!data) return { isValid: false, error: 'No data provided' };
+
+        switch (stage) {
+            case HOLDER_STAGES.CUSTOMER_INFO:
+                const requiredFields = [
+                    'firstName',
+                    'middleName',
+                    'lastName',
+                    'fatherOrHusbandName',
+                    'dateOfBirth',
+                    'gender',
+                    'mobileNo',
+                    'emailId',
+                    'panNo',
+                    'aadharNo',
+                    'address',
+                    'city',
+                    'state',
+                    'statecode'
+                ];
+                const missingFields = requiredFields.filter(field => !data[field]);
+                if (missingFields.length > 0) {
+                    return {
+                        isValid: false,
+                        error: `Please fill in required field: ${missingFields[0]}`
+                    };
+                }
+                return { isValid: true };
+
+            case HOLDER_STAGES.ATTACHMENTS:
+                return { isValid: true };
+
+            case HOLDER_STAGES.BIOMETRIC:
+                if (!data.fingerprints || data.fingerprints.length === 0) {
+                    return {
+                        isValid: false,
+                        error: 'Please capture fingerprints'
+                    };
+                }
+                return { isValid: true };
+
+            default:
+                return { isValid: false, error: 'Invalid stage' };
+        }
     }
 };

@@ -40,6 +40,7 @@ const SideNav = () => {
 
     const handleTabChange = (tab, path) => {
         setActiveTab(tab);
+        setIsCollapsed(true);
         navigate(path);
     };
 

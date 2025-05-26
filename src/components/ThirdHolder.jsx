@@ -9,6 +9,7 @@ import StagesProgress from './StagesProgress';
 import { API_URL } from '../assets/config';
 import { updateHolderSection, submitCustomerInfo, fetchCustomerById } from '../store/slices/customerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS, HOLDER_STAGES, STAGE_STATUS } from '../constants/holderConstants';
+import { ValidationService } from '../services/ValidationService';
 import '../styles/SecondaryHolder.css';
 
 const ThirdHolder = () => {
@@ -70,48 +71,13 @@ const ThirdHolder = () => {
         setCurrentStage(newStage);
     };
 
-    const validateStageData = (stage) => {
-        const data = getStageData(stage);
-        console.log('Validating data for stage:', stage, data);
-        switch (stage) {
-            case HOLDER_STAGES.CUSTOMER_INFO:
-                const requiredFields = [
-                    'firstName',
-                    'middleName',
-                    'lastName',
-                    'fatherOrHusbandName',
-                    'dateOfBirth',
-                    'gender',
-                    'mobileNo',
-                    'emailId',
-                    'panNo',
-                    'aadharNo',
-                    'address',
-                    'photo',
-                ];
-                const missingFields = requiredFields.filter(field => !data[field]);
-                if (missingFields.length > 0) {
-                    toast.error(`Please fill in required fields: ${missingFields[0]}`);
-                    return false;
-                }
-                break;
-
-            case HOLDER_STAGES.ATTACHMENTS:
-                break;
-
-            case HOLDER_STAGES.BIOMETRIC:
-                if (!data.fingerprints || data.fingerprints.length === 0) {
-                    toast.error('Please capture fingerprints');
-                    return false;
-                }
-                break;
-        }
-        return true;
-    };
-
     const submitCurrentStage = async () => {
         try {
-            if (!validateStageData(currentStage)) {
+            const stageData = getStageData(currentStage);
+            const validation = ValidationService.validateStageData(currentStage, stageData);
+
+            if (!validation.isValid) {
+                toast.error(validation.error);
                 return;
             }
 
@@ -130,9 +96,11 @@ const ThirdHolder = () => {
                     dob: thirdHolder.customerInfo.dateOfBirth,
                     mobile_number: thirdHolder.customerInfo.mobileNo,
                     email: thirdHolder.customerInfo.emailId,
-                    image_base64: thirdHolder.customerInfo.photo,
                     locker_center_id: 1,
                     parent_customer_id: primaryCustomerId,
+                    city: thirdHolder.customerInfo.city,
+                    state: thirdHolder.customerInfo.state,
+                    state_code: thirdHolder.customerInfo.statecode,
                 };
 
                 const result = await dispatch(submitCustomerInfo({

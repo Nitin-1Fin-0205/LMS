@@ -12,6 +12,7 @@ import '../styles/PrimaryHolder.css';
 import { useNavigate } from 'react-router-dom';
 import { updateHolderSection, submitCustomerInfo, fetchCustomerById } from '../store/slices/customerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS, HOLDER_STAGES, STAGE_STATUS } from '../constants/holderConstants';
+import { ValidationService } from '../services/ValidationService';
 
 const PrimaryHolder = () => {
     const location = useLocation();
@@ -90,48 +91,26 @@ const PrimaryHolder = () => {
         setCurrentStage(newStage);
     };
 
-    const validateStageData = (stage) => {
-        const data = getStageData(stage);
-        console.log('Validating data for stage:', stage, data);
+    const getStageData = (stage) => {
         switch (stage) {
             case HOLDER_STAGES.CUSTOMER_INFO:
-                const requiredFields = [
-                    'firstName',
-                    'middleName',
-                    'lastName',
-                    'fatherOrHusbandName',
-                    'dateOfBirth',
-                    'gender',
-                    'mobileNo',
-                    'emailId',
-                    'panNo',
-                    'aadharNo',
-                    'address',
-                    'photo',
-                ];
-                const missingFields = requiredFields.filter(field => !data[field]);
-                if (missingFields.length > 0) {
-                    toast.error(`Please fill in required fields: ${missingFields[0]}`);
-                    return false;
-                }
-                break;
-
-            case HOLDER_STAGES.ATTACHMENTS:
-                break;
-
+                return formData.customerInfo;
             case HOLDER_STAGES.BIOMETRIC:
-                if (!data.fingerprints || data.fingerprints.length === 0) {
-                    toast.error('Please capture fingerprints');
-                    return false;
-                }
-                break;
+                return formData.biometric;
+            case HOLDER_STAGES.ATTACHMENTS:
+                return formData.attachments;
+            default:
+                return {};
         }
-        return true;
     };
 
     const submitCurrentStage = async () => {
         try {
-            if (!validateStageData(currentStage)) {
+            const stageData = getStageData(currentStage);
+            const validation = ValidationService.validateStageData(currentStage, stageData);
+
+            if (!validation.isValid) {
+                toast.error(validation.error);
                 return;
             }
 
@@ -149,8 +128,10 @@ const PrimaryHolder = () => {
                     dob: formData.customerInfo.dateOfBirth,
                     mobile_number: formData.customerInfo.mobileNo,
                     email: formData.customerInfo.emailId,
-                    image_base64: formData.customerInfo.photo,
-                    locker_center_id: formData.customerInfo.lockerCenterId || 1, //TODO: remove this Hardcoded value
+                    locker_center_id: formData.customerInfo.lockerCenterId || 1,
+                    city: formData.customerInfo.city,
+                    state: formData.customerInfo.state,
+                    state_code: formData.customerInfo.statecode,
                 };
                 const result = await dispatch(submitCustomerInfo({ customerData: submitData, holderType: HOLDER_TYPES.PRIMARY })).unwrap();
 
@@ -185,19 +166,6 @@ const PrimaryHolder = () => {
                 [currentStage]: STAGE_STATUS.ERROR
             }));
             toast.error(error.message || `Failed to save ${currentStage} data`);
-        }
-    };
-
-    const getStageData = (stage) => {
-        switch (stage) {
-            case HOLDER_STAGES.CUSTOMER_INFO:
-                return formData.customerInfo;
-            case HOLDER_STAGES.BIOMETRIC:
-                return formData.biometric;
-            case HOLDER_STAGES.ATTACHMENTS:
-                return formData.attachments;
-            default:
-                return {};
         }
     };
 

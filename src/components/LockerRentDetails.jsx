@@ -232,9 +232,27 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                                         <h4 className="nominee-name">{nominee.name}</h4>
                                     </div>
                                     <div className="nominee-details">
-                                        <div className="nominee-info-row">
-                                            <span><strong>Relation:</strong> {nominee.relation}</span>
-                                            <span><strong>DOB:</strong> {nominee.dob}</span>
+                                        <div className="nominee-info-grid">
+                                            <div className="nominee-info-item">
+                                                <span className="info-label">Relation:</span>
+                                                <span className="info-value">{nominee.relation}</span>
+                                            </div>
+                                            <div className="nominee-info-item">
+                                                <span className="info-label">DOB:</span>
+                                                <span className="info-value">{nominee.dob}</span>
+                                            </div>
+                                            {nominee.proofId && (
+                                                <div className="nominee-info-item">
+                                                    <span className="info-label">Proof ID:</span>
+                                                    <span className="info-value">{nominee.proofId}</span>
+                                                </div>
+                                            )}
+                                            {nominee.remark && (
+                                                <div className="nominee-info-item">
+                                                    <span className="info-label">Remark:</span>
+                                                    <span className="info-value">{nominee.remark}</span>
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="nominee-ownership-compact">
                                             <span className="ownership-label">Ownership:</span>
@@ -246,6 +264,19 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                                                 <span className="ownership-percentage">{nominee.ownership_percentage}%</span>
                                             </div>
                                         </div>
+                                        {nominee.proofFile && (
+                                            <div className="nominee-proof">
+                                                <a
+                                                    href={nominee.proofFile}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="proof-link"
+                                                    key={index}
+                                                >
+                                                    View Proof Document
+                                                </a>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}

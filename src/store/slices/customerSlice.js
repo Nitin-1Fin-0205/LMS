@@ -170,6 +170,9 @@ const customerSlice = createSlice({
                     lockerCenterId: action.payload.locker_center_id,
                     type: action.payload.type,
                     address: action.payload.address,
+                    city: action.payload.city,
+                    state: action.payload.state,
+                    statecode: action.payload.state_code
                 };
 
                 state.form.secondaryHolder.customerInfo = {
@@ -213,7 +216,10 @@ const customerSlice = createSlice({
                     aadharNo: customerData.aadhar,
                     fatherOrHusbandName: customerData.guardian,
                     photo: customerData.profile_img,
-                    address: customerData.address
+                    address: customerData.address,
+                    city: customerData.city,
+                    state: customerData.state,
+                    statecode: customerData.state_code,
                 };
 
                 // Update the correct holder based on holderType

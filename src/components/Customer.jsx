@@ -276,7 +276,6 @@ const Customer = () => {
                                     </div>
                                 )}
                             </div>
-                            <div className="customer-id">#{primaryHolder.customerInfo.customerId}</div>
                         </div>
 
                         <div className="preview-info">
@@ -290,7 +289,7 @@ const Customer = () => {
                             </div>
                             <div className="document-info">
                                 <span><strong>PAN:</strong> {primaryHolder.customerInfo.panNo}</span>
-                                <span><strong>Locker No:</strong> {lockerData.lockerDetails.assignedLocker}</span>
+                                {/* <span><strong>Locker No:</strong> {lockerData.lockerDetails.assignedLocker}</span> */}
                             </div>
                         </div>
 

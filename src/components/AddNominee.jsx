@@ -2,10 +2,11 @@ import { faTrashAlt, faTimes } from '@fortawesome/free-solid-svg-icons';
 import React, { useState, useEffect } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateNominees, fetchNominees, deleteNominee, updateNominee, addNominee } from '../store/slices/lockerSlice';
+import { updateNominees, fetchNominees, deleteNominee } from '../store/slices/lockerSlice';
 import 'react-toastify/dist/ReactToastify.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import '../styles/AddNominee.css';
+import { API_URL } from '../assets/config';
 
 const AddNominee = ({ isOpen, onClose, onSave }) => {
     const dispatch = useDispatch();
@@ -14,7 +15,6 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
     const [nominees, setNominees] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formErrors, setFormErrors] = useState({});
-    const [proofFiles, setProofFiles] = useState({}); // Store nominee proof files
 
     useEffect(() => {
         const fetchNomineesData = async () => {
@@ -41,10 +41,21 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                 relation: nominee.relation,
                 dob: nominee.dob,
                 percentage: nominee.ownership_percentage || 0,
+                remark: nominee.remark || '',
                 proofId: nominee.proofId || '',
-                proofFileUrl: nominee.proofFileUrl || ''
+                proofFile: nominee.proofFile || null,
+                proofFileName: nominee.proofFileName || ''
             }))
-            : [{ name: '', relation: '', dob: '', percentage: 100, proofId: '', proofFileUrl: '' }];
+            : [{
+                name: '',
+                relation: '',
+                dob: '',
+                percentage: 100,
+                remark: '',
+                proofId: '',
+                proofFile: null,
+                proofFileName: ''
+            }];
 
         setNominees(initialNominees);
         setFormErrors({});
@@ -94,7 +105,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                 if (!nominee.proofId?.trim()) {
                     errors[`proofId-${index}`] = 'Proof ID is required for minors';
                 }
-                if (!proofFiles[index]) {
+                if (!nominee.proofFile) {
                     errors[`proofFile-${index}`] = 'Proof document is required for minors';
                 }
             }
@@ -159,10 +170,14 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
             return;
         }
 
-        // Store file in state
-        const newProofFiles = { ...proofFiles };
-        newProofFiles[index] = file;
-        setProofFiles(newProofFiles);
+        // Update nominee with file information
+        const updatedNominees = [...nominees];
+        updatedNominees[index] = {
+            ...updatedNominees[index],
+            proofFile: file,
+            proofFileName: file.name
+        };
+        setNominees(updatedNominees);
 
         // Clear any related error
         if (formErrors[`proofFile-${index}`]) {
@@ -185,7 +200,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
         updatedNominees[0].percentage = 50;
 
         // Add new nominee with 50%
-        updatedNominees.push({ name: '', relation: '', dob: '', percentage: 50 });
+        updatedNominees.push({ name: '', relation: '', dob: '', percentage: 50, remark: '' });
 
         setNominees(updatedNominees);
     };
@@ -221,6 +236,15 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
         }
     };
 
+    const convertFileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
     const handleSaveAll = async () => {
         if (!validateForm()) {
             toast.error('Please correct the errors before saving');
@@ -230,83 +254,41 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
         setIsSubmitting(true);
 
         try {
-            // Process each nominee (add new or update existing)
-            for (let i = 0; i < nominees.length; i++) {
-                const nominee = nominees[i];
-                const nomineeData = { ...nominee };
+            // Convert files to base64 and format nominees data
+            const formattedNominees = await Promise.all(nominees.map(async (nominee) => {
+                let proofFileBase64 = null;
 
-                // Include proof ID if available
-                if (nominee.proofId) {
-                    nomineeData.proofId = nominee.proofId;
+                if (nominee.proofFile instanceof File) {
+                    proofFileBase64 = await convertFileToBase64(nominee.proofFile);
                 }
 
-                // Handle file upload if we have one
-                if (proofFiles[i]) {
-                    const formData = new FormData();
-                    formData.append('proofFile', proofFiles[i]);
-                    formData.append('nomineeId', nominee.unique_id || 'new');
-                    formData.append('customerId', customerId);
-
-                    // You would need to implement a file upload API endpoint
-                    // This is just a placeholder for the logic
-                    try {
-                        const token = localStorage.getItem('authToken');
-                        const response = await fetch(`${API_URL}/customers/nominee-proof-upload`, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                            },
-                            body: formData
-                        });
-
-                        if (!response.ok) {
-                            throw new Error('Failed to upload proof document');
-                        }
-
-                        const data = await response.json();
-                        nomineeData.proofFileUrl = data.fileUrl;
-                    } catch (error) {
-                        console.error('Error uploading proof file:', error);
-                        throw new Error('Failed to upload proof document');
-                    }
-                }
-
-                if (nominee.unique_id) {
-                    // Update existing nominee
-                    await dispatch(updateNominee({
-                        customerId,
-                        nomineeData
-                    })).unwrap();
-                } else {
-                    // Add new nominee
-                    await dispatch(addNominee({
-                        customerId,
-                        nomineeData
-                    })).unwrap();
-                }
-            }
-
-            // Format nominees for display in the main form
-            const formattedNominees = nominees.map((nominee, index) => ({
-                unique_id: nominee.unique_id,
-                name: nominee.name,
-                relation: nominee.relation,
-                dob: nominee.dob,
-                ownership_percentage: nominee.percentage,
-                proofId: nominee.proofId,
-                proofFileUrl: nominee.proofFileUrl
+                return {
+                    unique_id: nominee.unique_id || null,
+                    name: nominee.name,
+                    relation: nominee.relation,
+                    dob: nominee.dob,
+                    ownership_percentage: nominee.percentage,
+                    remark: nominee.remark || '',
+                    proofId: nominee.proofId || '',
+                    proofFile: proofFileBase64
+                };
             }));
 
-            // Update parent component state
+            // Single dispatch to update nominees
+            await dispatch(updateNominees({
+                customerId,
+                nominees: formattedNominees
+            })).unwrap();
+
             if (onSave) {
                 onSave(formattedNominees);
             }
 
             toast.success('Nominees saved successfully!');
-            onClose(); // Close the modal after successful save
+            onClose();
         } catch (error) {
             console.error('Error saving nominees:', error);
-            toast.error('Failed to save nominees');
+            toast.error(error.message || 'Failed to save nominees');
         } finally {
             setIsSubmitting(false);
         }
@@ -430,12 +412,26 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                                         )}
                                     </div>
 
-                                    {/* Modified proof file upload */}
+                                    {/* Remark field */}
+                                    <div className="form-group">
+                                        <label>Remark</label>
+                                        <input
+                                            type="text"
+                                            value={nominee.remark || ''}
+                                            onChange={(e) => handleInputChange(index, 'remark', e.target.value)}
+                                            placeholder="Enter remarks if any"
+                                            className={formErrors[`remark-${index}`] ? 'input-error' : ''}
+                                        />
+                                        {formErrors[`remark-${index}`] && (
+                                            <span className="error-message">{formErrors[`remark-${index}`]}</span>
+                                        )}
+                                    </div>
+
                                     <div className="form-group">
                                         <label>Proof Document {isMinor && <span className="required">*</span>}</label>
                                         <div className="file-upload-container">
                                             <label className={`file-upload-label ${formErrors[`proofFile-${index}`] ? 'input-error' : ''}`}>
-                                                {proofFiles[index] ? proofFiles[index].name : 'Choose file'}
+                                                {nominee.proofFileName || 'Choose file'}
                                                 <input
                                                     type="file"
                                                     onChange={(e) => handleFileUpload(index, e.target.files[0])}
@@ -443,25 +439,32 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                                                     style={{ display: 'none' }}
                                                 />
                                             </label>
-                                            {proofFiles[index] && (
+                                            {nominee.proofFile && (
                                                 <button
                                                     className="remove-file-button"
                                                     onClick={() => {
-                                                        const newProofFiles = { ...proofFiles };
-                                                        delete newProofFiles[index];
-                                                        setProofFiles(newProofFiles);
+                                                        const updatedNominees = [...nominees];
+                                                        updatedNominees[index] = {
+                                                            ...updatedNominees[index],
+                                                            proofFile: null,
+                                                            proofFileName: ''
+                                                        };
+                                                        setNominees(updatedNominees);
                                                     }}
                                                 >
                                                     <FontAwesomeIcon icon={faTimes} />
                                                 </button>
                                             )}
                                         </div>
-                                        {formErrors[`proofFile-${index}`] ? (
-                                            <span className="error-message">{formErrors[`proofFile-${index}`]}</span>
-                                        ) : (
-                                            isMinor && <small className="helper-text important">Required for minors under 18</small>
-                                        )}
-                                        <small className="helper-text">Accepts PDF, JPG, PNG (Max 2MB)</small>
+                                        <div className="file-messages-container">
+                                            {formErrors[`proofFile-${index}`] && (
+                                                <span className="error-message">{formErrors[`proofFile-${index}`]}</span>
+                                            )}
+                                            {isMinor && !formErrors[`proofFile-${index}`] && (
+                                                <small className="helper-text important">Required for minors under 18</small>
+                                            )}
+                                            <small className="helper-text">Accepts PDF, JPG, PNG (Max 2MB)</small>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
