@@ -6,101 +6,6 @@ import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
 import '../styles/CustomerDetailsOverlay.css';
 
-// Mock data for temporary development
-const MOCK_CUSTOMER_DATA = {
-    primaryHolder: {
-        customerId: "12345",
-        firstName: "John",
-        middleName: "Michael",
-        lastName: "Doe",
-        panNo: "ABCDE1234F",
-        aadharNo: "123456789012",
-        gender: "Male",
-        address: "123 Main Street, Downtown, Mumbai, Maharashtra",
-        city: "Mumbai",
-        state: "Maharashtra",
-        fatherOrHusbandName: "Robert Doe",
-        dateOfBirth: "1985-06-15",
-        mobileNo: "9876543210",
-        emailId: "john.doe@example.com",
-        photo: "https://randomuser.me/api/portraits/men/44.jpg",
-        status: true,
-        biometricData: {
-            fingerprints: ["right-thumb", "left-thumb"]
-        },
-        documents: [
-            { id: 1, type: "Address Proof", name: "Aadhar Card.pdf", url: "#", size: 1024000, uploadDate: "2023-01-10" },
-            { id: 2, type: "Identity Proof", name: "PAN Card.pdf", url: "#", size: 512000, uploadDate: "2023-01-10" },
-        ]
-    },
-    secondaryHolder: {
-        customerId: "67890",
-        firstName: "Jane",
-        middleName: "Alice",
-        lastName: "Doe",
-        panNo: "FGHIJ5678K",
-        aadharNo: "987654321098",
-        gender: "Female",
-        address: "123 Main Street, Downtown, Mumbai, Maharashtra",
-        city: "Mumbai",
-        state: "Maharashtra",
-        fatherOrHusbandName: "David Smith",
-        dateOfBirth: "1988-09-23",
-        mobileNo: "8765432109",
-        emailId: "jane.doe@example.com",
-        photo: "https://randomuser.me/api/portraits/women/33.jpg",
-        biometricData: {
-            fingerprints: []
-        },
-        documents: [
-            { id: 1, type: "Address Proof", name: "Aadhar Card.pdf", url: "#", size: 1024000, uploadDate: "2023-01-10" },
-            { id: 2, type: "Identity Proof", name: "PAN Card.pdf", url: "#", size: 512000, uploadDate: "2023-01-10" },
-            { id: 3, type: "Photo", name: "Recent Photo.jpg", url: "#", size: 204800, uploadDate: "2023-01-10" }
-        ]
-    },
-    thirdHolder: {
-        customerId: "24680",
-        firstName: "Robert",
-        middleName: "James",
-        lastName: "Smith",
-        panNo: "LMNOP9876Q",
-        aadharNo: "456789012345",
-        gender: "Male",
-        address: "456 Park Avenue, Uptown, Delhi, Delhi",
-        city: "Mumbai",
-        state: "Maharashtra",
-        fatherOrHusbandName: "William Smith",
-        dateOfBirth: "1990-12-10",
-        mobileNo: "7654321098",
-        emailId: "robert.smith@example.com",
-        photo: "https://randomuser.me/api/portraits/men/22.jpg",
-        biometricData: {
-            fingerprints: ["right-thumb"]
-        },
-        documents: [
-            { id: 1, type: "Address Proof", name: "Aadhar Card.pdf", url: "#", size: 1024000, uploadDate: "2023-01-10" },
-            { id: 2, type: "Identity Proof", name: "PAN Card.pdf", url: "#", size: 512000, uploadDate: "2023-01-10" },
-            { id: 3, type: "Photo", name: "Recent Photo.jpg", url: "#", size: 204800, uploadDate: "2023-01-10" }
-        ]
-    },
-    lockerDetails: {
-        center: "Mumbai Main Branch",
-        roomNo: "R-101",
-        cabinetNo: "Cabinet A",
-        lockerSize: "Small",
-        lockerNumber: "L-203",
-        LockerKey: "LK-456",
-        monthlyRent: "750",
-        deposit: "5000",
-        startDate: "2023-01-15",
-        endDate: "2024-01-14",
-        status: true,
-    },
-};
-
-// Flag to toggle between mock data and API data
-const USE_MOCK_DATA = true;
-
 const CustomerDetailsOverlay = ({
     show,
     onClose,
@@ -111,37 +16,28 @@ const CustomerDetailsOverlay = ({
     const [error, setError] = useState(null);
 
     const fetchCustomerDetails = useCallback(async () => {
-        if (!show) return;
+        if (!show || !customerId) return;
 
         setIsLoading(true);
         setError(null);
 
-        // Use setTimeout to simulate network delay with mock data
-        if (USE_MOCK_DATA) {
-            setTimeout(() => {
-                // Simulate success scenario
-                setCustomerData(MOCK_CUSTOMER_DATA);
-                setIsLoading(false);
-
-                // Uncomment to simulate error scenario
-                // setError('Simulated error for testing UI');
-                // setIsLoading(false);
-            }, 1500); // 1.5 second delay
-            return;
-        }
-
-        // Real API call if not using mock data
         try {
-            if (!customerId) {
-                throw new Error('Customer ID is required');
-            }
-
             const token = localStorage.getItem('authToken');
-            const response = await axios.get(`${API_URL}/customers/details/${customerId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await axios.get(
+                `${API_URL}/customers/customer-preview/${customerId}`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'accept': '*/*'
+                    }
+                }
+            );
 
-            setCustomerData(response.data);
+            if (response.data?.data) {
+                setCustomerData(response.data.data);
+            } else {
+                throw new Error('Invalid data format received');
+            }
         } catch (err) {
             console.error('Error fetching customer details:', err);
             setError('Failed to load customer details. Please try again.');

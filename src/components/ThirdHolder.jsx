@@ -248,13 +248,6 @@ const ThirdHolder = () => {
                                     Back
                                 </button>
                                 <button
-                                    className="save-button"
-                                    onClick={validateAndSubmitStage}
-                                    disabled={isSubmitting}
-                                >
-                                    {isSubmitting ? 'Saving...' : 'Save'}
-                                </button>
-                                <button
                                     className="next-button"
                                     onClick={() => handleStageTransition(HOLDER_STAGES.BIOMETRIC)}
                                 >
