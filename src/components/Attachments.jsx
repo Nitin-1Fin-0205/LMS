@@ -25,7 +25,8 @@ const Attachments = ({ customerId }) => {
                     const documentCategoryList = response.data.data.document_master.map((item) => ({
                         key: item.id,
                         label: item.title,
-                        allowMultiple: true
+                        allowMultiple: true,
+                        limit: item.limit || 4,
                     }));
 
                     const initialDocuments = {};
@@ -139,6 +140,17 @@ const Attachments = ({ customerId }) => {
             return;
         }
 
+        // Get current document count and limit for this category
+        const currentCount = documents[category]?.length || 0;
+        const categoryConfig = documentCategories.find(c => c.key === category);
+        const uploadLimit = categoryConfig?.limit || 4;
+
+        // Check if upload would exceed limit
+        if (currentCount + files.length > uploadLimit) {
+            toast.error(`Maximum ${uploadLimit} documents allowed for ${categoryConfig.label}`);
+            return;
+        }
+
         for (const file of files) {
             if (file.size > 5 * 1024 * 1024) {
                 toast.error(`${file.name} is too large (max 5MB)`);
@@ -157,7 +169,6 @@ const Attachments = ({ customerId }) => {
                 };
 
                 await uploadDocumentToServer(newDoc);
-                console.log('Document uploaded successfully:', newDoc);
 
                 const updatedDocs = {
                     ...documents,
@@ -165,7 +176,6 @@ const Attachments = ({ customerId }) => {
                 };
 
                 setDocuments(updatedDocs);
-                // onUpdate(updatedDocs);
                 toast.success(`Document uploaded successfully`);
             } catch (error) {
                 toast.error(`Failed to upload ${file.name}: ${error.message}`);
@@ -293,9 +303,15 @@ const Attachments = ({ customerId }) => {
                         className="category-select"
                         disabled={documentCategories.length === 0}
                     >
-                        {documentCategories.map(({ key, label }) => (
-                            <option key={key} value={key}>{label}</option>
-                        ))}
+                        {documentCategories.map(({ key, label }) => {
+                            const currentCount = documents[key]?.length || 0;
+                            const limit = documentCategories.find(c => c.key === key)?.limit || 4;
+                            return (
+                                <option key={key} value={key}>
+                                    {`${label} (${currentCount}/${limit})`}
+                                </option>
+                            );
+                        })}
                     </select>
                     <label className="upload-button">
                         <FontAwesomeIcon icon={faPlus} />
@@ -305,7 +321,11 @@ const Attachments = ({ customerId }) => {
                             accept="image/*,.pdf"
                             onChange={handleFileUpload}
                             style={{ display: 'none' }}
-                            multiple={documentCategories.find(c => c.key === selectedCategory)?.allowMultiple}
+                            multiple={true}
+                            disabled={
+                                documents[selectedCategory]?.length >=
+                                (documentCategories.find(c => c.key === selectedCategory)?.limit || 4)
+                            }
                         />
                     </label>
                 </div>
