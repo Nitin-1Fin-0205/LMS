@@ -34,6 +34,10 @@ const ThirdHolder = () => {
                         customerId: thirdHolderId,
                         holderType: HOLDER_TYPES.THIRD
                     })).unwrap();
+                    setStageStatus(prev => ({
+                        ...prev,
+                        [HOLDER_STAGES.CUSTOMER_INFO]: STAGE_STATUS.COMPLETED
+                    }));
                 }
             } catch (error) {
                 toast.error('Failed to fetch third holder details');
@@ -74,8 +78,16 @@ const ThirdHolder = () => {
     const submitCurrentStage = async () => {
         try {
             const stageData = getStageData(currentStage);
-            const validation = ValidationService.validateStageData(currentStage, stageData);
+            // Validate PAN first for customer info stage
+            if (currentStage === HOLDER_STAGES.CUSTOMER_INFO) {
+                const panValidation = ValidationService.isValidPAN(stageData.panNo);
+                if (!panValidation.isValid) {
+                    toast.error(panValidation.error);
+                    return;
+                }
+            }
 
+            const validation = ValidationService.validateStageData(currentStage, stageData);
             if (!validation.isValid) {
                 toast.error(validation.error);
                 return;
@@ -164,8 +176,8 @@ const ThirdHolder = () => {
     };
 
     const canNavigateToStage = (stage) => {
-        if (stage === HOLDER_STAGES.CUSTOMER_INFO) return true;
-        return thirdHolder?.customerInfo?.customerId;
+        // Allow navigation to any stage if customerId exists
+        return stage === HOLDER_STAGES.CUSTOMER_INFO || thirdHolder?.customerInfo?.customerId;
     };
 
     const handleSubmitFinal = async () => {
@@ -218,8 +230,16 @@ const ThirdHolder = () => {
                                 </button>
                                 <button
                                     className="next-button"
-                                    onClick={() => handleStageTransition(HOLDER_STAGES.ATTACHMENTS)}
+                                    onClick={() => {
+                                        setStageStatus(prev => ({
+                                            ...prev,
+                                            [HOLDER_STAGES.ATTACHMENTS]: STAGE_STATUS.COMPLETED
+                                        }));
+                                        return handleStageTransition(HOLDER_STAGES.ATTACHMENTS)
+                                    }}
                                     disabled={!thirdHolder.customerInfo.customerId}
+                                    title={!thirdHolder.customerInfo.customerId ? 'Please save customer info first' : ''}
+
                                 >
                                     Next
                                 </button>

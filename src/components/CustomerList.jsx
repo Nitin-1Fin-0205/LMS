@@ -68,11 +68,11 @@ const CustomerList = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('authToken');
-            const response = await axios.get(`${API_URL}/customers/customers`, {
-                params: {
-                    page_no: pagination.pageNo,
-                    page_size: pagination.pageSize
-                },
+            const endpoint = searchText
+                ? `${API_URL}/customers/customers/search?pan=${searchText}&page_no=${pagination.pageNo}&page_size=${pagination.pageSize}`
+                : `${API_URL}/customers/customers?page_no=${pagination.pageNo}&page_size=${pagination.pageSize}`;
+
+            const response = await axios.get(endpoint, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': '*/*'
@@ -80,7 +80,6 @@ const CustomerList = () => {
             });
 
             if (response.data?.data) {
-                // Map the API response to the format expected by DataGrid
                 const mappedCustomers = response.data.data.customers.map(customer => ({
                     id: customer.customer_id,
                     name: [customer.first_name, customer.middle_name, customer.last_name].filter(Boolean).join(' '),
@@ -96,8 +95,6 @@ const CustomerList = () => {
                     ...prev,
                     totalCustomers: response.data.data.total || 0
                 }));
-
-                console.log('Fetched customers', pagination)
             }
         } catch (error) {
             console.error('Error fetching customers:', error);
@@ -106,10 +103,6 @@ const CustomerList = () => {
             setLoading(false);
         }
     };
-
-    useEffect(() => {
-        fetchCustomerList();
-    }, [pagination.pageNo, pagination.pageSize]);
 
     const handleEdit = (customerId) => {
         try {
@@ -135,32 +128,23 @@ const CustomerList = () => {
     };
 
     const handleSearch = (event) => {
-        const value = event.target.value;
+        const value = event.target.value.toUpperCase();
         setSearchText(value);
 
-        if (!value.trim()) {
-            setFilterModel({ items: [] });
-            return;
-        }
-
-        const searchFilter = {
-            items: [
-                {
-                    id: 1,
-                    field: 'name',
-                    operator: 'contains',
-                    value: value
-                },
-            ]
-        };
-
-        setFilterModel(searchFilter);
+        // Reset pagination when searching
+        setPagination(prev => ({
+            ...prev,
+            pageNo: 1
+        }));
     };
 
-    const clearSearch = () => {
-        setSearchText('');
-        setFilterModel({ items: [] });
-    };
+    useEffect(() => {
+        const delayDebounce = setTimeout(() => {
+            fetchCustomerList();
+        }, 500);
+
+        return () => clearTimeout(delayDebounce);
+    }, [searchText, pagination.pageNo, pagination.pageSize]);
 
     return (
         <Box sx={{
@@ -180,7 +164,7 @@ const CustomerList = () => {
                     <TextField
                         variant="outlined"
                         size="small"
-                        placeholder="Search by name or locker number"
+                        placeholder="Search by PAN"
                         value={searchText}
                         onChange={handleSearch}
                         sx={{ width: 300 }}
@@ -194,7 +178,10 @@ const CustomerList = () => {
                                 <InputAdornment position="end">
                                     <Button
                                         size="small"
-                                        onClick={clearSearch}
+                                        onClick={() => {
+                                            setSearchText('');
+                                            setFilterModel({ items: [] });
+                                        }}
                                         sx={{ minWidth: 'auto', p: 0.5 }}
                                     >
                                         <FontAwesomeIcon icon={faTimes} />

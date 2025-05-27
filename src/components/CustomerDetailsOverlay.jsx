@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSpinner, faUser, faFile, faDownload, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faSpinner, faUser, faFile, faDownload, faEye, faEdit } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
 import '../styles/CustomerDetailsOverlay.css';
+import { useNavigate } from 'react-router-dom';
 
 const CustomerDetailsOverlay = ({
     show,
     onClose,
     customerId
 }) => {
+    const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
     const [customerData, setCustomerData] = useState(null);
     const [error, setError] = useState(null);
@@ -55,22 +57,70 @@ const CustomerDetailsOverlay = ({
         fetchCustomerDetails();
     }, [fetchCustomerDetails]);
 
+    const handleEditClick = (type) => {
+        switch (type) {
+            case "PRIMARY":
+                navigate(`/primary-holder`);
+                break;
+            case "SECONDARY":
+                navigate(`/secondary-holder`);
+                break;
+            case "THIRD":
+                navigate(`/third-holder`);
+                break;
+            default:
+                break;
+        }
+    };
+
+    const handleDocumentAction = async (doc, action) => {
+        if (!doc.url) return;
+
+        try {
+            if (action === 'view') {
+                window.open(doc.url, '_blank');
+            } else if (action === 'download') {
+                const response = await fetch(doc.url);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = doc.name;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            }
+        } catch (error) {
+            toast.error(`Failed to ${action} document`);
+        }
+    };
+
+    const renderFingerprintStatus = (fingerType, biometricData) => {
+        const isPresent = biometricData?.fingerprints?.includes(fingerType);
+        return (
+            <span className={`fingerprint-status ${isPresent ? 'present' : 'missing'}`}>
+                {isPresent ? '✓' : '✗'}
+            </span>
+        );
+    };
+
     const renderHolderSection = (holder, title, documents, biometricData) => {
         if (!holder) return null;
 
-        // Helper function to render fingerprint status with color
-        const renderFingerprintStatus = (fingerType) => {
-            const isPresent = biometricData?.fingerprints?.includes(fingerType);
-            return (
-                <span className={`fingerprint-status ${isPresent ? 'present' : 'missing'}`}>
-                    {isPresent ? '✓' : '✗'}
-                </span>
-            );
-        };
-
         return (
             <div className="detail-main-section">
-                <h3 className="main-section-title">{title}</h3>
+                <div className="section-header">
+                    <h3 className="main-section-title">{title}</h3>
+                    <button
+                        className="edit-button"
+                        onClick={() => handleEditClick(title.split(' ')[0])}
+                        title={`Edit ${title}`}
+                    >
+                        <FontAwesomeIcon icon={faEdit} />
+                    </button>
+
+                </div>
 
                 <div className="holder-details-container">
                     <div className="holder-photo-container">
@@ -151,14 +201,14 @@ const CustomerDetailsOverlay = ({
                                         <div className="fingerprint-item">
                                             <div className="fingerprint-label">Right Thumb</div>
                                             <div className="fingerprint-value">
-                                                {renderFingerprintStatus('right-thumb')}
+                                                {renderFingerprintStatus('right-thumb', biometricData)}
                                             </div>
                                         </div>
 
                                         <div className="fingerprint-item">
                                             <div className="fingerprint-label">Left Thumb</div>
                                             <div className="fingerprint-value">
-                                                {renderFingerprintStatus('left-thumb')}
+                                                {renderFingerprintStatus('left-thumb', biometricData)}
                                             </div>
                                         </div>
                                     </div>
@@ -179,14 +229,21 @@ const CustomerDetailsOverlay = ({
                                                 <div className="document-name">{doc.name}</div>
                                                 <div className="document-meta">
                                                     <span className="document-type">{doc.type}</span>
-                                                    {/* File size removed */}
                                                 </div>
                                             </div>
                                             <div className="document-actions">
-                                                <button className="document-view-btn" title="View Document">
+                                                <button
+                                                    className="document-view-btn"
+                                                    title="View Document"
+                                                    onClick={() => handleDocumentAction(doc, 'view')}
+                                                >
                                                     <FontAwesomeIcon icon={faEye} />
                                                 </button>
-                                                <button className="document-download-btn" title="Download Document">
+                                                <button
+                                                    className="document-download-btn"
+                                                    title="Download Document"
+                                                    onClick={() => handleDocumentAction(doc, 'download')}
+                                                >
                                                     <FontAwesomeIcon icon={faDownload} />
                                                 </button>
                                             </div>
@@ -206,7 +263,17 @@ const CustomerDetailsOverlay = ({
 
         return (
             <div className="detail-main-section">
-                <h3 className="main-section-title">LOCKER DETAILS</h3>
+                <div className="section-header">
+
+                    <h3 className="main-section-title">LOCKER DETAILS </h3>
+                    <button
+                        className="edit-button"
+                        onClick={() => navigate('/locker-details')}
+                        title="Edit Locker Details"
+                    >
+                        <FontAwesomeIcon icon={faEdit} />
+                    </button>
+                </div>
                 <div className="locker-details-container">
                     <div className="detail-section">
                         <h4>LOCKER INFORMATION</h4>

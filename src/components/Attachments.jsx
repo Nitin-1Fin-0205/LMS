@@ -10,6 +10,7 @@ const Attachments = ({ customerId }) => {
     const [selectedCategory, setSelectedCategory] = useState('identityProof');
     const [documents, setDocuments] = useState(() => ({}));
     const [documentCategories, setDocumentCategories] = useState([]);
+    const [remarks, setRemarks] = useState('');
 
     useEffect(() => {
         const fetchDocumentCategories = async () => {
@@ -26,7 +27,7 @@ const Attachments = ({ customerId }) => {
                         key: item.id,
                         label: item.title,
                         allowMultiple: true,
-                        limit: item.limit || 4,
+                        limit: item.limit,
                     }));
 
                     const initialDocuments = {};
@@ -81,7 +82,8 @@ const Attachments = ({ customerId }) => {
                             data: doc.link,
                             category: doc.document_type_id,
                             canEdit: doc.can_edit,
-                            documentType: doc.document
+                            documentType: doc.document,
+                            remark: doc.remark // Add remarks field
                         });
                     });
 
@@ -104,14 +106,18 @@ const Attachments = ({ customerId }) => {
     const uploadDocumentToServer = async (documentData) => {
         try {
             const token = localStorage.getItem('authToken');
+            const payload = {
+                customerId: Number(customerId),
+                documentId: Number(documentData.category),
+                documentName: documentData.name || documentData.data.split(',')[0].split('/')[1].split(';')[0],
+                documentBase64: documentData.data.split(',')[1],
+                // Add remarks only for "Other Document" (id: 5)
+                ...(documentData.category === 5 && { remark: documentData.remark })
+            };
+
             const response = await axios.post(
                 `${API_URL}/customers/document-upload`,
-                {
-                    customerId: Number(customerId),
-                    documentId: Number(documentData.category),
-                    documentName: documentData.name || documentData.data.split(',')[0].split('/')[1].split(';')[0],
-                    documentBase64: documentData.data.split(',')[1]
-                },
+                payload,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -142,8 +148,17 @@ const Attachments = ({ customerId }) => {
 
         // Get current document count and limit for this category
         const currentCount = documents[category]?.length || 0;
-        const categoryConfig = documentCategories.find(c => c.key === category);
-        const uploadLimit = categoryConfig?.limit || 4;
+        const categoryConfig = documentCategories.find(c => Number(c.key) == Number(category));
+        console.log(`documentCategories:`, documentCategories, category, categoryConfig);
+        const uploadLimit = categoryConfig?.limit;
+
+        console.log(`Current count: ${currentCount}, Upload limit: ${uploadLimit}`);
+
+        // Check if limit is available
+        if (!uploadLimit) {
+            toast.error('Upload limit not available for this category');
+            return;
+        }
 
         // Check if upload would exceed limit
         if (currentCount + files.length > uploadLimit) {
@@ -165,10 +180,12 @@ const Attachments = ({ customerId }) => {
                     type: file.type,
                     size: file.size,
                     data: base64,
-                    category
+                    category,
+                    remark: category === 5 ? remark : undefined // Add remarks only for "Other Document"
                 };
 
                 await uploadDocumentToServer(newDoc);
+                setRemarks(''); // Clear remarks after successful upload
 
                 const updatedDocs = {
                     ...documents,
@@ -293,19 +310,27 @@ const Attachments = ({ customerId }) => {
         }
     };
 
+    // Reset remarks when category changes
+    const handleCategoryChange = (e) => {
+        setSelectedCategory(e.target.value);
+        if (Number(e.target.value) !== 5) {
+            setRemarks('');
+        }
+    };
+
     return (
         <div className="attachments-container">
             <div className="attachments-header">
                 <div className="upload-section">
                     <select
                         value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        onChange={handleCategoryChange}
                         className="category-select"
                         disabled={documentCategories.length === 0}
                     >
                         {documentCategories.map(({ key, label }) => {
                             const currentCount = documents[key]?.length || 0;
-                            const limit = documentCategories.find(c => c.key === key)?.limit || 4;
+                            const limit = documentCategories.find(c => c.key === key)?.limit;
                             return (
                                 <option key={key} value={key}>
                                     {`${label} (${currentCount}/${limit})`}
@@ -313,6 +338,16 @@ const Attachments = ({ customerId }) => {
                             );
                         })}
                     </select>
+                    {Number(selectedCategory) == 5 && (
+                        <input
+                            type="text"
+                            value={remarks}
+                            onChange={(e) => setRemarks(e.target.value)}
+                            placeholder="Enter document remarks"
+                            className="remarks-input"
+                            required
+                        />
+                    )}
                     <label className="upload-button">
                         <FontAwesomeIcon icon={faPlus} />
                         Add Document
@@ -323,8 +358,8 @@ const Attachments = ({ customerId }) => {
                             style={{ display: 'none' }}
                             multiple={true}
                             disabled={
-                                documents[selectedCategory]?.length >=
-                                (documentCategories.find(c => c.key === selectedCategory)?.limit || 4)
+                                documents[selectedCategory]?.length >= (documentCategories.find(c => Number(c.key) == Number(selectedCategory?.limit))) ||
+                                (Number(selectedCategory) == 5 && !remarks)
                             }
                         />
                     </label>
@@ -344,6 +379,11 @@ const Attachments = ({ customerId }) => {
                                         </div>
                                         <div className="document-info">
                                             <span className="document-name">{doc.name}</span>
+                                            {Number(key) == 5 && doc.remark && (
+                                                <span className="document-remarks">
+                                                    Remarks: {doc.remark}
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="document-actions">
                                             <button onClick={() => handlePreview(doc)} title="Preview">

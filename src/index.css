@@ -43,6 +43,13 @@ button {
   letter-spacing: -0.01em;
 }
 
+textarea,
+input[type="text"],
+input[type="date"],
+select {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
 :root {
   /* Primary Colors */
   --primary-blue: #007bff;

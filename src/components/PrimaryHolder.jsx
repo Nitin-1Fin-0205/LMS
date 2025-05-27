@@ -174,8 +174,8 @@ const PrimaryHolder = () => {
     };
 
     const canNavigateToStage = (stage) => {
-        if (stage === HOLDER_STAGES.CUSTOMER_INFO) return true;
-        return isCustomerCreated && customerId;
+        // Allow navigation to any stage if customerId exists
+        return stage === HOLDER_STAGES.CUSTOMER_INFO || customerId;
     };
 
     const renderStage = () => {
@@ -202,8 +202,15 @@ const PrimaryHolder = () => {
                                 </button>
                                 <button
                                     className="next-button"
-                                    onClick={() => handleStageTransition(HOLDER_STAGES.ATTACHMENTS)}
+                                    onClick={() => {
+                                        setStageStatus(prev => ({
+                                            ...prev,
+                                            [HOLDER_STAGES.ATTACHMENTS]: STAGE_STATUS.COMPLETED
+                                        }));
+                                        return handleStageTransition(HOLDER_STAGES.ATTACHMENTS)
+                                    }}
                                     disabled={!customerId}
+                                    title={!customerId ? 'Please save customer info first' : ''}
                                 >
                                     Next
                                 </button>

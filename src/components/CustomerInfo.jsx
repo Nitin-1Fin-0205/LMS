@@ -86,8 +86,18 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         }
     };
 
+    // Add name validation helper
+    const validateNameInput = (value) => {
+        return value.replace(/[^a-zA-Z\s.']/g, ''); // Only allow letters, spaces, dots and apostrophes
+    };
+
     // Update handle input change
     const handleInputChange = (field, value) => {
+        // Validate name fields to prevent numbers
+        if (['firstName', 'middleName', 'lastName', 'fatherOrHusbandName'].includes(field)) {
+            value = validateNameInput(value);
+        }
+
         const updatedData = {
             ...customerData,
             [field]: value || ''
@@ -148,7 +158,6 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
     const handlePanInput = (e) => {
         const pan = e.target.value.toUpperCase();
         handleInputChange('panNo', pan);
-
         // Validate only if PAN has full length
         if (pan.length === 10) {
             const validation = ValidationService.isValidPAN(pan);
@@ -720,7 +729,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 </div>
 
                 <div className="form-group">
-                    <label>Aadhar No<span className='required'>*</span></label>
+                    <label>Aadhaar No<span className='required'>*</span></label>
                     <input
                         type="text"
                         value={formatAadhar(customerData?.aadharNo)}

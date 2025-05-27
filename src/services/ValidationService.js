@@ -11,7 +11,7 @@ export const ValidationService = {
         // 5th char: Letter
         // Next 4 chars: Numbers
         // Last char: Letter
-        const panRegex = /^[A-Z]{4}[A-Z][0-9]{4}[A-Z]$/;
+        const panRegex = /^[A-Z]{3}P[A-Z][0-9]{4}[A-Z]$/;
         const isValid = panRegex.test(pan.toUpperCase());
 
         if (!isValid) {
@@ -109,6 +109,15 @@ export const ValidationService = {
 
         switch (stage) {
             case HOLDER_STAGES.CUSTOMER_INFO:
+                // First validate PAN format
+                const panValidation = ValidationService.isValidPAN(data.panNo);
+                if (!panValidation.isValid) {
+                    return {
+                        isValid: false,
+                        error: panValidation.error
+                    };
+                }
+
                 const requiredFields = [
                     'firstName',
                     'middleName',
@@ -125,6 +134,7 @@ export const ValidationService = {
                     'state',
                     'statecode'
                 ];
+
                 const missingFields = requiredFields.filter(field => !data[field]);
                 if (missingFields.length > 0) {
                     return {

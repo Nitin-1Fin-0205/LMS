@@ -25,7 +25,7 @@
 .customer-info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  column-gap: 16px;
+  gap: 8px 16px;
   margin-top: 16px;
   padding: 16px;
 }
@@ -420,7 +420,7 @@ input:disabled {
 }
 
 /* Error Styles */
-.form-input.error {
+/* .form-input.error {
     border-color: #ff4444;
     background-color: #fff8f8;
 }
@@ -437,11 +437,10 @@ input:disabled {
     border-color: #ff4444;
 }
 
-/* Add focus styles to show when field is being edited */
 .form-input.error:focus {
     border-color: #ff4444;
     box-shadow: 0 0 0 2px rgba(255, 68, 68, 0.2);
-}
+} */
 
 /* Responsive */
 @media (max-width: 1200px) {

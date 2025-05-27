@@ -329,3 +329,27 @@
     font-weight: normal;
     margin-left: 0.5rem;
 }
+
+.remarks-input {
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 14px;
+    min-width: 200px;
+    margin-right: 10px;
+}
+
+.remarks-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.document-remarks {
+    display: block;
+    font-size: 10px;
+    color: #3b82f6;
+    margin-top: 4px;
+    font-style: italic;
+    font-weight: 600;
+}
