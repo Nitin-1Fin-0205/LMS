@@ -345,7 +345,7 @@ const CustomerDetailsOverlay = ({
                 <div className="overlay-header">
                     <h2>Customer Registration Summary</h2>
                     <div className="overlay-actions">
-                        <button className="print-btn" onClick={() => window.print()}>Print</button>
+                        {/* <button className="print-btn" onClick={() => window.print()}>Print</button> */}
                         <button className="close-btn" onClick={onClose}>Close</button>
                     </div>
                 </div>
@@ -363,10 +363,10 @@ const CustomerDetailsOverlay = ({
                         </div>
                     ) : customerData ? (
                         <>
-                            <div className="registration-info">
+                            {/* <div className="registration-info">
                                 <p>Customer ID: {customerData.primaryHolder.customerId}</p>
                                 <p>Date: {new Date().toLocaleDateString()}</p>
-                            </div>
+                            </div> */}
 
                             <div className="details-container">
                                 {renderHolderSection(
