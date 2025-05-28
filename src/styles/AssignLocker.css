@@ -276,7 +276,6 @@
 }
 
 .locker-item {
-    min-width: 150px; 
     width: 150px;
     height: 80px;
     position: relative;
@@ -292,13 +291,13 @@
 }
 
 .locker-item.locker-small {
-    width: 70px;
-    height: 70px;
+    width: 100px;
+    height: 50px;
 }
 
 .locker-item.locker-medium {
-    width: 120px;
-    height: 90px;
+    width: 140px;
+    height: 70px;
 }
 
 .locker-item.locker-large {
@@ -318,14 +317,26 @@
 
 .locker-number {
     position: absolute;
-    left: 35px;
+    left: 45%;
     top: 50%;
-    transform: translateY(-50%);
-    font-size: 9px;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
     font-weight: 800;
     color: #464655;
     text-shadow: 0 1px 1px rgba(255,255,255,0.5);
     z-index: 1;
+}
+
+.locker-small .locker-number {
+    font-size: 8px;
+}
+
+.locker-medium .locker-number {
+    font-size: 11px;
+}
+
+.locker-large .locker-number {
+    font-size: 12px;
 }
 
 .locker-item.selected {

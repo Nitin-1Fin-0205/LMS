@@ -40,11 +40,11 @@ const PrimaryHolder = () => {
                         holderType: HOLDER_TYPES.PRIMARY
                     })).unwrap();
 
-                    // Update stage status to completed for customer info if we have a customer ID
-                    setStageStatus(prev => ({
-                        ...prev,
-                        [HOLDER_STAGES.CUSTOMER_INFO]: STAGE_STATUS.COMPLETED
-                    }));
+                    // // Update stage status to completed for customer info if we have a customer ID
+                    // setStageStatus(prev => ({
+                    //     ...prev,
+                    //     [HOLDER_STAGES.CUSTOMER_INFO]: STAGE_STATUS.COMPLETED
+                    // }));
                 }
             } catch (error) {
                 console.error('Error fetching primary holder details:', error);
@@ -116,7 +116,7 @@ const PrimaryHolder = () => {
 
             if (currentStage === HOLDER_STAGES.CUSTOMER_INFO) {
                 const submitData = {
-                    customer_id: formData.customerInfo.customerId,
+                    customer_id: formData.customerInfo.customerId || null,
                     first_name: `${formData.customerInfo.firstName}`,
                     middle_name: `${formData.customerInfo.middleName}`,
                     last_name: `${formData.customerInfo.lastName}`,

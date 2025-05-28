@@ -36,10 +36,10 @@ const SecondaryHolder = () => {
                         holderType: HOLDER_TYPES.SECONDARY
                     })).unwrap();
                 }
-                setStageStatus(prev => ({
-                    ...prev,
-                    [HOLDER_STAGES.CUSTOMER_INFO]: STAGE_STATUS.COMPLETED
-                }));
+                // setStageStatus(prev => ({
+                //     ...prev,
+                //     [HOLDER_STAGES.CUSTOMER_INFO]: STAGE_STATUS.COMPLETED
+                // }));
             } catch (error) {
                 toast.error('Failed to fetch secondary holder details');
             }

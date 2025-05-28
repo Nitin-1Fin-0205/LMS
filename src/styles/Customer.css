@@ -321,10 +321,11 @@
 }
 
 .badge {
-    padding: 2px 8px;
-    background: #e2e8f0;
+    padding: 3px 5px 2px 5px;
+    background: #d0ebe9;
     border-radius: 12px;
-    font-size: 12px;
+    font-size: 8px;
+    font-weight: 600;
     color: #475569;
 }
 

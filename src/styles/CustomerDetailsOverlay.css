@@ -115,10 +115,16 @@
     border-bottom: 1px solid #e5e7eb;
 }
 
-.holder-details-container, .locker-details-container {
+.holder-details-container {
     display: flex;
     padding: 16px;
 }
+ .pre-locker-details-container {
+    display: flex;
+    padding: 16px;
+    flex-direction: column;
+}
+
 
 .holder-photo-container {
     width: 160px;
@@ -188,7 +194,7 @@
 .detail-label {
     font-weight: 600;
     width: 40%;
-    color: #4b5563;
+    color: #3563a2;
     font-size: 0.85rem;
 }
 

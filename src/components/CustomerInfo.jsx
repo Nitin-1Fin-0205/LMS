@@ -9,7 +9,7 @@ import { otpService } from '../services/otpService';
 
 const CustomerInfo = ({ onUpdate, initialData }) => {
     const [customerData, setCustomerData] = useState({
-        customerId: '',
+        customerId: null,
         firstName: '',
         middleName: '',
         lastName: '',
@@ -48,7 +48,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
             setCustomerData(prev => ({
                 ...prev,
                 ...initialData,
-                customerId: initialData.customerId || '',
+                customerId: Number(initialData.customerId) || null,
                 firstName: initialData.firstName || '',
                 middleName: initialData.middleName || '',
                 lastName: initialData.lastName || '',
@@ -94,7 +94,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
     // Update handle input change
     const handleInputChange = (field, value) => {
         // Validate name fields to prevent numbers
-        if (['firstName', 'middleName', 'lastName', 'fatherOrHusbandName'].includes(field)) {
+        if (['firstName', 'middleName', 'lastName', 'fatherOrHusbandName', 'city', 'state'].includes(field)) {
             value = validateNameInput(value);
         }
 
@@ -221,7 +221,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                     const names = data?.name?.split(' ') || ['', '', ''];
                     const updatedData = {
                         ...prev,
-                        customerId: data?.customerId || '',
+                        customerId: Number(data?.customerId) || null,
                         firstName: names[0] || '',
                         middleName: names[1] || '',
                         lastName: names[2] || '',
@@ -284,163 +284,6 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
             toast.error('Failed to process PAN image');
         } finally {
             setIsPanImageFetching(false);
-        }
-    };
-
-    const startCamera = async () => {
-        try {
-            // Set camera active first so the video element renders
-            setCameraActive(true);
-
-            // Wait for next render cycle to ensure video element exists
-            await new Promise(resolve => setTimeout(resolve, 0));
-
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                throw new Error('Webcam not supported on this browser.');
-            }
-
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: 'user',
-                    width: { ideal: 880 },
-                    height: { ideal: 1040 },
-                },
-            });
-
-            if (!videoRef.current) {
-                throw new Error('Video element not found');
-            }
-
-            videoRef.current.srcObject = stream;
-            await videoRef.current.play();
-            toast.success('Camera started successfully');
-
-        } catch (error) {
-            console.error('Error accessing the webcam:', error);
-            toast.error(`Camera error: ${error.message}`);
-            setCameraActive(false);
-
-            // Clean up if there was an error
-            if (videoRef.current?.srcObject) {
-                const tracks = videoRef.current.srcObject.getTracks();
-                tracks.forEach(track => track.stop());
-                videoRef.current.srcObject = null;
-            }
-        }
-    };
-
-    const stopCamera = () => {
-        const stream = videoRef.current?.srcObject;
-        if (stream) {
-            const tracks = stream.getTracks();
-            tracks.forEach((track) => track.stop());
-        }
-        if (videoRef.current) {
-            videoRef.current.srcObject = null;
-        }
-        setCameraActive(false);
-    };
-
-    // Capture the image from the video feed
-    const captureImage = () => {
-        if (videoRef.current && canvasRef.current) {
-            const video = videoRef.current;
-            const canvas = canvasRef.current;
-            const context = canvas.getContext('2d');
-
-            // Set canvas dimensions to match the video element dimensions
-            canvas.width = 880;
-            canvas.height = 1040;
-
-            try {
-                // Draw the current video frame
-                context.drawImage(
-                    video,
-                    0, 0,
-                    canvas.width, canvas.height
-                );
-
-                context.setTransform(1, 0, 0, 1, 0, 0);
-
-                // Convert to data URL
-                const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                setCapturedImage(imageDataUrl);
-                handleInputChange('photo', imageDataUrl); // Add this line to update parent state
-                setSelectedFile(null);
-                toast.success('Image captured successfully');
-
-                // Stop the camera after successful capture
-                stopCamera();
-            } catch (error) {
-                console.error('Error capturing image:', error);
-                toast.error('Failed to capture image');
-            }
-        } else {
-            toast.error('Camera not initialized properly');
-        }
-    };
-
-    // Reset the captured image
-    const resetCapturedImage = () => {
-        setCapturedImage(null);
-        handleInputChange('photo', null);
-        setSelectedFile(null);
-    };
-
-    const handleFileUpload = async (event) => {
-        await stopCamera(); // Stop the camera if it's active
-        const file = event.target.files[0];
-
-        if (file && validateFile(file)) {
-            setSelectedFile(file);
-
-            // Read the file as data URL and set it in both states
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const imageDataUrl = e.target.result;
-                setCapturedImage(imageDataUrl);
-                handleInputChange('photo', imageDataUrl);
-            };
-            reader.readAsDataURL(file);
-            toast.success('Image uploaded successfully');
-        }
-    };
-
-    const handleDragEnter = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(true);
-    };
-
-    const handleDragLeave = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-    };
-
-    const handleDragOver = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-    };
-
-    const handleDrop = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-
-        const file = e.dataTransfer.files[0];
-        if (file && validateFile(file)) {
-            setSelectedFile(file);
-
-            // Read the file as data URL and set it in both states
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const imageDataUrl = e.target.result;
-                setCapturedImage(imageDataUrl);
-                handleInputChange('photo', imageDataUrl);
-            };
-            reader.readAsDataURL(file);
-            toast.success('Image uploaded successfully');
         }
     };
 
@@ -656,7 +499,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                         type="date"
                         value={customerData.dateOfBirth}
                         onChange={(e) => handleDobChange(e)}
-                        max={new Date().toISOString().split('T')[0]} // Restricts to today and earlier
+                        max={new Date().toISOString().split('T')[0]}
                         required
                     />
                 </div>
@@ -672,9 +515,9 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                         placeholder="Enter first name"
                         required
                     />
-                    {touched.firstName && validationErrors.firstName && (
+                    {/* {touched.firstName && validationErrors.firstName && (
                         <div className="error-message">{validationErrors.firstName}</div>
-                    )}
+                    )} */}
                 </div>
 
                 <div className="form-group">
@@ -698,9 +541,9 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                         placeholder="Enter last name"
                         required
                     />
-                    {touched.lastName && validationErrors.lastName && (
+                    {/* {touched.lastName && validationErrors.lastName && (
                         <div className="error-message">{validationErrors.lastName}</div>
-                    )}
+                    )} */}
                 </div>
 
                 <div className="form-group">
@@ -734,7 +577,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                         type="text"
                         value={formatAadhar(customerData?.aadharNo)}
                         onChange={handleAadharInput}
-                        placeholder="Enter Aadhar (e.g., 1234 5678 9012)"
+                        placeholder="Enter Aadhaar (e.g., 1234 5678 9012)"
                         maxLength={14}
                         required
                     />
@@ -753,9 +596,9 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                             required
                             disabled={otpVerification.isMobileVerified}
                         />
-                        {touched.mobileNo && validationErrors.mobileNo && (
+                        {/* {touched.mobileNo && validationErrors.mobileNo && (
                             <div className="error-message">{validationErrors.mobileNo}</div>
-                        )}
+                        )} */}
                         {otpVerification.isMobileVerified ? (
                             <span className="verified-badge">
                                 <FontAwesomeIcon className='fontIcon' icon={faCheck} bounce={true} style={{ paddingTop: '4px' }} /> Verified
@@ -786,9 +629,9 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                             required
                             disabled={otpVerification.isEmailVerified}
                         />
-                        {touched.emailId && validationErrors.emailId && (
+                        {/* {touched.emailId && validationErrors.emailId && (
                             <div className="error-message">{validationErrors.emailId}</div>
-                        )}
+                        )} */}
                         {otpVerification.isEmailVerified ? (
                             <span className="verified-badge">
                                 <FontAwesomeIcon className='fontIcon' icon={faCheck} bounce={true} style={{ paddingTop: '4px' }} /> Verified

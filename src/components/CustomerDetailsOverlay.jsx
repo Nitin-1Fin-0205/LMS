@@ -135,7 +135,7 @@ const CustomerDetailsOverlay = ({
                                 <FontAwesomeIcon icon={faUser} size="2x" />
                             </div>
                         )}
-                        <div className="holder-id">ID: {holder.customerId}</div>
+                        {/* <div className="holder-id">ID: {holder.customerId}</div> */}
                     </div>
 
                     <div className="holder-details">
@@ -159,7 +159,7 @@ const CustomerDetailsOverlay = ({
                                     <div className="detail-value">{holder.emailId}</div>
                                 </div>
                                 <div className="detail-row">
-                                    <div className="detail-label">Guardian Name:</div>
+                                    <div className="detail-label">Father/Husband Name:</div>
                                     <div className="detail-value">{holder.fatherOrHusbandName}</div>
                                 </div>
                                 <div className="detail-row">
@@ -181,7 +181,7 @@ const CustomerDetailsOverlay = ({
                                     <div className="detail-value">{holder.panNo}</div>
                                 </div>
                                 <div className="detail-row">
-                                    <div className="detail-label">Aadhar Number:</div>
+                                    <div className="detail-label">Aadhaar Number:</div>
                                     <div className="detail-value">{holder.aadharNo}</div>
                                 </div>
                             </div>
@@ -274,10 +274,10 @@ const CustomerDetailsOverlay = ({
                         <FontAwesomeIcon icon={faEdit} />
                     </button>
                 </div>
-                <div className="locker-details-container">
+                <div className="pre-locker-details-container">
                     <div className="detail-section">
                         <h4>LOCKER INFORMATION</h4>
-                        <div className="detail-grid">
+                        <div className="detail-grid three-columns">
                             <div className="detail-row">
                                 <div className="detail-label">Center:</div>
                                 <div className="detail-value">{lockerDetails.center}</div>
@@ -311,7 +311,7 @@ const CustomerDetailsOverlay = ({
 
                     <div className="detail-section">
                         <h4>PAYMENT DETAILS</h4>
-                        <div className="detail-grid">
+                        <div className="detail-grid three-columns">
                             <div className="detail-row">
                                 <div className="detail-label">Monthly Rent:</div>
                                 <div className="detail-value">₹{lockerDetails.monthlyRent}</div>

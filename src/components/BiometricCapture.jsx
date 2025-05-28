@@ -348,7 +348,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
 
     return (
         <div className="biometric-capture-section">
-            <div className="section-header">
+            <div className="bio-section-header">
                 <FontAwesomeIcon icon={faFingerprint} className="section-title-icon" />
                 <h2 className="section-title">Fingerprint Registration</h2>
             </div>
