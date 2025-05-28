@@ -65,6 +65,9 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
     const calculateAge = (dob) => {
         if (!dob) return 0;
         const birthDate = new Date(dob);
+        // Check if date is invalid
+        if (isNaN(birthDate.getTime())) return 0;
+
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
@@ -88,6 +91,11 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
             }
             if (!nominee.dob) {
                 errors[`dob-${index}`] = 'Date of Birth is required';
+            } else {
+                const birthDate = new Date(nominee.dob);
+                if (isNaN(birthDate.getTime())) {
+                    errors[`dob-${index}`] = 'Invalid date format';
+                }
             }
 
             // Validate percentage as a number between 0-100
@@ -101,7 +109,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
 
             // Validate proof requirement for minors
             const age = calculateAge(nominee.dob);
-            if (age < 18) {
+            if (age < 18 && !isNaN(new Date(nominee.dob).getTime())) {
                 if (!nominee.proofId?.trim()) {
                     errors[`proofId-${index}`] = 'Proof ID is required for minors';
                 }
@@ -126,7 +134,16 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
     const handleInputChange = (index, field, value) => {
         const updatedNominees = [...nominees];
 
-        if (field === 'percentage') {
+        if (field === 'dob') {
+            // Try to parse the date input
+            const dateValue = new Date(value);
+            if (!isNaN(dateValue.getTime())) {
+                updatedNominees[index][field] = value;
+            } else {
+                // If invalid date, store empty string
+                updatedNominees[index][field] = '';
+            }
+        } else if (field === 'percentage') {
             // Handle percentage changes
             const newPercentage = parseFloat(value) || 0;
 
@@ -146,6 +163,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
 
         setNominees(updatedNominees);
 
+        // Clear related errors
         if (formErrors[`${field}-${index}`]) {
             const newErrors = { ...formErrors };
             delete newErrors[`${field}-${index}`];
@@ -247,7 +265,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
 
     const handleSaveAll = async () => {
         if (!validateForm()) {
-            toast.error('Please correct the errors before saving');
+            toast.error('Please Fill All Required Fields Correctly');
             return;
         }
 
@@ -281,7 +299,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
             })).unwrap();
 
             if (onSave) {
-                onSave(formattedNominees);
+                onSave();
             }
 
             toast.success('Nominees saved successfully!');

@@ -251,7 +251,6 @@ const lockerSlice = createSlice({
             .addCase(updateNominees.fulfilled, (state, action) => {
                 state.loading = false;
                 state.error = null;
-                state.lockerDetails.nominees = action.payload.data.nominees;
             })
             .addCase(updateNominees.rejected, (state, action) => {
                 state.loading = false;

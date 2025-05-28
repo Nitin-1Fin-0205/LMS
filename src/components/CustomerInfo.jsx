@@ -40,8 +40,6 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
     const [otpType, setOtpType] = useState(null);
     const [resendTimer, setResendTimer] = useState({ email: 0, mobile: 0 });
     const [request_id, setRequestId] = useState(null);
-    const [validationErrors, setValidationErrors] = useState({});
-    const [touched, setTouched] = useState({});
 
     useEffect(() => {
         if (initialData) {
@@ -65,25 +63,13 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 statecode: initialData.statecode || ''
             }));
         }
-    }, [initialData]);
-
-    // Add validation helper
+    }, [initialData]);    // Validation handler
     const validateField = (name, value) => {
         if (!value || value.trim() === '') {
-            return 'This field is required';
+            toast.error(`${name} is required`);
+            return false;
         }
-        switch (name) {
-            case 'mobileNo':
-                return value.length !== 10 ? 'Mobile number must be 10 digits' : '';
-            case 'emailId':
-                return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? 'Invalid email format' : '';
-            case 'panNo':
-                return !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(value) ? 'Invalid PAN format' : '';
-            case 'aadharNo':
-                return value.length !== 12 ? 'Aadhar number must be 12 digits' : '';
-            default:
-                return '';
-        }
+        return true;
     };
 
     // Add name validation helper
@@ -93,42 +79,25 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
 
     // Update handle input change
     const handleInputChange = (field, value) => {
-        // Validate name fields to prevent numbers
         if (['firstName', 'middleName', 'lastName', 'fatherOrHusbandName', 'city', 'state'].includes(field)) {
             value = validateNameInput(value);
         }
-
         const updatedData = {
             ...customerData,
             [field]: value || ''
         };
         setCustomerData(updatedData);
         onUpdate(updatedData);
-
-        // Validate field
-        if (touched[field]) {
-            setValidationErrors(prev => ({
-                ...prev,
-                [field]: validateField(field, value)
-            }));
-        }
     };
 
-    // Add blur handler
+    // Simplified blur handler to only validate the field
     const handleBlur = (field) => {
-        setTouched(prev => ({
-            ...prev,
-            [field]: true
-        }));
-        setValidationErrors(prev => ({
-            ...prev,
-            [field]: validateField(field, customerData[field])
-        }));
+        validateField(field, customerData[field]);
     };
 
     // Update input class helper
-    const getInputClassName = (fieldName) => {
-        return `form-input ${touched[fieldName] && validationErrors[fieldName] ? 'error' : ''}`;
+    const getInputClassName = () => {
+        return 'form-input';
     };
 
     // Add DOB validation handler
@@ -299,6 +268,18 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         }
     };
 
+    const handleEmailInput = (e) => {
+        const value = e.target.value;
+        handleInputChange('emailId', value);
+
+        if (value && value.includes('@')) {
+            const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailRegex.test(value)) {
+                toast.error('Please enter valid email address');
+            }
+        }
+    };
+
     const startResendTimer = (type) => {
         setResendTimer(prev => ({ ...prev, [type]: 10 }));
         const timer = setInterval(() => {
@@ -339,14 +320,21 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
             setOtpType(type);
             const value = type === 'email' ? customerData.emailId : customerData.mobileNo;
 
-            if (type === 'mobile' && (!value || value.length !== 10)) {
-                toast.error('Please enter valid 10-digit mobile number');
-                return;
+            // Validate mobile number
+            if (type === 'mobile') {
+                if (!value || value.length !== 10) {
+                    toast.error('Please enter valid 10-digit mobile number');
+                    return;
+                }
             }
 
-            if (type === 'email' && !value) {
-                toast.error('Please enter valid email');
-                return;
+            // Validate email
+            if (type === 'email') {
+                const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                if (!value || !emailRegex.test(value)) {
+                    toast.error('Please enter valid email address');
+                    return;
+                }
             }
 
             const response = await (type === 'email'
@@ -468,9 +456,6 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                             maxLength={10}
                             required
                         />
-                        {touched.panNo && validationErrors.panNo && (
-                            <div className="error-message">{validationErrors.panNo}</div>
-                        )}
                         <div className="pan-actions">
                             <button
                                 className="fetch-pan-button"
@@ -508,16 +493,12 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                     <label>First Name<span className='required'>*</span></label>
                     <input
                         type="text"
-                        value={customerData.firstName}
+                        id="firstName"
+                        className={getInputClassName()}
+                        value={customerData.firstName || ''}
                         onChange={(e) => handleInputChange('firstName', e.target.value)}
                         onBlur={() => handleBlur('firstName')}
-                        className={getInputClassName('firstName')}
-                        placeholder="Enter first name"
-                        required
                     />
-                    {/* {touched.firstName && validationErrors.firstName && (
-                        <div className="error-message">{validationErrors.firstName}</div>
-                    )} */}
                 </div>
 
                 <div className="form-group">
@@ -541,9 +522,6 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                         placeholder="Enter last name"
                         required
                     />
-                    {/* {touched.lastName && validationErrors.lastName && (
-                        <div className="error-message">{validationErrors.lastName}</div>
-                    )} */}
                 </div>
 
                 <div className="form-group">
@@ -596,9 +574,6 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                             required
                             disabled={otpVerification.isMobileVerified}
                         />
-                        {/* {touched.mobileNo && validationErrors.mobileNo && (
-                            <div className="error-message">{validationErrors.mobileNo}</div>
-                        )} */}
                         {otpVerification.isMobileVerified ? (
                             <span className="verified-badge">
                                 <FontAwesomeIcon className='fontIcon' icon={faCheck} bounce={true} style={{ paddingTop: '4px' }} /> Verified
@@ -622,16 +597,13 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                         <input
                             type="email"
                             value={customerData.emailId}
-                            onChange={(e) => handleInputChange('emailId', e.target.value)}
+                            onChange={handleEmailInput}
                             onBlur={() => handleBlur('emailId')}
                             className={getInputClassName('emailId')}
                             placeholder="Enter email"
                             required
                             disabled={otpVerification.isEmailVerified}
                         />
-                        {/* {touched.emailId && validationErrors.emailId && (
-                            <div className="error-message">{validationErrors.emailId}</div>
-                        )} */}
                         {otpVerification.isEmailVerified ? (
                             <span className="verified-badge">
                                 <FontAwesomeIcon className='fontIcon' icon={faCheck} bounce={true} style={{ paddingTop: '4px' }} /> Verified

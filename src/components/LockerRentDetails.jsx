@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
-import { updateLockerDetails, updateRentDetails } from '../store/slices/lockerSlice';
+import { updateLockerDetails, updateRentDetails, fetchNominees } from '../store/slices/lockerSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import AssignLocker from './AssignLocker';
@@ -16,7 +16,9 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
     const [lockerPlans, setLockerPlans] = useState([]);
     const [isLoadingPlans, setIsLoadingPlans] = useState(false);
 
-    const isSecondaryHolder = holderType === 'secondHolder' || holderType === 'thirdHolder';
+    const primaryHolder = useSelector(state => state.customer.form.primaryHolder);
+
+
 
     const handleInputChange = (field, value) => {
         dispatch(updateLockerDetails({ [field]: value }));
@@ -126,7 +128,7 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                             value={lockerDetails.center}
                             onChange={(e) => handleInputChange('center', e.target.value)}
                             required
-                            disabled={isLoadingCenters || isSecondaryHolder}
+                            disabled={isLoadingCenters}
                         >
                             <option value="">Select Center</option>
                             {centers.map((center) => (
@@ -145,7 +147,7 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                                 placeholder="Assign locker"
                                 readOnly
                             />
-                            {!isSecondaryHolder && (
+                            {
                                 <button
                                     className="add-center-button"
                                     onClick={() => dispatch(updateLockerDetails({ isModalOpen: true }))}
@@ -153,7 +155,7 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                                 >
                                     <FontAwesomeIcon icon={faPlus} />
                                 </button>
-                            )}
+                            }
                         </div>
                     </div>
 
@@ -210,7 +212,7 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                 </div>
             </div>
 
-            {holderType === 'primaryHolder' && (
+            {
                 <div className="nominee-section">
                     <div className="nominee-button-container">
                         <button
@@ -283,7 +285,7 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                         </div>
                     )}
                 </div>
-            )}
+            }
 
             <AssignLocker
                 isOpen={lockerDetails.isModalOpen}
@@ -294,7 +296,7 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
             <AddNominee
                 isOpen={lockerDetails.isNomineeModalOpen}
                 onClose={() => dispatch(updateLockerDetails({ isNomineeModalOpen: false }))}
-                onSave={(nominees) => dispatch(updateLockerDetails({ nominees }))}
+                onSave={() => dispatch(fetchNominees(primaryHolder?.customerInfo?.customerId)).unwrap()}
             />
         </div>
     );

@@ -83,7 +83,7 @@ const Attachments = ({ customerId }) => {
                             category: doc.document_type_id,
                             canEdit: doc.can_edit,
                             documentType: doc.document,
-                            remark: doc.remark // Add remarks field
+                            remark: doc.remark
                         });
                     });
 
@@ -134,69 +134,84 @@ const Attachments = ({ customerId }) => {
             console.error('Upload error:', error);
             throw new Error(error.response?.data?.message || 'Failed to upload document');
         }
-    };
+    }; const handleFileUpload = async (event) => {
+        try {
+            const files = Array.from(event.target.files || []);
+            if (files.length === 0) return;
 
-    const handleFileUpload = async (event) => {
-        const files = Array.from(event.target.files);
-        const category = selectedCategory;
-
-        // Safety check for category and documents
-        if (!category || !documents[category]) {
-            toast.error('Please select a valid document category');
-            return;
-        }
-
-        // Get current document count and limit for this category
-        const currentCount = documents[category]?.length || 0;
-        const categoryConfig = documentCategories.find(c => Number(c.key) == Number(category));
-        console.log(`documentCategories:`, documentCategories, category, categoryConfig);
-        const uploadLimit = categoryConfig?.limit;
-
-        console.log(`Current count: ${currentCount}, Upload limit: ${uploadLimit}`);
-
-        // Check if limit is available
-        if (!uploadLimit) {
-            toast.error('Upload limit not available for this category');
-            return;
-        }
-
-        // Check if upload would exceed limit
-        if (currentCount + files.length > uploadLimit) {
-            toast.error(`Maximum ${uploadLimit} documents allowed for ${categoryConfig.label}`);
-            return;
-        }
-
-        for (const file of files) {
-            if (file.size > 5 * 1024 * 1024) {
-                toast.error(`${file.name} is too large (max 5MB)`);
-                continue;
+            const category = selectedCategory;
+            if (!category || !documents[category]) {
+                toast.error('Please select a valid document category');
+                return;
             }
 
-            try {
-                const base64 = await convertToBase64(file);
-                const newDoc = {
-                    id: Date.now(),
-                    name: file.name,
-                    type: file.type,
-                    size: file.size,
-                    data: base64,
-                    category,
-                    remark: category === 5 ? remark : undefined // Add remarks only for "Other Document"
-                };
+            // Get current document count and limit for this category
+            const currentCount = documents[category]?.length || 0;
+            const categoryConfig = documentCategories.find(c => Number(c.key) === Number(category));
+            const uploadLimit = categoryConfig?.limit;
 
-                await uploadDocumentToServer(newDoc);
-                setRemarks(''); // Clear remarks after successful upload
-
-                const updatedDocs = {
-                    ...documents,
-                    [category]: [...documents[category], newDoc]
-                };
-
-                setDocuments(updatedDocs);
-                toast.success(`Document uploaded successfully`);
-            } catch (error) {
-                toast.error(`Failed to upload ${file.name}: ${error.message}`);
+            if (!uploadLimit) {
+                toast.error('Upload limit not available for this category');
+                return;
             }
+
+            // Validate remarks for "Other Document"
+            if (Number(category) === 5 && !remarks?.trim()) {
+                toast.error('Please enter remarks for Other Document');
+                return;
+            }
+
+            // Filter out files that would exceed the limit
+            const remainingSlots = uploadLimit - currentCount;
+            const filesToUpload = files.slice(0, remainingSlots);
+
+            if (filesToUpload.length === 0) {
+                toast.error(`Maximum ${uploadLimit} documents allowed for ${categoryConfig.label}`);
+                return;
+            }
+
+            if (filesToUpload.length < files.length) {
+                toast.warning(`Only uploading ${filesToUpload.length} files due to category limit`);
+            }
+
+            // Process each file
+            for (const file of filesToUpload) {
+                if (file.size > 5 * 1024 * 1024) {
+                    toast.error(`${file.name} is too large (max 5MB)`);
+                    continue;
+                }
+
+                try {
+                    const base64 = await convertToBase64(file);
+                    const newDoc = {
+                        id: Date.now(),
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        data: base64,
+                        category,
+                        remark: Number(category) === 5 ? remarks : undefined
+                    };
+
+                    await uploadDocumentToServer(newDoc);
+
+                    const updatedDocs = {
+                        ...documents,
+                        [category]: [...documents[category], newDoc]
+                    };
+
+                    setDocuments(updatedDocs);
+                    if (Number(category) === 5) {
+                        setRemarks(''); // Clear remarks after successful upload for Other Document
+                    }
+                    toast.success(`${file.name} uploaded successfully`);
+                } catch (error) {
+                    toast.error(`Failed to upload ${file.name}: ${error.message}`);
+                }
+            }
+        } catch (error) {
+            console.error('File upload error:', error);
+            toast.error('An error occurred during file upload');
         }
     };
 
@@ -318,6 +333,22 @@ const Attachments = ({ customerId }) => {
         }
     };
 
+    const isUploadDisabled = () => {
+        if (!selectedCategory) return true;
+
+        const currentCount = documents[selectedCategory]?.length || 0;
+        const category = documentCategories.find(c => Number(c.key) === Number(selectedCategory));
+        const limit = category?.limit;
+
+        // Disabled if:
+        // 1. Current count has reached the limit
+        // 2. For "Other Document" (id: 5), remarks are required
+        // 3. Category has no limit defined
+        return !limit ||
+            currentCount >= limit ||
+            (Number(selectedCategory) === 5 && !remarks?.trim());
+    };
+
     return (
         <div className="attachments-container">
             <div className="attachments-header">
@@ -348,7 +379,7 @@ const Attachments = ({ customerId }) => {
                             required
                         />
                     )}
-                    <label className="upload-button">
+                    <label className={`upload-button ${isUploadDisabled() ? 'disabled' : ''}`}>
                         <FontAwesomeIcon icon={faPlus} />
                         Add Document
                         <input
@@ -357,10 +388,7 @@ const Attachments = ({ customerId }) => {
                             onChange={handleFileUpload}
                             style={{ display: 'none' }}
                             multiple={true}
-                            disabled={
-                                documents[selectedCategory]?.length >= (documentCategories.find(c => Number(c.key) == Number(selectedCategory?.limit))) ||
-                                (Number(selectedCategory) == 5 && !remarks)
-                            }
+                            disabled={isUploadDisabled()}
                         />
                     </label>
                 </div>
