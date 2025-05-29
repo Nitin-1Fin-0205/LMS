@@ -120,7 +120,6 @@ export const ValidationService = {
 
                 const requiredFields = [
                     'firstName',
-                    'middleName',
                     'lastName',
                     'fatherOrHusbandName',
                     'dateOfBirth',

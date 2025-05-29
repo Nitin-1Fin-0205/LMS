@@ -15,13 +15,15 @@ import Access from './components/Access';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import CustomerList from './components/CustomerList';
-import PrimaryHolder from './components/PrimaryHolder';
+// import PrimaryHolder from './components/PrimaryHolder';
 import NotFound from './components/pages/NotFound';
-import SecondaryHolder from './components/SecondaryHolder';
-import ThirdHolder from './components/ThirdHolder';
+// import SecondaryHolder from './components/SecondaryHolder';
+// import ThirdHolder from './components/ThirdHolder';
 import LockerDetails from './components/LockerDetails';
 import Welcome from './components/Welcome';
 import CustomerVisit from './components/CustomerVisit';
+import HolderDetails from './components/HolderDetails';
+import { HOLDER_TYPES } from './constants/holderConstants';
 
 // Create a wrapper component that uses useLocation
 const AppContent = () => {
@@ -72,7 +74,7 @@ const AppContent = () => {
 
               <Route path={ROUTES.PRIMARY_HOLDER} element={
                 <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
-                  <PrimaryHolder />
+                  <HolderDetails holderType={HOLDER_TYPES.PRIMARY} />
                 </PrivateRoute>
               } />
 
@@ -102,13 +104,13 @@ const AppContent = () => {
 
               <Route path={ROUTES.SECONDARY_HOLDER} element={
                 <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
-                  <SecondaryHolder />
+                  <HolderDetails holderType={HOLDER_TYPES.SECONDARY} />
                 </PrivateRoute>
               } />
 
               <Route path={ROUTES.THIRD_HOLDER} element={
                 <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
-                  <ThirdHolder />
+                  <HolderDetails holderType={HOLDER_TYPES.THIRD} />
                 </PrivateRoute>
               } />
 

@@ -502,7 +502,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 </div>
 
                 <div className="form-group">
-                    <label>Middle Name<span className='required'>*</span></label>
+                    <label>Middle Name</label>
                     <input
                         type="text"
                         value={customerData.middleName}

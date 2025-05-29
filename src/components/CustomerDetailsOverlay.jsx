@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
 import '../styles/CustomerDetailsOverlay.css';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../constants/routes';
 
 const CustomerDetailsOverlay = ({
     show,
@@ -60,13 +61,13 @@ const CustomerDetailsOverlay = ({
     const handleEditClick = (type) => {
         switch (type) {
             case "PRIMARY":
-                navigate(`/primary-holder`);
+                navigate(ROUTES.PRIMARY_HOLDER);
                 break;
             case "SECONDARY":
-                navigate(`/secondary-holder`);
+                navigate(ROUTES.SECONDARY_HOLDER);
                 break;
             case "THIRD":
-                navigate(`/third-holder`);
+                navigate(ROUTES.THIRD_HOLDER);
                 break;
             default:
                 break;
@@ -169,6 +170,18 @@ const CustomerDetailsOverlay = ({
                                 <div className="detail-row">
                                     <div className="detail-label">Address:</div>
                                     <div className="detail-value">{holder.address}</div>
+                                </div>
+                                <div className="detail-row">
+                                    <div className="detail-label">City:</div>
+                                    <div className="detail-value">{holder.city}</div>
+                                </div>
+                                <div className="detail-row">
+                                    <div className="detail-label">State:</div>
+                                    <div className="detail-value">{holder.state}</div>
+                                </div>
+                                <div className="detail-row">
+                                    <div className="detail-label">State Code:</div>
+                                    <div className="detail-value">{holder.statecode}</div>
                                 </div>
                             </div>
                         </div>
