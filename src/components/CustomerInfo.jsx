@@ -272,12 +272,12 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         const value = e.target.value;
         handleInputChange('emailId', value);
 
-        if (value && value.includes('@')) {
-            const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-            if (!emailRegex.test(value)) {
-                toast.error('Please enter valid email address');
-            }
-        }
+        // if (value && value.includes('@')) {
+        //     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        //     if (!emailRegex.test(value)) {
+        //         toast.error('Please enter valid email address');
+        //     }
+        // }
     };
 
     const startResendTimer = (type) => {

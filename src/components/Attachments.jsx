@@ -49,54 +49,55 @@ const Attachments = ({ customerId }) => {
         fetchDocumentCategories();
     }, []);
 
-    useEffect(() => {
-        const fetchExistingDocuments = async () => {
-            try {
-                const token = localStorage.getItem('authToken');
-                const response = await axios.get(`${API_URL}/customers/documents?customer_id=${customerId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+    const fetchExistingDocuments = async () => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.get(`${API_URL}/customers/documents?customer_id=${customerId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.status === 200 && response.data.data.documents) {
+                const docs = response.data.data.documents;
+                const organizedDocs = {};
+
+                // Initialize categories
+                documentCategories.forEach(category => {
+                    organizedDocs[category.key] = [];
                 });
 
-                if (response.status === 200 && response.data.data.documents) {
-                    const docs = response.data.data.documents;
-                    const organizedDocs = {};
+                // Organize documents by category
+                docs.forEach(doc => {
+                    const categoryKey = doc.document_type_id;
+                    if (!organizedDocs[categoryKey]) {
+                        organizedDocs[categoryKey] = [];
+                    }
 
-                    // Initialize categories
-                    documentCategories.forEach(category => {
-                        organizedDocs[category.key] = [];
+                    organizedDocs[categoryKey].push({
+                        id: doc.unique_id,
+                        name: doc.title,
+                        type: doc.link.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/*',
+                        data: doc.link,
+                        category: doc.document_type_id,
+                        canEdit: doc.can_edit,
+                        documentType: doc.document,
+                        remark: doc.remark
                     });
+                });
 
-                    // Organize documents by category
-                    docs.forEach(doc => {
-                        const categoryKey = doc.document_type_id;
-                        if (!organizedDocs[categoryKey]) {
-                            organizedDocs[categoryKey] = [];
-                        }
-
-                        organizedDocs[categoryKey].push({
-                            id: doc.unique_id,
-                            name: doc.title,
-                            type: doc.link.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/*',
-                            data: doc.link,
-                            category: doc.document_type_id,
-                            canEdit: doc.can_edit,
-                            documentType: doc.document,
-                            remark: doc.remark
-                        });
-                    });
-
-                    setDocuments(prevDocs => ({
-                        ...prevDocs,
-                        ...organizedDocs
-                    }));
-                }
-            } catch (error) {
-                console.error('Error fetching documents:', error);
-                toast.error('Failed to fetch existing documents');
+                setDocuments(prevDocs => ({
+                    ...prevDocs,
+                    ...organizedDocs
+                }));
             }
-        };
+        } catch (error) {
+            console.error('Error fetching documents:', error);
+            toast.error('Failed to fetch existing documents');
+        }
+    };
+
+    useEffect(() => {
 
         if (customerId && documentCategories.length > 0) {
             fetchExistingDocuments();
@@ -111,8 +112,9 @@ const Attachments = ({ customerId }) => {
                 documentId: Number(documentData.category),
                 documentName: documentData.name || documentData.data.split(',')[0].split('/')[1].split(';')[0],
                 documentBase64: documentData.data.split(',')[1],
-                // Add remarks only for "Other Document" (id: 5)
-                ...(documentData.category === 5 && { remark: documentData.remark })
+                remark: documentData.remark || '', // Add remarks if available
+                // // Add remarks only for "Other Document" (id: 5)
+                // ...(documentData.category === 5 && { remark: documentData.remark })
             };
 
             const response = await axios.post(
@@ -127,6 +129,7 @@ const Attachments = ({ customerId }) => {
             );
 
             if (response.status === 200 || response.status === 201) {
+                fetchExistingDocuments(); // Refresh documents after upload
                 return response.data;
             }
             throw new Error('Failed to upload document');
