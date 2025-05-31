@@ -97,7 +97,8 @@ export const assignLocker = createAsyncThunk(
                     center_id: lockerData.centerId,
                     plan_id: lockerData.planId,
                     expiry_date: lockerData.expiryDate,
-                    pay_frequency: lockerData.payFrequency
+                    pay_frequency: lockerData.payFrequency,
+                    upi_id: lockerData.upiId
                 },
                 {
                     headers: {

@@ -32,6 +32,7 @@ const Customer = () => {
     const [activeCard, setActiveCard] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
     const [showDetailOverlay, setShowDetailOverlay] = useState(false);
+    const [isSendingAgreement, setIsSendingAgreement] = useState(false);
 
     const handlePrimaryHolder = () => {
         navigate(ROUTES.PRIMARY_HOLDER);
@@ -122,10 +123,64 @@ const Customer = () => {
         dispatch(resetForm());
         dispatch(clearAllLockerData());
         sessionStorage.removeItem('customerSearchForm');
+    }; const toggleDetailOverlay = () => {
+        setShowDetailOverlay(!showDetailOverlay);
     };
 
-    const toggleDetailOverlay = () => {
-        setShowDetailOverlay(!showDetailOverlay);
+    const handleSendAgreement = async (customerId) => {
+        try {
+            setIsSendingAgreement(true);
+            const token = localStorage.getItem('authToken');
+            const response = await axios.post(
+                `${API_URL}/customers/generate-agreement`,
+                {
+                    customer_id: customerId
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'accept': '*/*',
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (response.status === 200 || response.status === 201) {
+                toast.success('Agreement sent successfully');
+            } else {
+                throw new Error('Failed to send agreement');
+            }
+        } catch (error) {
+            console.error('Error sending agreement:', error);
+            toast.error(error.response?.data?.message || 'Failed to send agreement');
+        } finally {
+            setIsSendingAgreement(false);
+        }
+    };
+
+    const handleSendPaymentLink = async (customerId) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.post(
+                `${API_URL}/customers/${customerId}/send-payment-link`,
+                {},
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'accept': '*/*'
+                    }
+                }
+            );
+
+            if (response.status === 200) {
+                toast.success('Payment link sent successfully');
+            } else {
+                throw new Error('Failed to send payment link');
+            }
+        } catch (error) {
+            console.error('Error sending payment link:', error);
+            toast.error(error.response?.data?.message || 'Failed to send payment link');
+        }
     };
 
     return (
@@ -220,17 +275,70 @@ const Customer = () => {
 
             {primaryHolder?.customerInfo?.customerId && (
                 <div className="customer-preview">
-                    <div className="preview-header">
-                        <h3>Customer Details</h3>
-                        <div className="preview-actions">
+                    <div className="flex justify-between items-center bg-gray-50 px-6 py-4 border-b border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-900">Customer Details</h3>
+                        <div className="flex items-center gap-4">
                             <button
-                                className="view-details-btn"
+                                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
                                 onClick={toggleDetailOverlay}
                                 title="View Full Details"
                             >
-                                <FontAwesomeIcon icon={faEye} />
+                                <FontAwesomeIcon icon={faEye} className="text-lg cursor-pointer" />
+                            </button>                            <button
+                                className="flex items-center px-4 py-2 text-white rounded-md transition-all gap-2 text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                                style={{
+                                    backgroundColor: 'var(--primary-green-background)',
+                                    transition: 'all 0.3s ease',
+                                    ':hover': {
+                                        backgroundColor: '#38a169'
+                                    }
+                                }}
+                                disabled={isSendingAgreement}
+                                onMouseOver={(e) => {
+                                    if (!isSendingAgreement) {
+                                        e.currentTarget.style.backgroundColor = '#38a169';
+                                    }
+                                }}
+                                onMouseOut={(e) => {
+                                    if (!isSendingAgreement) {
+                                        e.currentTarget.style.backgroundColor = 'var(--primary-green-background)';
+                                    }
+                                }}
+                                onClick={() => handleSendAgreement(primaryHolder.customerInfo.customerId)}
+                            >
+                                {isSendingAgreement ? (
+                                    <>
+                                        <FontAwesomeIcon icon={faSpinner} spin />
+                                        Sending...
+                                    </>
+                                ) : (
+                                    <>
+                                        <FontAwesomeIcon icon={faFileAlt} />
+                                        Send Agreement Link
+                                    </>
+                                )}
                             </button>
-                            <span className="customer-status">
+                            {/* <button
+                            className="flex items-center px-4 py-2 text-white rounded-md transition-all gap-2 text-sm font-medium cursor-pointer"
+                            style={{
+                                backgroundColor: 'var(--primary-green-background)',
+                                transition: 'all 0.3s ease',
+                                ':hover': {
+                                    backgroundColor: '#38a169'
+                                }
+                            }}
+                            onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor = '#38a169';
+                            }}
+                            onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--primary-green-background)';
+                            }}
+                            onClick={() => handleSendPaymentLink(primaryHolder.customerInfo.customerId)}
+                        >
+                            <FontAwesomeIcon icon={faUpLong} />
+                            Send Payment Link
+                        </button> */}
+                            <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
                                 {primaryHolder.customerInfo.status || 'Active'}
                             </span>
                         </div>

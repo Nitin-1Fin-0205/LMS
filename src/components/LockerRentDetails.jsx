@@ -203,11 +203,30 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                     <div className="form-group">
                         <label>Admission Fees<span className='required'>*</span></label>
                         <input type="text" value={lockerDetails.rentDetails?.admissionFees || ''} readOnly />
-                    </div>
-
-                    <div className="form-group">
+                    </div>                    <div className="form-group">
                         <label>Total<span className='required'>*</span></label>
                         <input type="text" value={lockerDetails.rentDetails?.total || ''} readOnly />
+                    </div>                    <div className="form-group">
+                        <label>UPI ID<span className='required'>*</span></label>
+                        <input
+                            type="text"
+                            value={lockerDetails.upiId || ''}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/\s/g, ''); // Remove any spaces
+                                if (value === '') {
+                                    toast.error('UPI ID is required');
+                                }
+                                handleInputChange('upiId', value);
+                            }}
+                            onBlur={(e) => {
+                                if (!e.target.value) {
+                                    toast.error('UPI ID is required');
+                                }
+                            }}
+                            placeholder="Enter UPI ID"
+                            pattern="^[^\s]*$"
+                            required
+                        />
                     </div>
                 </div>
             </div>

@@ -248,13 +248,13 @@ const CustomerDetailsOverlay = ({
                                                 >
                                                     <FontAwesomeIcon icon={faEye} />
                                                 </button>
-                                                <button
+                                                {/* <button
                                                     className="document-download-btn"
                                                     title="Download Document"
                                                     onClick={() => handleDocumentAction(doc, 'download')}
                                                 >
                                                     <FontAwesomeIcon icon={faDownload} />
-                                                </button>
+                                                </button> */}
                                             </div>
                                         </div>
                                     ))}

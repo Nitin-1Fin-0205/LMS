@@ -105,11 +105,18 @@ export const fetchCustomerById = createAsyncThunk(
 
 // This API is used to create a new customer or update an existing one
 export const submitCustomerInfo = createAsyncThunk(
-    'customer/submitCustomerInfo',
-    async ({ customerData, holderType }, { rejectWithValue }) => {
+    'customer/submitCustomerInfo', async ({ customerData, holderType }, { rejectWithValue }) => {
         console.log('Submitting customer data:', customerData, holderType);
         try {
-            const response = await axios.post(`${API_URL}/customers/add-update/personal-details`, customerData);
+            const token = localStorage.getItem('authToken');
+            const response = await axios.post(`${API_URL}/customers/add-update/personal-details`,
+                customerData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
             if (response.status === 200 || response.status === 201) {
 
                 return {

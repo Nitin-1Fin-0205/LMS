@@ -98,14 +98,19 @@ const LockerDetails = () => {
 
     const handleSaveLockerDetails = async () => {
         try {
-            console.log('Locker Data:', lockerData);
+            console.log('Locker Data:', lockerData); if (!lockerData?.lockerDetails?.upiId) {
+                toast.error('UPI ID is required');
+                return;
+            }
+
             const lockerAssignmentData = {
                 customerId: primaryHolder?.customerInfo?.customerId, // Get from customer state
                 lockerId: lockerData?.lockerDetails.lockerId,
                 centerId: lockerData?.lockerDetails?.center,
                 planId: lockerData?.lockerDetails?.selectedPlan,
                 expiryDate: '2024-06-30', //TODO : need to implement this function
-                payFrequency: 1 //TODO: get from lockerData
+                payFrequency: 1, //TODO: get from lockerData
+                upiId: lockerData?.lockerDetails?.upiId
             };
 
             await dispatch(assignLocker(lockerAssignmentData)).unwrap();
