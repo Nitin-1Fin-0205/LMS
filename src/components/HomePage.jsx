@@ -1,9 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import '../styles/Welcome.css';
+import '../styles/HomePage.css';
 
-const Welcome = () => {
+const HomePage = () => {
     // const navigate = useNavigate();
     const { auth } = useAuth();
     const token = localStorage.getItem('authToken');
@@ -13,28 +13,31 @@ const Welcome = () => {
         fontWeight: 'bold'
     };
 
+    const highredStyle = {
+        color: 'tomato',
+        fontWeight: 'bold'
+    };
+
     return (
         <div className="welcome-container">
             <div className="welcome-content">
-                <h1>Welcome to LMS Dashboard</h1>
-                <p>
-                    {token ? (
-                        <>
-                            Welcome back, <span style={highlightStyle}>{auth.userName || 'User'}</span>!
-                        </>
-                    ) : (
-                        'Please provide token to access the system'
-                    )}
-                </p>
+                {token ? (
+
+                    <h3>Welcome back, <span style={highlightStyle}>{auth.userName || 'User'}</span>!</h3>) : (
+                    <>
+                        <h1><span style={highredStyle}>403</span></h1>
+                    </>
+                )}
+
                 {!token &&
                     <div className="welcome-info">
-                        <p>You will be automatically redirected once a valid token is provided</p>
+                        <p><span style={highredStyle}>Unauthenticated user</span>  ! you are currently not logged in.</p>
                     </div>
                 }
 
             </div>
-        </div>
+        </div >
     );
 };
 
-export default Welcome;
+export default HomePage;

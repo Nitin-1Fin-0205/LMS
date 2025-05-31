@@ -20,7 +20,7 @@ import NotFound from './components/pages/NotFound';
 // import SecondaryHolder from './components/SecondaryHolder';
 // import ThirdHolder from './components/ThirdHolder';
 import LockerDetails from './components/LockerDetails';
-import Welcome from './components/Welcome';
+import HomePage from './components/HomePage';
 import CustomerVisit from './components/CustomerVisit';
 import HolderDetails from './components/HolderDetails';
 import { HOLDER_TYPES } from './constants/holderConstants';
@@ -38,8 +38,8 @@ const AppContent = () => {
 
     if (token) {
       localStorage.setItem('authToken', token);
-      validateToken(); // Only call here, not on every render
-      navigate(ROUTES.CUSTOMER, { replace: true });
+      validateToken();
+      navigate(ROUTES.HomePage, { replace: true });
     }
   }, [location.search, navigate]);
 
@@ -59,7 +59,7 @@ const AppContent = () => {
         boxSizing: 'border-box'
       }}>
         <Routes>
-          <Route path="/" element={<Welcome />} />
+          <Route path="/" element={<HomePage />} />
           {/* <Route path={ROUTES.FORBIDDEN} element={<Forbidden />} /> */}
 
           <Route path="/*" element={
@@ -128,6 +128,7 @@ const AppContent = () => {
 
               {/* <Route path={`${ROUTES.EDIT_CUSTOMER}/:customerId`} element={<EditCustomer />} /> */}
 
+              <Route path={ROUTES.FORBIDDEN} element={<Forbidden />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           } />

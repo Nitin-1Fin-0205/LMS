@@ -15,11 +15,11 @@ const initialState = {
 // This API is used to fetch customer details by PAN number
 export const fetchCustomerByPan = createAsyncThunk(
     'customer/fetchByPan',
-    async ({ pan, centerId }, { rejectWithValue }) => {
+    async ({ pan }, { rejectWithValue }) => {
 
         try {
             const token = localStorage.getItem('authToken');
-            const response = await axios.get(`${API_URL}/customers/details?pan=${pan}&locker_center_id=${centerId}`, {
+            const response = await axios.get(`${API_URL}/customers/details?pan=${pan}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/json'
@@ -27,11 +27,10 @@ export const fetchCustomerByPan = createAsyncThunk(
             });
 
             if (response.status !== 200 && response.status !== 201) {
-                throw new Error('Failed to fetch customer info');
-            }
-            if (response.data.status_code !== 200) {
+                console.log('Error response:', response);
                 throw new Error(response.data.message || 'Failed to fetch customer info');
             }
+
             if (!response.data.data) {
                 throw new Error('No customer data found');
             }
@@ -42,7 +41,7 @@ export const fetchCustomerByPan = createAsyncThunk(
             return response.data.data;
 
         } catch (error) {
-            return rejectWithValue('Failed to fetch customer info');
+            return rejectWithValue(error?.response?.data?.message || 'Failed to fetch customer info');
         }
     }
 );

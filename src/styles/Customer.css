@@ -46,7 +46,8 @@
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-    /* align-items: center; */
+    align-items: flex-end;
+    margin-bottom: 5px;
 }
 
 .reset-button {

@@ -179,10 +179,6 @@ const CustomerDetailsOverlay = ({
                                     <div className="detail-label">State:</div>
                                     <div className="detail-value">{holder.state}</div>
                                 </div>
-                                <div className="detail-row">
-                                    <div className="detail-label">State Code:</div>
-                                    <div className="detail-value">{holder.statecode}</div>
-                                </div>
                             </div>
                         </div>
 

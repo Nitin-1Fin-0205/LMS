@@ -26,6 +26,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         statecode: '',
         ...initialData
     });
+    const [stateList, setStateList] = useState([]);
     const [otpVerification, setOtpVerification] = useState({
         emailOtp: '',
         mobileOtp: '',
@@ -40,6 +41,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
     const [otpType, setOtpType] = useState(null);
     const [resendTimer, setResendTimer] = useState({ email: 0, mobile: 0 });
     const [request_id, setRequestId] = useState(null);
+    const [isLoadingStates, setIsLoadingStates] = useState(false);
 
     useEffect(() => {
         if (initialData) {
@@ -63,7 +65,38 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 statecode: initialData.statecode || ''
             }));
         }
-    }, [initialData]);    // Validation handler
+    }, [initialData]);
+
+    // Fetch state list from API
+    const fetchStateList = async () => {
+        setIsLoadingStates(true);
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${API_URL}/customers/state-code-list`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'accept': '*/*'
+                }
+            });
+            const result = await response.json();
+            if (result.status_code === 200) {
+                setStateList(result.data);
+            } else {
+                throw new Error('Failed to fetch state list');
+            }
+        } catch (error) {
+            console.error('Error fetching state list:', error);
+            toast.error('Failed to load state list');
+        } finally {
+            setIsLoadingStates(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchStateList();
+    }, []);
+
+    // Validation handler
     const validateField = (name, value) => {
         if (!value || value.trim() === '') {
             toast.error(`${name} is required`);
@@ -434,29 +467,54 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         </div>
     );
 
-    const handleStateCodeInput = (e) => {
-        const value = e.target.value.replace(/\D/g, ''); // Only digits
-        handleInputChange('statecode', value);
+    const handleStateSelect = (e) => {
+        const selectedState = stateList.find(state => state.state_code === parseInt(e.target.value));
+        if (selectedState) {
+            setCustomerData(prev => ({
+                ...prev,
+                state: selectedState.state_name,
+                statecode: selectedState.state_code.toString()
+            }));
+            // Update parent component
+            onUpdate({
+                ...customerData,
+                state: selectedState.state_name,
+                statecode: selectedState.state_code.toString()
+            });
+        }
     };
 
     return (
         <div className="form-section">
             <h2>Customer Information</h2>
             <div className="customer-info-grid">
-                <div className="form-group pan-group">
+                <div className="form-group">
                     <label>PAN No<span className='required'>*</span></label>
+                    <input
+                        type="text"
+                        value={customerData.panNo}
+                        onChange={handlePanInput}
+                        onBlur={() => handleBlur('panNo')}
+                        className={getInputClassName('panNo')}
+                        placeholder="Enter PAN no here"
+                        maxLength={10}
+                        required
+                    />
+
+                </div>
+
+                <div className="form-group  pan-group">
+                    <label>D.O.B<span className='required'>*</span></label>
                     <div className="input-button-group">
+
                         <input
-                            type="text"
-                            value={customerData.panNo}
-                            onChange={handlePanInput}
-                            onBlur={() => handleBlur('panNo')}
-                            className={getInputClassName('panNo')}
-                            placeholder="Enter PAN no here"
-                            maxLength={10}
+                            type="date"
+                            value={customerData.dateOfBirth}
+                            onChange={(e) => handleDobChange(e)}
+                            max={new Date().toISOString().split('T')[0]}
                             required
                         />
-                        <div className="pan-actions">
+                        {/* <div className="pan-actions">
                             <button
                                 className="fetch-pan-button"
                                 onClick={handleFetchPan}
@@ -474,22 +532,11 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                                     disabled={isPanImageFetching}
                                 />
                             </label>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
 
-                <div className="form-group">
-                    <label>D.O.B<span className='required'>*</span></label>
-                    <input
-                        type="date"
-                        value={customerData.dateOfBirth}
-                        onChange={(e) => handleDobChange(e)}
-                        max={new Date().toISOString().split('T')[0]}
-                        required
-                    />
-                </div>
-
-                <div className="form-group">
+                <div className="form-group first-name-group">
                     <label>First Name<span className='required'>*</span></label>
                     <input
                         type="text"
@@ -645,24 +692,23 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
 
                 <div className="form-group">
                     <label>State<span className='required'>*</span></label>
-                    <input
-                        type="text"
-                        value={customerData.state}
-                        onChange={(e) => handleInputChange('state', e.target.value)}
-                        placeholder="Enter state"
-                        required
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label>State Code<span className='required'>*</span></label>
-                    <input
-                        type="text"
+                    <select
                         value={customerData.statecode}
-                        onChange={handleStateCodeInput}
-                        placeholder="Enter state code"
+                        onChange={handleStateSelect}
+                        disabled={isLoadingStates}
                         required
-                    />
+                    >
+                        <option value="">Select State</option>
+                        {stateList.map(state => (
+                            <option
+                                key={state.state_code}
+                                value={state.state_code}
+                            >
+                                {state.state_name}
+                            </option>
+                        ))}
+                    </select>
+                    {isLoadingStates && <span className="loading-states">Loading states...</span>}
                 </div>
             </div>
 

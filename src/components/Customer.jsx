@@ -23,30 +23,15 @@ const Customer = () => {
     const lockerData = useSelector(state => state.locker);
     const [formData, setFormData] = useState(() => {
         const savedForm = sessionStorage.getItem('customerSearchForm');
-        // Ensure default values are never undefined
         return {
             pan: '',
-            center: '',
             ...(savedForm ? JSON.parse(savedForm) : {})
         };
     });
-    const [centers, setCenters] = useState([]);
     const navigate = useNavigate();
     const [activeCard, setActiveCard] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
     const [showDetailOverlay, setShowDetailOverlay] = useState(false);
-
-    const fetchCenters = async () => {
-        try {
-            const token = localStorage.getItem('authToken');
-            const response = await axios.get(`${API_URL}/lockers/locker-centers`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            setCenters(response.data);
-        } catch (error) {
-            toast.error('Failed to fetch centers');
-        }
-    };
 
     const handlePrimaryHolder = () => {
         navigate(ROUTES.PRIMARY_HOLDER);
@@ -69,20 +54,19 @@ const Customer = () => {
     useEffect(() => {
         const editData = sessionStorage.getItem('editCustomerData');
         if (editData) {
-            const { pan, center } = JSON.parse(editData);
-            setFormData({ pan, center });
+            const { pan } = JSON.parse(editData);
+            setFormData({ pan });
             setIsEditMode(true);
             sessionStorage.removeItem('editCustomerData');
         }
-        fetchCenters();
     }, []);
 
     useEffect(() => {
-        if (isEditMode && formData.pan && formData.center) {
+        if (isEditMode && formData.pan) {
             handleSubmit();
             setIsEditMode(false);
         }
-    }, [formData.pan, formData.center, isEditMode]);
+    }, [formData.pan, isEditMode]);
 
     const handlePanChange = (e) => {
         const pan = e.target.value.toUpperCase();
@@ -103,32 +87,38 @@ const Customer = () => {
             e.preventDefault();
         }
 
-        if (!formData.pan || !formData.center) {
-            if (e) toast.error('Please fill all required fields');
+        if (!formData.pan) {
+            if (e) toast.error('Please enter PAN number');
             return;
         }
 
-        // Reset all previous customer and locker data before fetching new customer
+        const panValidated = ValidationService.validateField('pan', formData.pan);
+
+        if (!panValidated.isValid) {
+            if (e) toast.error(panValidated.error);
+            return;
+        }
+
         dispatch(resetForm());
         dispatch(clearAllLockerData());
         setActiveCard(null);
 
         try {
             const result = await dispatch(fetchCustomerByPan({
-                pan: formData.pan.trim().toUpperCase(),
-                centerId: formData.center
+                pan: formData.pan.trim().toUpperCase()
             })).unwrap();
 
             sessionStorage.setItem('customerSearchForm', JSON.stringify(formData));
 
         } catch (error) {
+            toast.dismiss()
             console.error('Error fetching customer details:', error);
-            if (e) toast.error('Failed to fetch customer details');
+            if (e) toast.error(error || 'Failed to fetch customer details');
         }
     };
 
     const handleReset = () => {
-        setFormData({ pan: '', center: '' });
+        setFormData({ pan: '' });
         dispatch(resetForm());
         dispatch(clearAllLockerData());
         sessionStorage.removeItem('customerSearchForm');
@@ -148,27 +138,8 @@ const Customer = () => {
                         value={formData.pan || ''}
                         onChange={handlePanChange}
                         maxLength={10}
-                        // placeholder="AAAPL1234A"
                         required
                     />
-                </div>
-                <div className="form-group">
-                    <label>Locker Center</label>
-                    <select
-                        value={formData.center || ''}
-                        onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            center: e.target.value
-                        }))}
-                        required
-                    >
-                        <option value="">Select Center</option>
-                        {centers.map((center) => (
-                            <option key={center.id} value={center.id}>
-                                {center.name}
-                            </option>
-                        ))}
-                    </select>
                 </div>
                 <div className="fetch-cust-actions">
                     <button type="submit" className="fetch-button" disabled={isSubmitting}>

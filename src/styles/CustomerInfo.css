@@ -29,12 +29,16 @@
   margin-top: 16px;
   padding: 16px;
 }
+/* Ensure first name starts from first column in second row */
+.first-name-group {
+  grid-column: 1;
+}
 
 /* Form Groups */
 .form-group {
-  display: flex;
-  gap: 6px;
-  align-items: center;
+  /* display: flex; */
+  flex-direction: column;
+  /* align-items: center; */
   min-width: 0;
 }
 
@@ -70,10 +74,9 @@
 }
 
 /* Special Fields */
-.pan-group {
+/* .pan-group {
   grid-column: span 2;
-  order: -1;
-}
+} */
 
 .input-button-group {
   display: flex;
@@ -144,7 +147,6 @@
 }
 
 .fetch-pan-button {
-  padding: 6px 12px;
   background-color: #4CAF50;
   color: white;
   border: none;
@@ -154,6 +156,7 @@
   font-weight: 600;
   white-space: nowrap;
   transition: background-color 0.3s;
+  margin-bottom :4px;
 }
 
 .fetch-pan-button:hover {
@@ -177,7 +180,7 @@
 }
 
 .pan-upload-button {
-  padding: 6px 12px;
+  padding: 5px 6px;
   background-color: #2b6cb0;
   color: white !important;
   border: none;
@@ -419,6 +422,17 @@ input:disabled {
   cursor: not-allowed;
 }
 
+.loading-states {
+    font-size: 0.8rem;
+    color: #666;
+    margin-left: 8px;
+}
+
+select:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}
+
 /* Error Styles */
 /* .form-input.error {
     border-color: #ff4444;
@@ -469,7 +483,5 @@ input:disabled {
     width: 100%;
   }
   
-  .pan-group {
-    grid-column: span 1;
-  }
+
 }

@@ -11,6 +11,7 @@ export const ROUTES = {
     LOCKERDETAILS: '/add-locker-details',
     LOCKER_DETAILS: '/locker-details',
     CUSTOMER_VISIT: '/customer-visit',
+    FORBIDDEN: '/forbidden',
 };
 
 export const TAB_NAMES = {

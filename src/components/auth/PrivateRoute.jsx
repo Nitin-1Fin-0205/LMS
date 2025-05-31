@@ -12,7 +12,7 @@ const PrivateRoute = ({ children, requiredRoles = [] }) => {
     }
 
     if (requiredRoles.length > 0 && !requiredRoles.includes(auth.role)) {
-        return <Navigate to="/" replace />;
+        return <Navigate to={ROUTES.FORBIDDEN} replace />;
     }
 
     return children;

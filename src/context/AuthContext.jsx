@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_URL } from '../assets/config';
-import { ROLES } from '../constants/roles';
+import { ROLES, getRoleFromId } from '../constants/roles';
 
 const AuthContext = createContext(null);
 
@@ -11,9 +11,7 @@ export const AuthProvider = ({ children }) => {
         role: null,
         isLoading: true,
         userName: null
-    });
-
-    const validateToken = async () => {
+    }); const validateToken = async () => {
         const token = localStorage.getItem('authToken');
 
         if (!token) {
@@ -22,27 +20,20 @@ export const AuthProvider = ({ children }) => {
         }
 
         try {
-            // For Testing purposes, we are using a mock API endpoint to validate the token.
-            const mockResponse = {
-                data: {
-                    valid: true,
-                    role: ROLES.ADMIN,
-                    name: 'Nitin Gupta',
+            const response = await axios.post(`${API_URL}/users/validate`, '', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'accept': '*/*'
                 }
-            };
-            const response = mockResponse;
+            });
 
-            // const response = await axios.get(`${API_URL}/api/auth/validate`, {
-            //     headers: {
-            //         Authorization: `Bearer ${token}`
-            //     }
-            // });
-
-            if (response.data.valid) {
+            if (response.data.is_valid) {
+                const role = getRoleFromId(response.data.role_id);
                 setAuth({
                     isAuthenticated: true,
-                    role: response.data.role,
+                    role: role,
                     userName: response.data.name,
+                    userId: response.data.user_code,
                     isLoading: false
                 });
             } else {
