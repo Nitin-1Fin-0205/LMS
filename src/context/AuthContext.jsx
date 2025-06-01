@@ -10,13 +10,22 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: false,
         role: null,
         isLoading: true,
-        userName: null
-    }); const validateToken = async () => {
+        userName: null,
+        validationError: null
+    });
+    const validateToken = async () => {
+        setAuth(prev => ({ ...prev, isLoading: true }));
         const token = localStorage.getItem('authToken');
 
         if (!token) {
-            setAuth({ isAuthenticated: false, role: null, isLoading: false, userName: null });
-            return;
+            setAuth({
+                isAuthenticated: false,
+                role: null,
+                isLoading: false,
+                userName: null,
+                validationError: 'No token found'
+            });
+            return false;
         }
 
         try {
@@ -34,15 +43,31 @@ export const AuthProvider = ({ children }) => {
                     role: role,
                     userName: response.data.name,
                     userId: response.data.user_code,
-                    isLoading: false
+                    isLoading: false,
+                    validationError: null
                 });
+                return true;
             } else {
                 localStorage.removeItem('authToken');
-                setAuth({ isAuthenticated: false, role: null, isLoading: false, userName: null });
+                setAuth({
+                    isAuthenticated: false,
+                    role: null,
+                    isLoading: false,
+                    userName: null,
+                    validationError: 'Invalid token'
+                });
+                return false;
             }
         } catch (error) {
             localStorage.removeItem('authToken');
-            setAuth({ isAuthenticated: false, role: null, isLoading: false, userName: null });
+            setAuth({
+                isAuthenticated: false,
+                role: null,
+                isLoading: false,
+                userName: null,
+                validationError: error.message || 'Token validation failed'
+            });
+            return false;
         }
     };
 

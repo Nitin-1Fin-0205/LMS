@@ -4,9 +4,8 @@ import { CssBaseline, Box } from '@mui/material';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import SideNav from './components/SideNav';
 import Customer from './components/Customer';
-// import AddCustomer from './components/AddCustomer';
-// import EditCustomer from './components/EditCustomer';
 import Forbidden from './components/pages/Forbidden';
+import UnauthorizedAccess from './components/pages/UnauthorizedAccess';
 import PrivateRoute from './components/auth/PrivateRoute';
 import './styles/App.css';
 import { ROUTES } from './constants/routes';
@@ -15,10 +14,7 @@ import Access from './components/Access';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import CustomerList from './components/CustomerList';
-// import PrimaryHolder from './components/PrimaryHolder';
 import NotFound from './components/pages/NotFound';
-// import SecondaryHolder from './components/SecondaryHolder';
-// import ThirdHolder from './components/ThirdHolder';
 import LockerDetails from './components/LockerDetails';
 import HomePage from './components/HomePage';
 import CustomerVisit from './components/CustomerVisit';
@@ -31,15 +27,19 @@ const AppContent = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem('authToken');
   const { validateToken } = useAuth();
-
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const token = params.get('access_token');
 
     if (token) {
       localStorage.setItem('authToken', token);
-      validateToken();
-      navigate(ROUTES.HomePage, { replace: true });
+      validateToken().then(isValid => {
+        if (isValid) {
+          navigate(ROUTES.HomePage, { replace: true });
+        } else {
+          navigate(ROUTES.UNAUTHORIZED, { replace: true });
+        }
+      });
     }
   }, [location.search, navigate]);
 
@@ -57,10 +57,13 @@ const AppContent = () => {
         paddingLeft: '60px',
         width: '100%',
         boxSizing: 'border-box'
-      }}>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          {/* <Route path={ROUTES.FORBIDDEN} element={<Forbidden />} /> */}
+      }}>        <Routes>
+          <Route path="/" element={
+            <PrivateRoute>
+              <HomePage />
+            </PrivateRoute>
+          } />
+          <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedAccess />} />
 
           <Route path="/*" element={
             <Routes>

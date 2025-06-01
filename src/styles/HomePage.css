@@ -1,43 +1,172 @@
 .welcome-container {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    justify-content: flex-start;
+    align-items: flex-start;
     min-height: 100vh;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    padding: 20px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    padding: 24px;
 }
 
-.welcome-content {
-    background: white;
-    padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    max-width: 600px;
-    width: 90%;
+/* Authenticated User Styles */
+.welcome-authenticated {
+    animation: slideUp 0.4s ease-out;
 }
 
-.welcome-content h1 {
-    color: #2d3748;
-    margin-bottom: 16px;
-    font-size: 2.5rem;
+.welcome-header {
+    margin-bottom: 32px;
+    text-align: left;
 }
 
-.welcome-content p {
-    color: #4a5568;
-    margin-bottom: 24px;
-    font-size: 1.1rem;
+.welcome-header h2 {
+    font-size: 1.75rem;
+    color: #0f172a;
+    margin-bottom: 6px;
+    font-weight: 600;
 }
 
-.welcome-info {
-    background: #f8fafc;
-    padding: 16px;
-    border-radius: 8px;
-    border-left: 4px solid #3b82f6;
-}
-
-.welcome-info p {
+.subtitle {
     color: #64748b;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.stat-card:hover {
+    background: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-color: #cbd5e1;
+}
+
+.stat-icon {
+    font-size: 1.75rem;
+    padding: 12px;
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.stat-content {
+    flex: 1;
+    text-align: left;
+}
+
+.stat-card h3 {
+    color: #0f172a;
+    margin-bottom: 4px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.stat-card p {
+    color: #64748b;
+    font-size: 0.875rem;
+    line-height: 1.4;
     margin: 0;
-    font-size: 0.9rem;
+}
+
+
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .welcome-container {
+        padding: 16px;
+    }
+
+    .welcome-content {
+        padding: 24px 20px;
+    }
+
+    .logo-container {
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+    }
+
+    .welcome-logo {
+        height: 32px;
+    }
+
+    .dashboard-stats {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .welcome-header {
+        margin-bottom: 24px;
+    }
+
+    .welcome-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .subtitle {
+        font-size: 0.875rem;
+    }
+
+    .stat-card {
+        padding: 16px;
+    }
+
+    .stat-icon {
+        font-size: 1.5rem;
+        padding: 10px;
+    }
+
+    .welcome-info {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 12px;
+    }
+
+    .info-content {
+        text-align: center;
+    }
+
+    .error-badge {
+        width: 64px;
+        height: 64px;
+        font-size: 2rem;
+    }
+
+    .login-button {
+        padding: 10px 24px;
+        font-size: 0.875rem;
+    }
 }

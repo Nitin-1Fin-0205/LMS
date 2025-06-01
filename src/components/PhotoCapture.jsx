@@ -26,12 +26,14 @@ const PhotoCapture = ({ customerId }) => {
             }
 
             try {
+                const token = localStorage.getItem('authToken');
                 setInitialLoading(true);
                 const response = await axios.get(
                     `${API_URL}/customers/profile-image/${customerId}`,
                     {
                         headers: {
-                            'Accept': '*/*'
+                            'Accept': '*/*',
+                            'Authorization': `Bearer ${token}`
                         }
                     }
                 );

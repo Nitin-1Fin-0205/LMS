@@ -1,0 +1,213 @@
+.welcome-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
+    padding: 24px;
+}
+
+.welcome-content {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 48px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(14, 165, 233, 0.15);
+    max-width: 700px;
+    width: 100%;
+    margin: 0 auto;
+    animation: fadeIn 0.4s ease-out;
+    backdrop-filter: blur(8px);
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.welcome-logo {
+    height: 36px;
+    width: auto;
+    transition: opacity 0.2s ease;
+}
+
+.welcome-logo:hover {
+    opacity: 0.9;
+}
+
+/* Unauthenticated User Styles */
+.welcome-unauthenticated {
+    animation: slideUp 0.4s ease-out;
+    text-align: center;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.auth-error {
+    margin: 32px 0;
+}
+
+.error-badge {
+    font-size: 2.75rem;
+    color: #ef4444;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    width: 92px;
+    height: 92px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    border: 2px solid #fee2e2;
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.12);
+    letter-spacing: -0.03em;
+}
+
+.auth-error h2 {
+    color: #0f172a;
+    font-size: 1.75rem;
+    margin: 16px 0;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.welcome-info {
+    background: #f8fafc;
+    padding: 18px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 20px auto;
+    max-width: 85%;
+}
+
+.info-icon {
+    font-size: 1.5rem;
+    padding: 10px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    color: #64748b;
+}
+
+.info-content {
+    flex: 1;
+    text-align: left;
+}
+
+.info-content h3 {
+    color: #0f172a;
+    margin-bottom: 8px;
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.info-content p {
+    color: #64748b;
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+}
+
+.login-button {    
+    margin-top: 28px;
+    padding: 8px 10px;
+    background: var(--primary-green-background);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    letter-spacing: 0.02em;
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.2);
+}
+
+.login-button:hover {
+    background: #38a169;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(34, 197, 94, 0.25);
+}
+
+.login-button:active {
+    transform: translateY(0);
+    background: #2f855a;
+    box-shadow: 0 4px 16px rgba(34, 197, 94, 0.15);
+}
+
+.button-icon {
+    font-size: 1.1rem;
+    transition: transform 0.3s ease;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.login-button:hover .button-icon {
+    transform: translateX(4px);
+    color: rgba(255, 255, 255, 1);
+}
+
+.error-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 32px;
+}
+
+.secondary-button {
+    background: white !important;
+    color: #0f172a !important;
+    border: 2px solid #e2e8f0 !important;
+}
+
+.secondary-button:hover {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #1e293b !important;
+}
+
+.secondary-button .button-icon {
+    color: #64748b;
+}
+
+.secondary-button:hover .button-icon {
+    color: #475569;
+}
+
+@media (max-width: 768px) {
+    .welcome-unauthenticated {
+        padding: 24px 20px;
+    }
+
+    .welcome-info {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 12px;
+    }
+
+    .info-content {
+        text-align: center;
+    }
+
+    .error-badge {
+        width: 64px;
+        height: 64px;
+        font-size: 2rem;
+    }
+
+    .login-button {
+        padding: 10px 24px;
+        font-size: 0.875rem;
+    }
+}

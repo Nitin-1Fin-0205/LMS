@@ -1,11 +1,8 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ROUTES } from "../../constants/routes";
+import { APP_LOGOUT_REDIRECT } from "../../assets/config";
 import '../../styles/UnauthorizedAccess.css';
 
-const Forbidden = () => {
-    const navigate = useNavigate();
-
+const UnauthorizedAccess = () => {
     return (
         <div className="welcome-container">
             <div className="welcome-content">
@@ -14,22 +11,24 @@ const Forbidden = () => {
                 </div>
                 <div className="welcome-unauthenticated">
                     <div className="auth-error">
-                        <div className="error-badge">401</div>
-                        <h2>Access Denied</h2>
+                        <div className="error-badge">403</div>
+                        <h2>Access Restricted</h2>
                     </div>
                     <div className="welcome-info">
-                        <div className="info-icon">⚠️</div>
+                        <div className="info-icon">🔒</div>
                         <div className="info-content">
-                            <h3>Insufficient Permissions</h3>
-                            <p>You don't have the necessary permissions to access this page.</p>
+                            <h3>Authentication Required</h3>
+                            <p>Please log in to access the Locker Management System.</p>
                         </div>
                     </div>
                     <button
                         className="login-button"
-                        onClick={() => navigate(ROUTES.HomePage)}
+                        onClick={() => {
+                            window.location.href = `${APP_LOGOUT_REDIRECT}`;
+                        }}
                     >
-                        <span className="button-icon">←</span>
-                        <span>Return to Dashboard</span>
+                        <span className="button-icon">→</span>
+                        <span>Login to Access</span>
                     </button>
                 </div>
             </div>
@@ -37,4 +36,4 @@ const Forbidden = () => {
     );
 };
 
-export default Forbidden;
+export default UnauthorizedAccess;
