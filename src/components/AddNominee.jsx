@@ -143,9 +143,8 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                 // If invalid date, store empty string
                 updatedNominees[index][field] = '';
             }
-        } else if (field === 'percentage') {
-            // Handle percentage changes
-            const newPercentage = parseFloat(value) || 0;
+        } else if (field === 'percentage') {            // Handle percentage changes
+            const newPercentage = Math.round(parseFloat(value)) || 0;
 
             // Only update if valid input
             if (newPercentage >= 0 && newPercentage <= 100) {
@@ -154,7 +153,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                 // Auto-adjust other nominee's percentage if we have exactly 2
                 if (updatedNominees.length === 2) {
                     const otherIndex = index === 0 ? 1 : 0;
-                    updatedNominees[otherIndex].percentage = Math.max(0, Math.min(100, 100 - newPercentage));
+                    updatedNominees[otherIndex].percentage = Math.max(0, Math.min(100, Math.round(100 - newPercentage)));
                 }
             }
         } else {
@@ -393,16 +392,15 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
 
                                     <div className="form-group">
                                         <label>Percentage<span className="required">*</span></label>
-                                        <div className="percentage-input-container">
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                step="0.01"
-                                                value={nominee.percentage || 0}
-                                                onChange={(e) => handleInputChange(index, 'percentage', e.target.value)}
-                                                className={formErrors[`percentage-${index}`] ? 'input-error' : ''}
-                                            />
+                                        <div className="percentage-input-container">                                                <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="1"
+                                            value={Math.round(nominee.percentage) || 0}
+                                            onChange={(e) => handleInputChange(index, 'percentage', e.target.value)}
+                                            className={formErrors[`percentage-${index}`] ? 'input-error' : ''}
+                                        />
                                             <span className="percentage-symbol">%</span>
                                         </div>
                                         {formErrors[`percentage-${index}`] && (
