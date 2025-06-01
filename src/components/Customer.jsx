@@ -60,6 +60,9 @@ const Customer = () => {
             setIsEditMode(true);
             sessionStorage.removeItem('editCustomerData');
         }
+        if (formData.pan) {
+            handleSubmit();
+        }
     }, []);
 
     useEffect(() => {
