@@ -287,15 +287,20 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         } finally {
             setIsPanImageFetching(false);
         }
-    };
-
-    // Add this validation function near your other handlers
-    const handleMobileInput = (e) => {
+    };    const handleMobileInput = (e) => {
         const value = e.target.value;
         // Only allow numbers
         if (value === '' || /^[0-9\b]+$/.test(value)) {
             // Limit to 10 digits
             if (value.length <= 10) {
+                // If the number is changing and was previously verified, reset verification
+                if (otpVerification.isMobileVerified && value !== customerData.mobileNo) {
+                    setOtpVerification(prev => ({
+                        ...prev,
+                        isMobileVerified: false,
+                        mobileOtp: ''
+                    }));
+                }
                 handleInputChange('mobileNo', value);
             }
         }
@@ -303,18 +308,20 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
 
     const handleEmailInput = (e) => {
         const value = e.target.value;
-        handleInputChange('emailId', value);
-
-        // if (value && value.includes('@')) {
-        //     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        //     if (!emailRegex.test(value)) {
-        //         toast.error('Please enter valid email address');
-        //     }
-        // }
+        
+        // If the email is changing and was previously verified, reset verification
+        if (otpVerification.isEmailVerified && value !== customerData.emailId) {
+            setOtpVerification(prev => ({
+                ...prev,
+                isEmailVerified: false,
+                emailOtp: ''
+            }));
+        }
+          handleInputChange('emailId', value);
     };
 
     const startResendTimer = (type) => {
-        setResendTimer(prev => ({ ...prev, [type]: 10 }));
+        setResendTimer(prev => ({ ...prev, [type]: 30 }));
         const timer = setInterval(() => {
             setResendTimer(prev => {
                 const newTime = prev[type] - 1;
@@ -617,9 +624,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                             onChange={handleMobileInput}
                             onBlur={() => handleBlur('mobileNo')}
                             className={getInputClassName('mobileNo')}
-                            placeholder="Enter mobile number"
-                            required
-                            disabled={otpVerification.isMobileVerified}
+                            placeholder="Enter mobile number"                            required
                         />
                         {otpVerification.isMobileVerified ? (
                             <span className="verified-badge">
@@ -647,9 +652,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                             onChange={handleEmailInput}
                             onBlur={() => handleBlur('emailId')}
                             className={getInputClassName('emailId')}
-                            placeholder="Enter email"
-                            required
-                            disabled={otpVerification.isEmailVerified}
+                            placeholder="Enter email"                            required
                         />
                         {otpVerification.isEmailVerified ? (
                             <span className="verified-badge">

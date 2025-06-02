@@ -30,7 +30,7 @@ const HomePage = () => {
                 <div className="welcome-authenticated">
                     <div className="welcome-header">
                         <h2>Welcome back, <span style={highlightStyle}>{auth.userName || 'User'}</span>!</h2>
-                        <p className="subtitle">Locker Management System Dashboard</p>
+                        {/* <p className="subtitle">Locker Management System Dashboard</p> */}
                     </div>
                     {/* <div className="dashboard-stats">
                         <div className="stat-card">

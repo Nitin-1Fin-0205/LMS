@@ -11,7 +11,7 @@ const UnauthorizedAccess = () => {
                 </div>
                 <div className="welcome-unauthenticated">
                     <div className="auth-error">
-                        <div className="error-badge">403</div>
+                        <div className="error-badge">401</div>
                         <h2>Access Restricted</h2>
                     </div>
                     <div className="welcome-info">

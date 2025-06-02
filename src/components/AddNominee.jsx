@@ -144,7 +144,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                 updatedNominees[index][field] = '';
             }
         } else if (field === 'percentage') {            // Handle percentage changes
-            const newPercentage = Math.round(parseFloat(value)) || 0;
+            const newPercentage = Math.abs(value) || 0;
 
             // Only update if valid input
             if (newPercentage >= 0 && newPercentage <= 100) {
@@ -153,7 +153,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                 // Auto-adjust other nominee's percentage if we have exactly 2
                 if (updatedNominees.length === 2) {
                     const otherIndex = index === 0 ? 1 : 0;
-                    updatedNominees[otherIndex].percentage = Math.max(0, Math.min(100, Math.round(100 - newPercentage)));
+                    updatedNominees[otherIndex].percentage = Math.max(0, Math.min(100, Math.abs(100 - newPercentage)));
                 }
             }
         } else {
