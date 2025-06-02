@@ -1,432 +1,210 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Box, Typography, Button, Paper, CircularProgress, Grid, TextField, Card, CardContent } from '@mui/material';
+import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFingerprint, faCamera, faUser, faCheck, faTimes, faIdCard } from '@fortawesome/free-solid-svg-icons';
+import { faFingerprint, faUser, faArrowsRotate, faCamera, faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
-import BiometricService from '../services/BiometricService';
-import axios from 'axios';
-import { API_URL } from '../assets/config';
-import CustomerPhotoCapture from '../components/CustomerPhotoCapture';
+
+const mockCustomerData = {
+    firstName: 'John',
+    lastName: 'Doe',
+    customerId: 'CUS123456',
+    mobileNo: '+91 98765 43210',
+    email: 'john.doe@example.com',
+    panNo: 'ABCDE1234F',
+    lockerNo: 'L001',
+    photo: null
+};
 
 const CustomerVisit = () => {
-    // State management
-    const [step, setStep] = useState(1); // 1: Biometric Scan, 2: Customer Preview, 3: Photo Capture, 4: Complete
-    const [loading, setLoading] = useState(false);
-    const [scanningFingerprint, setScanningFingerprint] = useState(false);
+    const [step, setStep] = useState(1);
+    const [isScanning, setIsScanning] = useState(false);
     const [customerData, setCustomerData] = useState(null);
     const [visitPhoto, setVisitPhoto] = useState(null);
-    const [visitReason, setVisitReason] = useState('');
-    const [visitNotes, setVisitNotes] = useState('');
-    const [identificationResult, setIdentificationResult] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [showPhotoModal, setShowPhotoModal] = useState(false);
 
     // Handle fingerprint scanning
     const handleScanFingerprint = async () => {
         try {
-            setScanningFingerprint(true);
-
-            // // Step 1: Capture the fingerprint
-            // const fingerprintResult = await BiometricService.captureFingerprint();
-
-            // if (!fingerprintResult.success) {
-            //     toast.error("Failed to capture fingerprint");
-            //     return;
-            // }
-
-            // // Step 2: Send the template to backend for identification
-            // const token = localStorage.getItem('authToken');
-            // const response = await axios.post(
-            //     `${API_URL}/biometrics/identify`,
-            //     {
-            //         template: fingerprintResult.template
-            //     },
-            //     {
-            //         headers: {
-            //             'Authorization': `Bearer ${token}`,
-            //             'Content-Type': 'application/json'
-            //         }
-            //     }
-            // );
-
-            // setIdentificationResult(response.data);
-
-            // if (response.data.matched) {
-            //     // If matched, fetch customer details
-            //     const customerResponse = await axios.get(
-            //         `${API_URL}/customers/${response.data.customerId}`,
-            //         {
-            //             headers: {
-            //                 'Authorization': `Bearer ${token}`
-            //             }
-            //         }
-            //     );
-
-            //     setCustomerData(customerResponse.data.data);
+            setIsScanning(true);
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            setCustomerData(mockCustomerData);
             toast.success("Customer identified successfully");
             setStep(2);
-            // } else {
-            //     toast.error("No matching customer found");
-            // }
         } catch (error) {
             console.error('Error during fingerprint identification:', error);
             toast.error(`Identification failed: ${error.message || 'Unknown error'}`);
         } finally {
-            setScanningFingerprint(false);
+            setIsScanning(false);
         }
     };
 
     // Handle photo capture
-    const handlePhotoCapture = (photoData) => {
-        setVisitPhoto(photoData);
+    const handlePhotoCapture = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setVisitPhoto(reader.result);
+                setShowPhotoModal(false);
+                handleSaveVisit();
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // Handle Access Vault Click
+    const handleAccessVaultClick = () => {
+        setShowPhotoModal(true);
     };
 
     // Save visit record
     const handleSaveVisit = async () => {
         try {
             setLoading(true);
-
-            // if (!customerData || !visitPhoto) {
-            //     toast.error("Customer data and photo are required");
-            //     return;
-            // }
-
-            // const token = localStorage.getItem('authToken');
-            // const visitData = {
-            //     customerId: customerData.customerId,
-            //     verificationMethod: 'biometric',
-            //     verificationStatus: true, 
-            //     visitPhoto: visitPhoto,
-            //     visitReason: visitReason,
-            //     notes: visitNotes,
-            //     timestamp: new Date().toISOString()
-            // };
-
-            // await axios.post(
-            //     `${API_URL}/visits/record`,
-            //     visitData,
-            //     {
-            //         headers: {
-            //             'Authorization': `Bearer ${token}`,
-            //             'Content-Type': 'application/json'
-            //         }
-            //     }
-            // );
-
-            toast.success("Visit recorded successfully");
-            setStep(4); // Move to completion step
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            toast.success("Visit recorded successfully. You may now access the vault.");
+            // Don't reset the component state here to allow vault access
+            setLoading(false);
         } catch (error) {
             console.error('Error recording visit:', error);
             toast.error(`Failed to record visit: ${error.message || 'Unknown error'}`);
-        } finally {
             setLoading(false);
         }
     };
 
-    // Reset the process
-    const handleReset = () => {
-        setStep(1);
-        setCustomerData(null);
-        setVisitPhoto(null);
-        setVisitReason('');
-        setVisitNotes('');
-        setIdentificationResult(null);
-    };
-
     return (
-        <Container maxWidth="lg" sx={{ py: 4 }}>
-            <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-                <Typography variant="h4" component="h1" gutterBottom align="center">
-                    Customer Visit Verification
-                </Typography>
-
-                {/* Progress indicator */}
-                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
-                    <Box sx={{ display: 'flex', width: '80%', justifyContent: 'space-between', position: 'relative' }}>
-                        {/* Progress bar */}
-                        <Box sx={{
-                            position: 'absolute',
-                            top: '10px',
-                            left: 0,
-                            right: 0,
-                            height: '4px',
-                            bgcolor: '#e0e0e0',
-                            zIndex: 0
-                        }} />
-                        <Box sx={{
-                            position: 'absolute',
-                            top: '10px',
-                            left: 0,
-                            width: `${(step - 1) * 33.3}%`,
-                            height: '4px',
-                            bgcolor: 'primary.main',
-                            zIndex: 1,
-                            transition: 'width 0.5s ease-in-out'
-                        }} />
-
-                        {/* Step indicators */}
-                        {[1, 2, 3].map((s) => (
-                            <Box key={s} sx={{
-                                width: 24,
-                                height: 24,
-                                borderRadius: '50%',
-                                bgcolor: step >= s ? 'primary.main' : '#e0e0e0',
-                                color: 'white',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: 'bold',
-                                zIndex: 2
-                            }}>
-                                {s}
-                            </Box>
-                        ))}
-                    </Box>
-                </Box>
-
+        <div className="min-h-screen bg-gray-50 py-8">
+            <div className="max-w-4xl mx-auto">
                 {/* Step 1: Biometric Scan */}
                 {step === 1 && (
-                    <Box sx={{ textAlign: 'center', py: 4 }}>
-                        <Box sx={{ maxWidth: 400, mx: 'auto' }}>
-                            <Card sx={{ mb: 4, bgcolor: '#f5f5f5', position: 'relative', overflow: 'hidden' }}>
-                                <Box sx={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    bgcolor: 'rgba(3, 169, 244, 0.1)',
-                                    display: scanningFingerprint ? 'flex' : 'none',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                    zIndex: 2
-                                }}>
-                                    <CircularProgress />
-                                </Box>
-                                <CardContent sx={{ p: 4 }}>
+                    <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+                        <div className="max-w-md mx-auto">
+                            <div className={`relative rounded-lg p-8 ${isScanning ? 'bg-blue-50' : 'bg-gray-50'}`}>
+                                <div className="mb-6">
                                     <FontAwesomeIcon
                                         icon={faFingerprint}
-                                        size="5x"
-                                        color={scanningFingerprint ? "#2196f3" : "#757575"}
-                                        pulse={scanningFingerprint}
+                                        className={`text-6xl ${isScanning ? 'text-blue-500 animate-pulse' : 'text-gray-400'}`}
                                     />
-                                    <Typography variant="h6" sx={{ mt: 2 }}>
-                                        Fingerprint Identification
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 3 }}>
-                                        Place customer's finger on scanner to identify
-                                    </Typography>
-
-                                    <Button
-                                        variant="contained"
-                                        color="primary"
-                                        onClick={handleScanFingerprint}
-                                        disabled={scanningFingerprint}
-                                        startIcon={<FontAwesomeIcon icon={faFingerprint} />}
-                                        size="large"
-                                    >
-                                        {scanningFingerprint ? "Scanning..." : "Scan Fingerprint"}
-                                    </Button>
-                                </CardContent>
-                            </Card>
-
-                            {identificationResult && !identificationResult.matched && (
-                                <Paper sx={{ p: 2, bgcolor: '#ffebee', color: '#c62828', mt: 2 }}>
-                                    <Typography variant="subtitle2">
-                                        <FontAwesomeIcon icon={faTimes} style={{ marginRight: '8px' }} />
-                                        No matching customer found
-                                    </Typography>
-                                </Paper>
-                            )}
-                        </Box>
-                    </Box>
+                                </div>
+                                <h2 className="text-2xl font-semibold mb-4">
+                                    {isScanning ? 'Scanning...' : 'Ready to Scan'}
+                                </h2>
+                                <p className="text-gray-600 mb-6">
+                                    {isScanning
+                                        ? 'Please keep your finger on the scanner'
+                                        : 'Place your finger on the scanner to verify your identity'
+                                    }
+                                </p>
+                                <button
+                                    onClick={handleScanFingerprint}
+                                    disabled={isScanning}
+                                    className={`w-full py-3 px-4 rounded-lg font-medium transition-colors
+                                        ${isScanning
+                                            ? 'bg-blue-100 text-blue-400 cursor-not-allowed'
+                                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                                        }`}
+                                >
+                                    {isScanning ? 'Scanning...' : 'Start Scan'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )}
 
-                {/* Step 2: Customer Preview */}
+                {/* Step 2: Verified Customer Details */}
                 {step === 2 && customerData && (
-                    <Box sx={{ py: 3 }}>
-                        <Paper elevation={1} sx={{ p: 3, mb: 4, bgcolor: '#f0f7ff', border: '1px solid #bbdefb' }}>
-                            <Typography variant="h6" gutterBottom sx={{ color: '#0d47a1', display: 'flex', alignItems: 'center' }}>
-                                <FontAwesomeIcon icon={faCheck} style={{ marginRight: '10px', color: '#2e7d32' }} />
-                                Customer Identified Successfully
-                            </Typography>
+                    <div className="bg-white rounded-lg shadow-lg p-8">
+                        <div className="max-w-md mx-auto">
+                            <div className="text-center mb-8">
+                                <div className="mb-4">
+                                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100">
+                                        <FontAwesomeIcon icon={faCheck} className="text-green-500 text-3xl" />
+                                    </div>
+                                </div>
+                                <h2 className="text-2xl font-semibold text-gray-800">Authentication Successful</h2>
+                                <p className="text-gray-600 mt-2">Customer verified successfully</p>
+                            </div>
 
-                            <Grid container spacing={3} sx={{ mt: 2 }}>
-                                <Grid item xs={12} md={4}>
-                                    <Box sx={{ textAlign: 'center' }}>
-                                        {customerData.photo ? (
-                                            <img
-                                                src={customerData.photo}
-                                                alt={`${customerData.firstName} ${customerData.lastName}`}
-                                                style={{
-                                                    width: '180px',
-                                                    height: '220px',
-                                                    objectFit: 'cover',
-                                                    borderRadius: '8px',
-                                                    border: '1px solid #e0e0e0'
-                                                }}
-                                            />
-                                        ) : (
-                                            <Box sx={{
-                                                width: 180,
-                                                height: 220,
-                                                bgcolor: '#e0e0e0',
-                                                borderRadius: 1,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                mx: 'auto'
-                                            }}>
-                                                <FontAwesomeIcon icon={faUser} size="4x" color="#9e9e9e" />
-                                            </Box>
-                                        )}
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={12} md={8}>
-                                    <Typography variant="h5" gutterBottom>
-                                        {customerData.firstName} {customerData.middleName} {customerData.lastName}
-                                    </Typography>
+                            <div className="space-y-6">
+                                <div className="bg-gray-50 rounded-lg p-6">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-sm text-gray-500">Full Name</p>
+                                            <p className="font-medium">{`${customerData.firstName} ${customerData.lastName}`}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-500">Customer ID</p>
+                                            <p className="font-medium">{customerData.customerId}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-500">Mobile Number</p>
+                                            <p className="font-medium">{customerData.mobileNo}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-500">Locker Number</p>
+                                            <p className="font-medium">{customerData.lockerNo}</p>
+                                        </div>
+                                    </div>
+                                </div>
 
-                                    <Grid container spacing={2} sx={{ mt: 1 }}>
-                                        <Grid item xs={12} sm={6}>
-                                            <Typography><strong>Customer ID:</strong> {customerData.customerId}</Typography>
-                                            <Typography><strong>Mobile:</strong> {customerData.mobileNo}</Typography>
-                                            <Typography><strong>Email:</strong> {customerData.email || 'N/A'}</Typography>
-                                        </Grid>
-                                        <Grid item xs={12} sm={6}>
-                                            <Typography><strong>PAN:</strong> {customerData.panNo}</Typography>
-                                            {customerData.lockerNo && (
-                                                <Typography><strong>Locker:</strong> {customerData.lockerNo}</Typography>
-                                            )}
-                                            <Typography>
-                                                <strong>Last Visit:</strong> {customerData.lastVisit ? new Date(customerData.lastVisit).toLocaleDateString() : 'First Visit'}
-                                            </Typography>
-                                        </Grid>
-                                    </Grid>
-                                </Grid>
-                            </Grid>
-
-                            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    onClick={() => setStep(3)}
+                                <button
+                                    onClick={handleAccessVaultClick}
+                                    className="w-full py-3 px-4 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                                    disabled={loading}
                                 >
-                                    Continue to Photo Capture
-                                </Button>
-                            </Box>
-                        </Paper>
-                    </Box>
+                                    {visitPhoto ? 'Access Vault' : 'Take Photo to Access Vault'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )}
 
-                {/* Step 3: Photo Capture */}
-                {step === 3 && (
-                    <Box sx={{ py: 3 }}>
-                        <Typography variant="h6" gutterBottom>Capture Visit Photo</Typography>
-
-                        <Grid container spacing={3}>
-                            <Grid item xs={12} md={6}>
-                                <CustomerPhotoCapture
-                                    onPhotoCapture={handlePhotoCapture}
-                                    initialPhoto={visitPhoto}
-                                />
-                            </Grid>
-                            <Grid item xs={12} md={6}>
-                                <Typography variant="subtitle1" gutterBottom>Visit Details</Typography>
-                                <TextField
-                                    select
-                                    fullWidth
-                                    label="Visit Reason"
-                                    value={visitReason}
-                                    onChange={(e) => setVisitReason(e.target.value)}
-                                    SelectProps={{
-                                        native: true,
-                                    }}
-                                    sx={{ mb: 2 }}
+                {/* Photo Capture Modal */}
+                {showPhotoModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-semibold">Take Photo</h3>
+                                <button
+                                    onClick={() => setShowPhotoModal(false)}
+                                    className="text-gray-500 hover:text-gray-700"
                                 >
-                                    <option value="">Select reason</option>
-                                    <option value="locker_access">Locker Access</option>
-                                    <option value="document_submission">Document Submission</option>
-                                    <option value="consultation">Consultation</option>
-                                    <option value="other">Other</option>
-                                </TextField>
-
-                                <TextField
-                                    fullWidth
-                                    multiline
-                                    rows={4}
-                                    label="Notes"
-                                    value={visitNotes}
-                                    onChange={(e) => setVisitNotes(e.target.value)}
-                                />
-
-                                <Box sx={{ mt: 3 }}>
-                                    <Button
-                                        variant="contained"
-                                        color="primary"
-                                        disabled={!visitPhoto || !visitReason || loading}
-                                        onClick={handleSaveVisit}
-                                        sx={{ mr: 2 }}
-                                    >
-                                        {loading ? <CircularProgress size={24} /> : 'Record Visit'}
-                                    </Button>
-                                    <Button
-                                        variant="outlined"
-                                        onClick={() => setStep(2)}
-                                    >
-                                        Back
-                                    </Button>
-                                </Box>
-                            </Grid>
-                        </Grid>
-                    </Box>
+                                    <FontAwesomeIcon icon={faTimes} />
+                                </button>
+                            </div>
+                            <div className="text-center p-6 bg-gray-50 rounded-lg mb-6">
+                                <FontAwesomeIcon icon={faCamera} className="text-4xl text-gray-400 mb-4" />
+                                <p className="text-gray-600 mb-4">Please take a photo for visit record</p>
+                                <label className="block">
+                                    <div className="w-full py-3 px-4 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer">
+                                        Take Photo
+                                    </div>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        capture="environment"
+                                        onChange={handlePhotoCapture}
+                                        className="hidden"
+                                    />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 )}
 
-                {/* Step 4: Complete */}
-                {step === 4 && (
-                    <Box sx={{ textAlign: 'center', py: 5 }}>
-                        <FontAwesomeIcon icon={faCheck} style={{ fontSize: '48px', color: '#2e7d32' }} />
-                        <Typography variant="h5" sx={{ my: 2 }}>Visit Recorded Successfully</Typography>
-
-                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
-                            {customerData && (
-                                <Box>
-                                    <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-                                        {customerData.firstName} {customerData.lastName}
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Visit Purpose: {visitReason.replace('_', ' ')}
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Date: {new Date().toLocaleString()}
-                                    </Typography>
-                                </Box>
-                            )}
-                        </Box>
-
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={handleReset}
-                            sx={{ mt: 3 }}
-                        >
-                            Record Another Visit
-                        </Button>
-                    </Box>
+                {/* Loading State */}
+                {loading && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg p-8">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                            <p className="text-center mt-4">Processing...</p>
+                        </div>
+                    </div>
                 )}
-
-                {/* Back button for step navigation, excluding step 1 and 4 */}
-                {step > 1 && step < 4 && !loading && (
-                    <Box sx={{ mt: 2, textAlign: 'center' }}>
-                        <Button
-                            onClick={handleReset}
-                            startIcon={<FontAwesomeIcon icon={faTimes} />}
-                            color="inherit"
-                        >
-                            Cancel
-                        </Button>
-                    </Box>
-                )}
-            </Paper>
-        </Container>
+            </div>
+        </div>
     );
 };
 
