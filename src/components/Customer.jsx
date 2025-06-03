@@ -4,7 +4,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
 import '../styles/Customer.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faUserPlus, faVault, faFileAlt, faEye, faPhone, faEnvelope, faSpinner, faUpLong, faDownload, faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
@@ -16,19 +16,18 @@ import CustomerDetailsOverlay from './CustomerDetailsOverlay';
 
 const Customer = () => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const { pan: urlPan } = useParams(); // Get PAN from URL parameters
     const { form, isSubmitting } = useSelector(state => state.customer);
     const primaryHolder = form.primaryHolder;
     const secondaryHolder = form.secondaryHolder;
     const thirdHolder = form.thirdHolder;
     const lockerData = useSelector(state => state.locker);
-    const [formData, setFormData] = useState(() => {
-        const savedForm = sessionStorage.getItem('customerSearchForm');
-        return {
-            pan: '',
-            ...(savedForm ? JSON.parse(savedForm) : {})
-        };
+
+    const [formData, setFormData] = useState({
+        pan: urlPan || '' // Initialize with URL PAN if available
     });
-    const navigate = useNavigate();
+
     const [activeCard, setActiveCard] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
     const [showDetailOverlay, setShowDetailOverlay] = useState(false);
@@ -52,26 +51,7 @@ const Customer = () => {
         }
     };
 
-    useEffect(() => {
-        const editData = sessionStorage.getItem('editCustomerData');
-        if (editData) {
-            const { pan } = JSON.parse(editData);
-            setFormData({ pan });
-            setIsEditMode(true);
-            sessionStorage.removeItem('editCustomerData');
-        }
-        if (formData.pan) {
-            handleSubmit();
-        }
-    }, []);
-
-    useEffect(() => {
-        if (isEditMode && formData.pan) {
-            handleSubmit();
-            setIsEditMode(false);
-        }
-    }, [formData.pan, isEditMode]);
-
+    // Fix: Add the missing handlePanChange function
     const handlePanChange = (e) => {
         const pan = e.target.value.toUpperCase();
         const validation = ValidationService.isValidPAN(pan);
@@ -86,6 +66,40 @@ const Customer = () => {
         }));
     };
 
+    // Simplified useEffect - fetch customer when component mounts or PAN changes
+    useEffect(() => {
+        if (urlPan) {
+            setFormData({ pan: urlPan });
+            // Auto-fetch when PAN is in URL
+            handleSubmitWithPan(urlPan);
+        }
+    }, [urlPan]);
+
+    // New method to handle submit with specific PAN
+    const handleSubmitWithPan = async (panValue) => {
+        if (!panValue) return;
+
+        const panValidated = ValidationService.validateField('pan', panValue);
+        if (!panValidated.isValid) {
+            toast.error(panValidated.error);
+            return;
+        }
+
+        dispatch(resetForm());
+        dispatch(clearAllLockerData());
+        setActiveCard(null);
+
+        try {
+            const result = await dispatch(fetchCustomerByPan({
+                pan: panValue.trim().toUpperCase()
+            })).unwrap();
+        } catch (error) {
+            toast.dismiss();
+            console.error('Error fetching customer details:', error);
+            toast.error(error || 'Failed to fetch customer details');
+        }
+    };
+
     const handleSubmit = async (e) => {
         if (e) {
             e.preventDefault();
@@ -96,36 +110,21 @@ const Customer = () => {
             return;
         }
 
-        const panValidated = ValidationService.validateField('pan', formData.pan);
-
-        if (!panValidated.isValid) {
-            if (e) toast.error(panValidated.error);
-            return;
+        // Update URL when searching manually
+        if (formData.pan !== urlPan) {
+            navigate(`/customer/${formData.pan.toUpperCase()}`);
+            return; // Let useEffect handle the fetch
         }
 
-        dispatch(resetForm());
-        dispatch(clearAllLockerData());
-        setActiveCard(null);
-
-        try {
-            const result = await dispatch(fetchCustomerByPan({
-                pan: formData.pan.trim().toUpperCase()
-            })).unwrap();
-
-            sessionStorage.setItem('customerSearchForm', JSON.stringify(formData));
-
-        } catch (error) {
-            toast.dismiss()
-            console.error('Error fetching customer details:', error);
-            if (e) toast.error(error || 'Failed to fetch customer details');
-        }
+        await handleSubmitWithPan(formData.pan);
     };
 
     const handleReset = () => {
         setFormData({ pan: '' });
         dispatch(resetForm());
         dispatch(clearAllLockerData());
-        sessionStorage.removeItem('customerSearchForm');
+        // Navigate back to customer page without PAN
+        navigate('/customer');
     }; const toggleDetailOverlay = () => {
         setShowDetailOverlay(!showDetailOverlay);
     };

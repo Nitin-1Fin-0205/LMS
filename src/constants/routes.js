@@ -5,6 +5,7 @@ export const ROUTES = {
     CUSTOMERS: '/customers',
     // EDIT_CUSTOMER: '/edit-customer',
     CUSTOMER: '/customer',
+    CUSTOMER_WITH_PAN: '/customer/:pan', // New route with PAN parameter
     PRIMARY_HOLDER: '/primary-holder',
     SECONDARY_HOLDER: '/secondary-holder',
     THIRD_HOLDER: '/third-holder',

@@ -113,11 +113,8 @@ const CustomerList = () => {
                     toast.error('Missing required customer data for editing');
                     return;
                 }
-                sessionStorage.setItem('editCustomerData', JSON.stringify({
-                    pan: customer.pan,
-                    center: 1 // Default center ID since it's not in the response
-                }));
-                navigate(ROUTES.CUSTOMER);
+                // Navigate with PAN as URL parameter instead of sessionStorage
+                navigate(`/customer/${customer.pan}`);
             } else {
                 toast.error('Customer not found');
             }

@@ -75,6 +75,12 @@ const AppContent = () => {
                 </PrivateRoute>
               } />
 
+              <Route path={ROUTES.CUSTOMER_WITH_PAN} element={
+                <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
+                  <Customer />
+                </PrivateRoute>
+              } />
+
               <Route path={ROUTES.PRIMARY_HOLDER} element={
                 <PrivateRoute requiredRoles={getRequiredRoles([ROLES.CUSTOMER_EXECUTIVE])}>
                   <HolderDetails holderType={HOLDER_TYPES.PRIMARY} />
