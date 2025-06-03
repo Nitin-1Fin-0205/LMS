@@ -16,13 +16,12 @@
   border-radius: 0;
   padding: 0;
   box-shadow: none;
-    flex:1;
+    /* flex:1; */
 
 }
 
 .profile-photo-section {
   width: 100%;
-  max-width: 500px;
   background: #fff;
   padding: 0;
   display: flex;

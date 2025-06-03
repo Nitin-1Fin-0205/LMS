@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
 import '../styles/CustomerInfo.css';
@@ -6,8 +8,14 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark, faUpload, faCheck, faMessage, faEnvelope, faSms } from '@fortawesome/free-solid-svg-icons';
 import { ValidationService } from '../services/ValidationService';
 import { otpService } from '../services/otpService';
+import { submitCustomerInfo, fetchCustomerById } from '../store/slices/customerSlice';
+import { HOLDER_TYPES, HOLDER_STAGES } from '../constants/holderConstants';
+import { ROUTES } from '../constants/routes';
 
-const CustomerInfo = ({ onUpdate, initialData }) => {
+const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const primaryHolder = useSelector(state => state.customer.form.primaryHolder);
     const [customerData, setCustomerData] = useState({
         customerId: null,
         firstName: '',
@@ -42,6 +50,45 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
     const [resendTimer, setResendTimer] = useState({ email: 0, mobile: 0 });
     const [request_id, setRequestId] = useState(null);
     const [isLoadingStates, setIsLoadingStates] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoadingCustomer, setIsLoadingCustomer] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState({
+        firstName: '',
+        lastName: '',
+        fatherOrHusbandName: '',
+        address: '',
+        dateOfBirth: '',
+        mobileNo: '',
+        panNo: '',
+        gender: '',
+        emailId: '',
+        aadharNo: '',
+        city: '',
+        state: ''
+    });
+
+    // Fetch existing customer data if customerId exists
+    useEffect(() => {
+        const fetchCustomerDetails = async () => {
+            try {
+                const customerId = initialData?.customerId;
+                if (customerId) {
+                    setIsLoadingCustomer(true);
+                    await dispatch(fetchCustomerById({
+                        customerId: customerId,
+                        holderType
+                    })).unwrap();
+                }
+            } catch (error) {
+                console.error('Error fetching customer details:', error);
+                toast.error(`Failed to fetch ${holderType} details`);
+            } finally {
+                setIsLoadingCustomer(false);
+            }
+        };
+
+        fetchCustomerDetails();
+    }, [dispatch, holderType, initialData?.customerId]);
 
     useEffect(() => {
         if (initialData) {
@@ -64,6 +111,15 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 state: initialData.state || '',
                 statecode: initialData.statecode || ''
             }));
+
+            // Auto-verify mobile and email if they exist in initial data
+            if (initialData.mobileNo || initialData.emailId) {
+                setOtpVerification(prev => ({
+                    ...prev,
+                    isMobileVerified: !!initialData.mobileNo,
+                    isEmailVerified: !!initialData.emailId
+                }));
+            }
         }
     }, [initialData]);
 
@@ -94,43 +150,119 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
 
     useEffect(() => {
         fetchStateList();
-    }, []);
-
-    // Validation handler
+    }, []);    // Validation handler for single field
     const validateField = (name, value) => {
+        let error = '';
+
         if (!value || value.trim() === '') {
-            toast.error(`${name} is required`);
-            return false;
+            error = `${name.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`;
+        } else {
+            switch (name) {
+                case 'panNo':
+                    if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(value)) {
+                        error = 'Invalid PAN format';
+                    }
+                    break;
+                case 'mobileNo':
+                    if (!/^[6-9]\d{9}$/.test(value)) {
+                        error = 'Invalid mobile number';
+                    }
+                    break;
+                case 'emailId':
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                        error = 'Invalid email format';
+                    }
+                    break;
+                case 'aadharNo':
+                    if (!/^\d{12}$/.test(value)) {
+                        error = 'Aadhaar number must be 12 digits';
+                    }
+                    break;
+            }
         }
-        return true;
+
+        setFieldErrors(prev => ({
+            ...prev,
+            [name]: error
+        }));
+        return !error;
+    };
+
+    // Validate all fields at once
+    const validateAllFields = () => {
+        const requiredFields = [
+            'firstName', 'lastName', 'fatherOrHusbandName', 'address',
+            'dateOfBirth', 'mobileNo', 'panNo', 'gender', 'emailId',
+            'aadharNo', 'city', 'state'
+        ];
+
+        const newErrors = {};
+        let hasErrors = false;
+
+        requiredFields.forEach(field => {
+            const value = customerData[field];
+            let error = '';
+
+            if (!value || value.trim() === '') {
+                error = `${field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`;
+            } else {
+                switch (field) {
+                    case 'panNo':
+                        if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(value)) {
+                            error = 'Invalid PAN format';
+                        }
+                        break;
+                    case 'mobileNo':
+                        if (!/^[6-9]\d{9}$/.test(value)) {
+                            error = 'Invalid mobile number';
+                        }
+                        break;
+                    case 'emailId':
+                        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                            error = 'Invalid email format';
+                        }
+                        break;
+                    case 'aadharNo':
+                        if (!/^\d{12}$/.test(value)) {
+                            error = 'Aadhaar number must be 12 digits';
+                        }
+                        break;
+                }
+            }
+
+            newErrors[field] = error;
+            if (error) hasErrors = true;
+        });
+
+        setFieldErrors(newErrors);
+        return !hasErrors;
     };
 
     // Add name validation helper
     const validateNameInput = (value) => {
         return value.replace(/[^a-zA-Z\s.']/g, ''); // Only allow letters, spaces, dots and apostrophes
-    };
-
-    // Update handle input change
+    };    // Update handle input change
     const handleInputChange = (field, value) => {
         if (['firstName', 'middleName', 'lastName', 'fatherOrHusbandName', 'city', 'state'].includes(field)) {
             value = validateNameInput(value);
         }
+
+        // Clear error when user starts typing
+        setFieldErrors(prev => ({
+            ...prev,
+            [field]: ''
+        }));
+
         const updatedData = {
             ...customerData,
             [field]: value || ''
         };
         setCustomerData(updatedData);
-        onUpdate(updatedData);
+        handleCustomerInfoUpdate(updatedData);
     };
-
-    // Simplified blur handler to only validate the field
+    // Simplified blur handler to validate single field
     const handleBlur = (field) => {
         validateField(field, customerData[field]);
-    };
-
-    // Update input class helper
-    const getInputClassName = () => {
-        return 'form-input';
     };
 
     // Add DOB validation handler
@@ -161,12 +293,12 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         const pan = e.target.value.toUpperCase();
         handleInputChange('panNo', pan);
         // Validate only if PAN has full length
-        if (pan.length === 10) {
-            const validation = ValidationService.isValidPAN(pan);
-            if (!validation.isValid) {
-                toast.error(validation.error);
-            }
-        }
+        // if (pan.length === 10) {
+        //     const validation = ValidationService.isValidPAN(pan);
+        //     if (!validation.isValid) {
+        //         toast.error(validation.error);
+        //     }
+        // }
     };
 
     const formatAadhar = (value) => {
@@ -230,7 +362,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                         address: data?.address || '',
                         mobileNo: data?.mobileNumber || ''
                     };
-                    onUpdate(updatedData);
+                    handleCustomerInfoUpdate(updatedData);
                     return updatedData;
                 });
                 toast.success('PAN details fetched successfully');
@@ -274,7 +406,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                         lastName: data?.name?.split(' ')[2] || '',
                         dateOfBirth: data?.dob || '',
                     };
-                    onUpdate(updatedData);
+                    handleCustomerInfoUpdate(updatedData);
                     return updatedData;
                 });
                 toast.success('PAN details extracted successfully');
@@ -287,7 +419,8 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
         } finally {
             setIsPanImageFetching(false);
         }
-    };    const handleMobileInput = (e) => {
+    };
+    const handleMobileInput = (e) => {
         const value = e.target.value;
         // Only allow numbers
         if (value === '' || /^[0-9\b]+$/.test(value)) {
@@ -308,7 +441,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
 
     const handleEmailInput = (e) => {
         const value = e.target.value;
-        
+
         // If the email is changing and was previously verified, reset verification
         if (otpVerification.isEmailVerified && value !== customerData.emailId) {
             setOtpVerification(prev => ({
@@ -317,7 +450,7 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 emailOtp: ''
             }));
         }
-          handleInputChange('emailId', value);
+        handleInputChange('emailId', value);
     };
 
     const startResendTimer = (type) => {
@@ -483,239 +616,393 @@ const CustomerInfo = ({ onUpdate, initialData }) => {
                 statecode: selectedState.state_code.toString()
             }));
             // Update parent component
-            onUpdate({
+            handleCustomerInfoUpdate({
                 ...customerData,
                 state: selectedState.state_name,
                 statecode: selectedState.state_code.toString()
             });
         }
+    };    // Complete form submission handler
+    const handleSubmit = async () => {
+        try {
+            toast.dismiss();
+            setIsSubmitting(true);
+
+            // Validate all fields before submission
+            const isValid = validateAllFields();
+            if (!isValid) {
+                // toast.error('Please fill all required fields correctly');
+                return;
+            }
+
+            if (!otpVerification.isMobileVerified) {
+                toast.error('Please verify your mobile number');
+                return;
+            }
+
+            // Check if email and mobile are verified(optional - remove if not required)
+            if (!otpVerification.isEmailVerified) {
+                toast.error('Please verify your email address');
+                return;
+            }
+
+            // Prepare submission data
+            const submitData = {
+                customer_id: customerData.customerId || null,
+                first_name: customerData.firstName,
+                middle_name: customerData.middleName,
+                last_name: customerData.lastName,
+                pan: customerData.panNo,
+                aadhar: customerData.aadharNo,
+                gender: customerData.gender,
+                address: customerData.address,
+                guardian_name: customerData.fatherOrHusbandName,
+                dob: customerData.dateOfBirth,
+                mobile_number: customerData.mobileNo,
+                email: customerData.emailId,
+                locker_center_id: 1,
+                city: customerData.city,
+                state: customerData.state,
+                state_code: customerData.statecode
+            };
+
+            // Add parent customer ID for secondary and third holders
+            if (holderType !== HOLDER_TYPES.PRIMARY) {
+                submitData.parent_customer_id = primaryHolder?.customerInfo?.customerId;
+            }
+
+            // Submit using Redux action
+            const result = await dispatch(submitCustomerInfo({
+                customerData: submitData,
+                holderType
+            })).unwrap();
+
+            if (!result.customerId) {
+                throw new Error(`Failed to create ${holderType}`);
+            }
+
+            toast.success(`${holderType} info saved successfully!`);
+
+            // Call success callback if provided
+            if (onSuccess) {
+                onSuccess(result);
+            }
+
+        } catch (error) {
+            console.error('Form submission error:', error);
+            toast.error(error.message || 'Failed to save customer information');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleCustomerInfoUpdate = (data) => {
+        dispatch(updateHolderSection({
+            holder: holderType,
+            section: HOLDER_SECTIONS.CUSTOMER_INFO,
+            data
+        }));
+    };
+
+    // Helper function to get input classes with error styling
+    const getInputClassName = (fieldName) => {
+        const baseClasses = 'form-input';
+        const errorClasses = fieldErrors[fieldName] ? 'border-red-500' : '';
+        return `${baseClasses} ${errorClasses}`.trim();
     };
 
     return (
         <div className="form-section">
-            <h2>Customer Information</h2>
-            <div className="customer-info-grid">
-                <div className="form-group">
-                    <label>PAN No<span className='required'>*</span></label>
-                    <input
-                        type="text"
-                        value={customerData.panNo}
-                        onChange={handlePanInput}
-                        onBlur={() => handleBlur('panNo')}
-                        className={getInputClassName('panNo')}
-                        placeholder="Enter PAN no here"
-                        maxLength={10}
-                        required
-                    />
-
+            {isLoadingCustomer ? (
+                <div className="loading-container">
+                    <p>Loading customer details...</p>
                 </div>
-
-                <div className="form-group  pan-group">
-                    <label>D.O.B<span className='required'>*</span></label>
-                    <div className="input-button-group">
-
-                        <input
-                            type="date"
-                            value={customerData.dateOfBirth}
-                            onChange={(e) => handleDobChange(e)}
-                            max={new Date().toISOString().split('T')[0]}
-                            required
-                        />
-                        {/* <div className="pan-actions">
-                            <button
-                                className="fetch-pan-button"
-                                onClick={handleFetchPan}
-                                disabled={isPanFetching}
-                            >
-                                {isPanFetching ? 'Fetching...' : 'Fetch Details'}
-                            </button>
-                            <label className="pan-upload-button">
-                                <FontAwesomeIcon icon={faUpload} />
-                                {isPanImageFetching ? 'Processing...' : 'PAN OCR'}
+            ) : (
+                <>
+                    <h2>Customer Information</h2>
+                    <div className="customer-info-grid">
+                        <div className="form-group">
+                            <label>PAN No<span className='required'>*</span></label>
+                            <input
+                                type="text"
+                                value={customerData.panNo}
+                                onChange={handlePanInput}
+                                onBlur={() => handleBlur('panNo')}
+                                className={getInputClassName('panNo')}
+                                placeholder="Enter PAN no here"
+                                maxLength={10}
+                                required
+                            />
+                            {fieldErrors.panNo && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.panNo}</div>
+                            )}
+                        </div>
+                        <div className="form-group  pan-group">
+                            <label>D.O.B<span className='required'>*</span></label>
+                            <div className="input-button-group">
                                 <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handlePanImageUpload}
-                                    disabled={isPanImageFetching}
+                                    type="date"
+                                    value={customerData.dateOfBirth}
+                                    onChange={(e) => handleDobChange(e)}
+                                    onBlur={() => handleBlur('dateOfBirth')}
+                                    className={getInputClassName('dateOfBirth')}
+                                    max={new Date().toISOString().split('T')[0]}
+                                    required
                                 />
-                            </label>
-                        </div> */}
-                    </div>
-                </div>
+                                {/* <div className="pan-actions">
+                                    <button
+                                        className="fetch-pan-button"
+                                        onClick={handleFetchPan}
+                                        disabled={isPanFetching}
+                                    >
+                                        {isPanFetching ? 'Fetching...' : 'Fetch Details'}
+                                    </button>
+                                    <label className="pan-upload-button">
+                                        <FontAwesomeIcon icon={faUpload} />
+                                        {isPanImageFetching ? 'Processing...' : 'PAN OCR'}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handlePanImageUpload}
+                                            disabled={isPanImageFetching}
+                                        />
+                                    </label>
+                                </div> */}
+                            </div>
+                            {fieldErrors.dateOfBirth && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.dateOfBirth}</div>
+                            )}
+                        </div>
+                        <div className="form-group first-name-group">
+                            <label>First Name<span className='required'>*</span></label>
+                            <input
+                                type="text"
+                                id="firstName"
+                                className={getInputClassName('firstName')}
+                                value={customerData.firstName || ''}
+                                onChange={(e) => handleInputChange('firstName', e.target.value)}
+                                onBlur={() => handleBlur('firstName')}
+                                placeholder="Enter first name"
+                                required
+                            />
+                            {fieldErrors.firstName && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.firstName}</div>
+                            )}
+                        </div>
+                        <div className="form-group">
+                            <label>Middle Name</label>
+                            <input
+                                type="text"
+                                value={customerData.middleName}
+                                onChange={(e) => handleInputChange('middleName', e.target.value)}
+                                placeholder="Enter middle name"
+                            />
+                        </div>                <div className="form-group">
+                            <label>Last Name<span className='required'>*</span></label>
+                            <input
+                                type="text"
+                                value={customerData.lastName}
+                                onChange={(e) => handleInputChange('lastName', e.target.value)}
+                                onBlur={() => handleBlur('lastName')}
+                                className={getInputClassName('lastName')}
+                                placeholder="Enter last name"
+                                required
+                            />
+                            {fieldErrors.lastName && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.lastName}</div>
+                            )}
+                        </div>                <div className="form-group">
+                            <label>Father's / Husband's Name<span className='required'>*</span></label>
+                            <input
+                                type="text"
+                                value={customerData.fatherOrHusbandName}
+                                onChange={(e) => handleInputChange('fatherOrHusbandName', e.target.value)}
+                                onBlur={() => handleBlur('fatherOrHusbandName')}
+                                className={getInputClassName('fatherOrHusbandName')}
+                                placeholder="Enter father/husband name"
+                                required
+                            />
+                            {fieldErrors.fatherOrHusbandName && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.fatherOrHusbandName}</div>
+                            )}
+                        </div>                <div className="form-group">
+                            <label>Gender<span className='required'>*</span></label>
+                            <select
+                                value={customerData.gender}
+                                onChange={(e) => handleInputChange('gender', e.target.value)}
+                                onBlur={() => handleBlur('gender')}
+                                className={getInputClassName('gender')}
+                                required
+                            >
+                                <option value="">Select Gender</option>
+                                <option value="MALE">MALE</option>
+                                <option value="FEMALE">FEMALE</option>
+                                <option value="OTHER">OTHER</option>
+                            </select>
+                            {fieldErrors.gender && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.gender}</div>
+                            )}
+                        </div>                <div className="form-group">
+                            <label>Aadhaar No<span className='required'>*</span></label>
+                            <input
+                                type="text"
+                                value={formatAadhar(customerData?.aadharNo)}
+                                onChange={handleAadharInput}
+                                onBlur={() => handleBlur('aadharNo')}
+                                className={getInputClassName('aadharNo')}
+                                placeholder="Enter Aadhaar (e.g., 1234 5678 9012)"
+                                maxLength={14}
+                                required
+                            />
+                            {fieldErrors.aadharNo && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.aadharNo}</div>
+                            )}
+                        </div>                <div className="form-group mobile-group">
+                            <label>Mobile No<span className='required'>*</span></label>
+                            <div className="input-verify-group">
+                                <input
+                                    type="tel"
+                                    value={customerData.mobileNo}
+                                    onChange={handleMobileInput}
+                                    onBlur={() => handleBlur('mobileNo')}
+                                    className={getInputClassName('mobileNo')}
+                                    placeholder="Enter mobile number"
+                                    required
+                                />
+                                {otpVerification.isMobileVerified ? (
+                                    <span className="verified-badge">
+                                        <FontAwesomeIcon className='fontIcon' icon={faCheck} bounce={true} style={{ paddingTop: '4px' }} /> Verified
+                                    </span>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className="verify-button"
+                                        onClick={() => handleOtpClick('mobile')}
+                                    >
+                                        <FontAwesomeIcon icon={faSms} /> Verify
+                                    </button>
+                                )}
+                            </div>
+                            {fieldErrors.mobileNo && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.mobileNo}</div>
+                            )}
+                        </div>                <div className="form-group email-group">
+                            <label>Email ID<span className='required'>*</span></label>
+                            <div className="input-verify-group">
+                                <input
+                                    type="email"
+                                    value={customerData.emailId}
+                                    onChange={handleEmailInput}
+                                    onBlur={() => handleBlur('emailId')}
+                                    className={getInputClassName('emailId')}
+                                    placeholder="Enter email"
+                                    required
+                                />
+                                {otpVerification.isEmailVerified ? (
+                                    <span className="verified-badge">
+                                        <FontAwesomeIcon className='fontIcon' icon={faCheck} bounce={true} style={{ paddingTop: '4px' }} /> Verified
+                                    </span>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className="verify-button"
+                                        onClick={() => handleOtpClick('email')}
+                                    >
+                                        <FontAwesomeIcon icon={faEnvelope} /> Verify
+                                    </button>
+                                )}
+                            </div>
+                            {fieldErrors.emailId && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.emailId}</div>
+                            )}
+                        </div>                <div className="form-group full-width">
+                            <label>Address<span className='required'>*</span></label>
+                            <textarea
+                                value={customerData.address}
+                                onChange={(e) => handleInputChange('address', e.target.value)}
+                                onBlur={() => handleBlur('address')}
+                                className={getInputClassName('address')}
+                                placeholder="Enter address"
+                                required
+                            ></textarea>
+                            {fieldErrors.address && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.address}</div>
+                            )}
+                        </div>                <div className="form-group">
+                            <label>City<span className='required'>*</span></label>
+                            <input
+                                type="text"
+                                value={customerData.city}
+                                onChange={(e) => handleInputChange('city', e.target.value)}
+                                onBlur={() => handleBlur('city')}
+                                className={getInputClassName('city')}
+                                placeholder="Enter city"
+                                required
+                            />
+                            {fieldErrors.city && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.city}</div>
+                            )}
+                        </div>                <div className="form-group">
+                            <label>State<span className='required'>*</span></label>
+                            <select
+                                value={customerData.statecode}
+                                onChange={handleStateSelect}
+                                onBlur={() => handleBlur('state')}
+                                className={getInputClassName('state')}
+                                disabled={isLoadingStates}
+                                required
+                            >
+                                <option value="">Select State</option>
+                                {stateList.map(state => (
+                                    <option
+                                        key={state.state_code}
+                                        value={state.state_code}
+                                    >
+                                        {state.state_name}
+                                    </option>
+                                ))}
+                            </select>
+                            {isLoadingStates && <span className="loading-states">Loading states...</span>}
+                            {fieldErrors.state && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.state}</div>
+                            )}
+                        </div>            </div>
 
-                <div className="form-group first-name-group">
-                    <label>First Name<span className='required'>*</span></label>
-                    <input
-                        type="text"
-                        id="firstName"
-                        className={getInputClassName()}
-                        value={customerData.firstName || ''}
-                        onChange={(e) => handleInputChange('firstName', e.target.value)}
-                        onBlur={() => handleBlur('firstName')}
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label>Middle Name</label>
-                    <input
-                        type="text"
-                        value={customerData.middleName}
-                        onChange={(e) => handleInputChange('middleName', e.target.value)}
-                        placeholder="Enter middle name"
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label>Last Name<span className='required'>*</span></label>
-                    <input
-                        type="text"
-                        value={customerData.lastName}
-                        onChange={(e) => handleInputChange('lastName', e.target.value)}
-                        onBlur={() => handleBlur('lastName')}
-                        className={getInputClassName('lastName')}
-                        placeholder="Enter last name"
-                        required
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label>Father's / Husband's Name<span className='required'>*</span></label>
-                    <input
-                        type="text"
-                        value={customerData.fatherOrHusbandName}
-                        onChange={(e) => handleInputChange('fatherOrHusbandName', e.target.value)}
-                        placeholder="Enter father/husband name"
-                        required
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label>Gender<span className='required'>*</span></label>
-                    <select
-                        value={customerData.gender}
-                        onChange={(e) => handleInputChange('gender', e.target.value)}
-                        required
-                    >
-                        <option value="">Select Gender</option>
-                        <option value="MALE">MALE</option>
-                        <option value="FEMALE">FEMALE</option>
-                        <option value="OTHER">OTHER</option>
-                    </select>
-                </div>
-
-                <div className="form-group">
-                    <label>Aadhaar No<span className='required'>*</span></label>
-                    <input
-                        type="text"
-                        value={formatAadhar(customerData?.aadharNo)}
-                        onChange={handleAadharInput}
-                        placeholder="Enter Aadhaar (e.g., 1234 5678 9012)"
-                        maxLength={14}
-                        required
-                    />
-                </div>
-
-                <div className="form-group mobile-group">
-                    <label>Mobile No<span className='required'>*</span></label>
-                    <div className="input-verify-group">
-                        <input
-                            type="tel"
-                            value={customerData.mobileNo}
-                            onChange={handleMobileInput}
-                            onBlur={() => handleBlur('mobileNo')}
-                            className={getInputClassName('mobileNo')}
-                            placeholder="Enter mobile number"                            required
-                        />
-                        {otpVerification.isMobileVerified ? (
-                            <span className="verified-badge">
-                                <FontAwesomeIcon className='fontIcon' icon={faCheck} bounce={true} style={{ paddingTop: '4px' }} /> Verified
-                            </span>
-                        ) : (
+                    {/* Form Actions */}
+                    <div className="stage-actions">
+                        {onBack && (
                             <button
                                 type="button"
-                                className="verify-button"
-                                onClick={() => handleOtpClick('mobile')}
+                                className="back-button"
+                                onClick={onBack}
+                                disabled={isSubmitting || isLoadingCustomer}
                             >
-                                <FontAwesomeIcon icon={faSms} /> Verify
+                                Back
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            className="save-button"
+                            onClick={handleSubmit}
+                            disabled={isSubmitting || isLoadingCustomer}
+                        >
+                            {isSubmitting ? 'Saving...' : 'Save'}
+                        </button>
+                        {onSuccess && (
+                            <button
+                                type="button"
+                                className="next-button"
+                                onClick={onSuccess}
+                                disabled={!customerData.customerId || isLoadingCustomer}
+                            >
+                                Next
                             </button>
                         )}
                     </div>
-                </div>
 
-
-                <div className="form-group email-group">
-                    <label>Email ID<span className='required'>*</span></label>
-                    <div className="input-verify-group">
-                        <input
-                            type="email"
-                            value={customerData.emailId}
-                            onChange={handleEmailInput}
-                            onBlur={() => handleBlur('emailId')}
-                            className={getInputClassName('emailId')}
-                            placeholder="Enter email"                            required
-                        />
-                        {otpVerification.isEmailVerified ? (
-                            <span className="verified-badge">
-                                <FontAwesomeIcon className='fontIcon' icon={faCheck} bounce={true} style={{ paddingTop: '4px' }} /> Verified
-                            </span>
-                        ) : (
-                            <button
-                                type="button"
-                                className="verify-button"
-                                onClick={() => handleOtpClick('email')}
-                            >
-                                <FontAwesomeIcon icon={faEnvelope} /> Verify
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-
-
-                <div className="form-group full-width">
-                    <label>Address<span className='required'>*</span></label>
-                    <textarea
-                        value={customerData.address}
-                        onChange={(e) => handleInputChange('address', e.target.value)}
-                        placeholder="Enter address"
-                        required
-                    ></textarea>
-                </div>
-
-                <div className="form-group">
-                    <label>City<span className='required'>*</span></label>
-                    <input
-                        type="text"
-                        value={customerData.city}
-                        onChange={(e) => handleInputChange('city', e.target.value)}
-                        placeholder="Enter city"
-                        required
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label>State<span className='required'>*</span></label>
-                    <select
-                        value={customerData.statecode}
-                        onChange={handleStateSelect}
-                        disabled={isLoadingStates}
-                        required
-                    >
-                        <option value="">Select State</option>
-                        {stateList.map(state => (
-                            <option
-                                key={state.state_code}
-                                value={state.state_code}
-                            >
-                                {state.state_name}
-                            </option>
-                        ))}
-                    </select>
-                    {isLoadingStates && <span className="loading-states">Loading states...</span>}
-                </div>
-            </div>
-
-            {showOtpModal && <OtpModal />}
+                    {showOtpModal && <OtpModal />}
+                </>
+            )}
         </div >
     );
 };

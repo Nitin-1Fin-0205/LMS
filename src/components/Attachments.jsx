@@ -6,11 +6,12 @@ import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
 import '../styles/Attachments.css';
 
-const Attachments = ({ customerId }) => {
+const Attachments = ({ customerId, holderType, onSuccess, onBack }) => {
     const [selectedCategory, setSelectedCategory] = useState('identityProof');
     const [documents, setDocuments] = useState(() => ({}));
     const [documentCategories, setDocumentCategories] = useState([]);
     const [remarks, setRemarks] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         const fetchDocumentCategories = async () => {
@@ -352,8 +353,37 @@ const Attachments = ({ customerId }) => {
             (Number(selectedCategory) === 5 && !remarks?.trim());
     };
 
+    const handleSubmit = async () => {
+        try {
+            setIsSubmitting(true);
+
+            // Validate that required documents are uploaded
+            const hasDocuments = Object.values(documents).some(categoryDocs => categoryDocs.length > 0);
+
+            if (!hasDocuments) {
+                toast.error('Please upload at least one document');
+                return;
+            }
+
+            // Call success callback if provided
+            if (onSuccess) {
+                onSuccess();
+            }
+
+            toast.success('Documents uploaded successfully');
+
+        } catch (error) {
+            console.error('Attachment submission error:', error);
+            toast.error('Failed to process attachments');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <div className="attachments-container">
+            <h2>Document Attachments</h2>
+
             <div className="attachments-header">
                 <div className="upload-section">
                     <select
@@ -430,6 +460,28 @@ const Attachments = ({ customerId }) => {
                         </div>
                     )
                 ))}
+            </div>
+
+            {/* Stage Actions */}
+            <div className="stage-actions">
+                {onBack && (
+                    <button
+                        type="button"
+                        className="back-button"
+                        onClick={onBack}
+                        disabled={isSubmitting}
+                    >
+                        Back
+                    </button>
+                )}
+                <button
+                    type="button"
+                    className="next-button"
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? 'Processing...' : 'Next'}
+                </button>
             </div>
 
             {previewDoc && (

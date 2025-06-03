@@ -287,7 +287,8 @@ const Customer = () => {
                                 title="View Full Details"
                             >
                                 <FontAwesomeIcon icon={faEye} className="text-lg cursor-pointer" />
-                            </button>                            <button
+                            </button>
+                            <button
                                 className="flex items-center px-4 py-2 text-white rounded-md transition-all gap-2 text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                                 style={{
                                     backgroundColor: 'var(--primary-green-background)',

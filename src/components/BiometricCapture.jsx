@@ -142,7 +142,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                 deviceInfo: null
             });
 
-            toast.error(`Failed to connect to fingerprint device: ${error.message}`);
+            // toast.error(`Failed to connect to fingerprint device: ${error.message}`);
         }
     };
 
