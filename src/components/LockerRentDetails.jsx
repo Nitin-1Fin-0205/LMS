@@ -134,10 +134,10 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
             {/* Header */}
             <div className="mb-6">
                 <div className="flex items-center text-blue-600 mb-2">
-                    <FontAwesomeIcon icon={faKey} className="w-5 h-5 mr-2" />
+                    {/* <FontAwesomeIcon icon={faKey} className="w-5 h-5 mr-2" /> */}
                     <h1 className="text-xl font-semibold">Locker & Rent Details</h1>
                 </div>
-                <p className="text-gray-600 text-sm">Manage your locker assignment and payment details</p>
+                {/* <p className="text-gray-600 text-sm">Manage customer locker assignment and payment details</p> */}
             </div>
 
             {/* Main Content Grid */}
@@ -189,9 +189,9 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                                 <button
                                     onClick={() => dispatch(updateLockerDetails({ isModalOpen: true }))}
                                     disabled={!lockerDetails.center}
-                                    className="px-3 py-2 bg-green-500 text-white rounded-r hover:bg-green-600 focus:outline-none focus:ring-1 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                    className="px-3 py-2 bg-gradient-to-r from-green-400 to-green-600 text-white rounded-r hover:from-green-500 hover:to-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md"
                                 >
-                                    <FontAwesomeIcon icon={faPlus} className="text-xs" />
+                                    <FontAwesomeIcon icon={faPlus} className="text-xm" />
                                 </button>
                             </div>
                         </div>
@@ -348,7 +348,7 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                     </div>
                     <button
                         onClick={() => dispatch(updateLockerDetails({ isNomineeModalOpen: true }))}
-                        className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-medium rounded-md hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md"
+                        className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-blue-400 to-blue-500 text-white text-xs font-medium rounded-md hover:from-blue-500 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transform transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md cursor-pointer"
                     >
                         <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
@@ -370,94 +370,97 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                             {lockerDetails.nominees.map((nominee, index) => (
                                 <div
                                     key={index}
-                                    className="group relative bg-gradient-to-br from-gray-50 to-green-50 rounded-lg p-3 border border-gray-200 hover:border-green-300 transition-all duration-300 hover:shadow-md transform hover:-translate-y-0.5"
+                                    className="group relative bg-gradient-to-br from-white to-green-50 rounded-lg p-3 border border-gray-200 hover:border-green-300 transition-all duration-300 hover:shadow-md transform hover:-translate-y-0.5"
                                 >
-                                    {/* Nominee Header */}
-                                    <div className="flex items-start justify-between mb-2">
-                                        <div className="flex items-center space-x-2">
-                                            <div className="relative">
-                                                <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-md">
-                                                    {nominee?.name?.charAt(0).toUpperCase()}
-                                                </div>
-                                                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border border-white"></div>
+                                    {/* Header - Simplified */}
+                                    <div className="flex items-center space-x-2 mb-3">
+                                        <div className="relative">
+                                            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-md">
+                                                {nominee?.name?.charAt(0).toUpperCase()}
                                             </div>
-                                            <div className="min-w-0 flex-1">
-                                                <h4 className="font-semibold text-gray-900 truncate text-xm group-hover:text-green-700 transition-colors">
-                                                    {nominee.name}
-                                                </h4>
-                                                <p className="text-xs text-gray-600 flex items-center">
-                                                    <svg className="w-2.5 h-2.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clipRule="evenodd" />
-                                                    </svg>
-                                                    {nominee.relation}
-                                                </p>
-                                            </div>
+                                            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border border-white"></div>
                                         </div>
-
-                                        {/* Ownership Badge */}
-                                        <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-sm">
-                                            {nominee.ownership_percentage}%
+                                        <div className="min-w-0 flex-1">
+                                            <h4 className="font-semibold text-gray-900 truncate text-sm group-hover:text-green-700 transition-colors">
+                                                {nominee.name}
+                                            </h4>
+                                            <p className="text-xs text-gray-600 flex items-center">
+                                                <svg className="w-2.5 h-2.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clipRule="evenodd" />
+                                                </svg>
+                                                <span className="font-medium">{nominee.relation}</span>
+                                            </p>
                                         </div>
                                     </div>
 
-                                    {/* Nominee Details - Compact */}
-                                    <div className="space-y-2">
-                                        {/* Personal Details */}
-                                        <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
-                                            <div className="grid grid-cols-1 gap-3 text-xs">
-                                                <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                                                    <span className="text-gray-600 font-medium">Date of Birth:</span>
-                                                    <span className="text-gray-900 font-semibold">{nominee.dob}</span>
-                                                </div>
-                                                {(nominee.proofId || nominee.remark) && (
-                                                    <div className="flex justify-between items-start py-1">
-                                                        <span className="text-gray-600 font-medium">
-                                                            {'Proof ID'}
-                                                            <span className="text-green-700 text-xs"> {nominee.remark ? ` (${nominee.remark})` : ''}</span>
-                                                        </span>
-                                                        <div className="text-right max-w-[60%]">
-                                                            {nominee.proofId && (
-                                                                <div className="text-gray-900 font-semibold truncate">{nominee.proofId}</div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
+                                    {/* Progress Bar - Compact */}
+                                    <div className="mb-3">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="text-xs font-medium text-gray-600">Ownership Share</span>
+                                            <span className="text-xs font-bold text-green-600">{nominee.ownership_percentage}%</span>
                                         </div>
-
-                                        {/* Ownership Progress Bar */}
-                                        <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <span className="text-xs font-medium text-gray-600">Ownership Share</span>
-                                                <span className="text-sm font-bold text-green-600">{nominee.ownership_percentage}%</span>
-                                            </div>
-                                            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                                <div
-                                                    className="h-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-1000 ease-out"
-                                                    style={{ width: `${nominee.ownership_percentage}%` }}
-                                                ></div>
-                                            </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                            <div
+                                                className="h-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-1000 ease-out"
+                                                style={{ width: `${nominee.ownership_percentage}%` }}
+                                            ></div>
                                         </div>
+                                    </div>
 
-                                        {/* Action Buttons */}
-                                        <div className="flex items-center justify-center pt-2">
-                                            {nominee.proofFile ? (
-                                                <a
-                                                    href={nominee.proofFile}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="inline-flex items-center px-4 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors group shadow-sm hover:shadow-md"
-                                                >
-                                                    <svg className="w-3 h-3 mr-2 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                                        <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                    {/* Personal Details - Compact */}
+                                    <div className="bg-white rounded-md p-2 shadow-sm border border-gray-100 mb-3">
+                                        <div className="space-y-1.5 text-xs">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-gray-600 font-medium flex items-center">
+                                                    <svg className="w-2.5 h-2.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
                                                     </svg>
-                                                    View Document
-                                                </a>
-                                            ) : (
-                                                <span className="text-xs text-gray-400 py-2">No document available</span>
+                                                    DOB
+                                                </span>
+                                                <span className="text-gray-900 font-semibold">{nominee.dob}</span>
+                                            </div>
+                                            {(nominee.proofId || nominee.remark) && (
+                                                <div className="flex justify-between items-start pt-1 border-t border-gray-100">
+                                                    <span className="text-gray-600 font-medium flex items-center">
+                                                        <svg className="w-2.5 h-2.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zM14 6a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h8zM6 8a2 2 0 00-2 2v4a2 2 0 002 2h8a2 2 0 002-2v-4a2 2 0 00-2-2H6z" clipRule="evenodd" />
+                                                        </svg>
+                                                        Proof ID
+                                                        {nominee.remark && <span className="text-green-700 ml-1">({nominee.remark})</span>}
+                                                    </span>
+                                                    <div className="text-right max-w-[50%]">
+                                                        {nominee.proofId && (
+                                                            <div className="text-gray-900 font-semibold truncate">{nominee.proofId}</div>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
+                                    </div>
+
+                                    {/* Action Button - Compact */}
+                                    <div className="flex items-center justify-center">
+                                        {nominee.proofFile ? (
+                                            <a
+                                                href={nominee.proofFile}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-md transition-all duration-200 group shadow-sm hover:shadow-md transform hover:scale-105 cursor-pointer"
+                                            >
+                                                <svg className="w-3 h-3 mr-1.5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                                </svg>
+                                                View Document
+                                            </a>
+                                        ) : (
+                                            <div className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-md border border-gray-200">
+                                                <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                No Document
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -477,7 +480,7 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                         </p>
                         <button
                             onClick={() => dispatch(updateLockerDetails({ isNomineeModalOpen: true }))}
-                            className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-medium rounded-md hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform transition-all duration-200 hover:scale-105 shadow-md"
+                            className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-400 to-blue-500 text-white text-xs font-medium rounded-md hover:from-blue-500 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transform transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md cursor-pointer"
                         >
                             <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
@@ -489,17 +492,21 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
             </div>
 
             {/* Modals */}
-            <AssignLocker
-                isOpen={lockerDetails.isModalOpen}
-                onLockerAssign={handleLockerAssign}
-                onClose={() => dispatch(updateLockerDetails({ isModalOpen: false }))}
-                centerId={lockerDetails.center}
-            />
-            <AddNominee
-                isOpen={lockerDetails.isNomineeModalOpen}
-                onClose={() => dispatch(updateLockerDetails({ isNomineeModalOpen: false }))}
-                onSave={() => dispatch(fetchNominees(primaryHolder?.customerInfo?.customerId)).unwrap()}
-            />
+            {lockerDetails.isModalOpen && (
+                <AssignLocker
+                    isOpen={lockerDetails.isModalOpen}
+                    onLockerAssign={handleLockerAssign}
+                    onClose={() => dispatch(updateLockerDetails({ isModalOpen: false }))}
+                    centerId={lockerDetails.center}
+                />
+            )}
+            {lockerDetails.isNomineeModalOpen && (
+                <AddNominee
+                    isOpen={lockerDetails.isNomineeModalOpen}
+                    onClose={() => dispatch(updateLockerDetails({ isNomineeModalOpen: false }))}
+                    onSave={() => dispatch(fetchNominees(primaryHolder?.customerInfo?.customerId)).unwrap()}
+                />
+            )}
         </div>
     );
 };

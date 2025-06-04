@@ -382,7 +382,9 @@ const Attachments = ({ customerId, holderType, onSuccess, onBack }) => {
 
     return (
         <div className="attachments-container">
-            <h2>Document Attachments</h2>
+            <h2 className='mb-6 align-middle text-lg font-semibold text-gray-800'>
+                {/* <span className="mr-2  text-2xl text-blue-500"><FontAwesomeIcon icon={faFileUpload} /></span> */}
+                Document Attachments</h2>
 
             <div className="attachments-header">
                 <div className="upload-section">
@@ -484,21 +486,23 @@ const Attachments = ({ customerId, holderType, onSuccess, onBack }) => {
                 </button>
             </div>
 
-            {previewDoc && (
-                <div className="preview-modal" onClick={() => setPreviewDoc(null)}>
-                    <div className="preview-content">
-                        <button className="close-preview">
-                            <FontAwesomeIcon icon={faTimes} />
-                        </button>
-                        {previewDoc.type.startsWith('image/') ? (
-                            renderPreview(previewDoc, false)
-                        ) : (
-                            <div>Unsupported file type</div>
-                        )}
+            {
+                previewDoc && (
+                    <div className="preview-modal" onClick={() => setPreviewDoc(null)}>
+                        <div className="preview-content">
+                            <button className="close-preview">
+                                <FontAwesomeIcon icon={faTimes} />
+                            </button>
+                            {previewDoc.type.startsWith('image/') ? (
+                                renderPreview(previewDoc, false)
+                            ) : (
+                                <div>Unsupported file type</div>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

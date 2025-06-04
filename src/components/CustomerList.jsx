@@ -52,10 +52,17 @@ const CustomerList = () => {
                         handleEdit(params.row.id);
                     }}
                     sx={{
-                        backgroundColor: '#000',
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                        color: 'white',
+                        cursor: 'pointer',
                         '&:hover': {
-                            backgroundColor: '#333'
-                        }
+                            background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 4px 8px rgba(59, 130, 246, 0.3)'
+                        },
+                        transition: 'all 0.2s ease',
+                        textTransform: 'none',
+                        fontWeight: 500
                     }}
                 >
                     View | Edit

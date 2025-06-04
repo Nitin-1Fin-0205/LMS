@@ -314,198 +314,211 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="modal-overlay">
-            <div className="nominee-modal-content">
-                <div className="nominee-modal-header">
-                    <h3>Nominee Details</h3>
-                    <button className="modal-close-button" onClick={onClose}>
-                        <FontAwesomeIcon icon={faTimes} />
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    <div className="flex items-center">
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center mr-4">
+                            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM5 8a2 2 0 11-4 0 2 2 0 014 0zM19 8a2 2 0 11-4 0 2 2 0 014 0zM13 14a4 4 0 00-8 0v3h8v-3zM9 13h2v4H9v-4zM13 16v1a1 1 0 001 1h3v-2h-4z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900">Add Nominee</h2>
+                            <p className="text-gray-600">Add beneficiary details for the locker</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors cursor-pointer"
+                    >
+                        <FontAwesomeIcon icon={faTimes} className="text-gray-600" />
                     </button>
                 </div>
 
-                {formErrors.total && (
-                    <div className="percentage-error-banner">
-                        {formErrors.total}
+                {/* Content */}
+                <div className="flex-1 overflow-auto p-6">
+                    {formErrors.total && (
+                        <div className="percentage-error-banner">
+                            {formErrors.total}
+                        </div>
+                    )}
+
+                    <div className="nominee-form-container">
+                        {nominees.map((nominee, index) => {
+                            const isMinor = calculateAge(nominee.dob) < 18;
+                            return (
+                                <div key={index} className="nominee-form-section">
+                                    <div className="nominee-form-header">
+                                        <h4>Nominee {index + 1}</h4>
+                                        {nominees.length > 1 && (
+                                            <button
+                                                className="delete-nominee-button"
+                                                onClick={() => handleDeleteNominee(nominee, index)}
+                                                title="Remove nominee"
+                                            >
+                                                <FontAwesomeIcon icon={faTrashAlt} />
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="nominee-fields-grid">
+                                        <div className="form-group">
+                                            <label>Name<span className="required">*</span></label>
+                                            <input
+                                                type="text"
+                                                value={nominee.name || ''}
+                                                onChange={(e) => handleInputChange(index, 'name', e.target.value)}
+                                                placeholder="Enter nominee name"
+                                                className={formErrors[`name-${index}`] ? 'input-error' : ''}
+                                            />
+                                            {formErrors[`name-${index}`] && (
+                                                <span className="error-message">{formErrors[`name-${index}`]}</span>
+                                            )}
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label>Relation<span className="required">*</span></label>
+                                            <input
+                                                type="text"
+                                                value={nominee.relation || ''}
+                                                onChange={(e) => handleInputChange(index, 'relation', e.target.value)}
+                                                placeholder="Enter relation"
+                                                className={formErrors[`relation-${index}`] ? 'input-error' : ''}
+                                            />
+                                            {formErrors[`relation-${index}`] && (
+                                                <span className="error-message">{formErrors[`relation-${index}`]}</span>
+                                            )}
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label>Date of Birth<span className="required">*</span></label>
+                                            <input
+                                                type="date"
+                                                value={nominee.dob || ''}
+                                                onChange={(e) => handleInputChange(index, 'dob', e.target.value)}
+                                                max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                                                className={formErrors[`dob-${index}`] ? 'input-error' : ''}
+                                            />
+                                            {formErrors[`dob-${index}`] && (
+                                                <span className="error-message">{formErrors[`dob-${index}`]}</span>
+                                            )}
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label>Percentage<span className="required">*</span></label>
+                                            <div className="percentage-input-container">                                                <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                step="1"
+                                                value={Math.round(nominee.percentage) || 0}
+                                                onChange={(e) => handleInputChange(index, 'percentage', e.target.value)}
+                                                className={formErrors[`percentage-${index}`] ? 'input-error' : ''}
+                                            />
+                                                <span className="percentage-symbol">%</span>
+                                            </div>
+                                            {formErrors[`percentage-${index}`] && (
+                                                <span className="error-message">{formErrors[`percentage-${index}`]}</span>
+                                            )}
+                                            {nominees.length === 2 && (
+                                                <small className="helper-text">Adjusting this will update the other nominee's percentage</small>
+                                            )}
+                                        </div>
+
+                                        {/* Modified proof ID field */}
+                                        <div className="form-group">
+                                            <label>Proof ID {isMinor && <span className="required">*</span>}</label>
+                                            <input
+                                                type="text"
+                                                value={nominee.proofId || ''}
+                                                onChange={(e) => handleInputChange(index, 'proofId', e.target.value)}
+                                                placeholder="Enter proof ID (Aadhar, etc.)"
+                                                className={formErrors[`proofId-${index}`] ? 'input-error' : ''}
+                                            />
+                                            {formErrors[`proofId-${index}`] ? (
+                                                <span className="error-message">{formErrors[`proofId-${index}`]}</span>
+                                            ) : (
+                                                isMinor && <small className="helper-text important">Required for minors under 18</small>
+                                            )}
+                                        </div>
+
+                                        {/* Remark field */}
+                                        <div className="form-group">
+                                            <label>Remark</label>
+                                            <input
+                                                type="text"
+                                                value={nominee.remark || ''}
+                                                onChange={(e) => handleInputChange(index, 'remark', e.target.value)}
+                                                placeholder="Enter remarks if any"
+                                                className={formErrors[`remark-${index}`] ? 'input-error' : ''}
+                                            />
+                                            {formErrors[`remark-${index}`] && (
+                                                <span className="error-message">{formErrors[`remark-${index}`]}</span>
+                                            )}
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label>Proof Document {isMinor && <span className="required">*</span>}</label>
+                                            <div className="file-upload-container">
+                                                <label className={`file-upload-label ${formErrors[`proofFile-${index}`] ? 'input-error' : ''}`}>
+                                                    {nominee.proofFileName || 'Choose file'}
+                                                    <input
+                                                        type="file"
+                                                        onChange={(e) => handleFileUpload(index, e.target.files[0])}
+                                                        accept=".pdf,.jpg,.jpeg,.png"
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                </label>
+                                                {nominee.proofFile && (
+                                                    <button
+                                                        className="remove-file-button"
+                                                        onClick={() => {
+                                                            const updatedNominees = [...nominees];
+                                                            updatedNominees[index] = {
+                                                                ...updatedNominees[index],
+                                                                proofFile: null,
+                                                                proofFileName: ''
+                                                            };
+                                                            setNominees(updatedNominees);
+                                                        }}
+                                                    >
+                                                        <FontAwesomeIcon icon={faTimes} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div className="file-messages-container">
+                                                {formErrors[`proofFile-${index}`] && (
+                                                    <span className="error-message">{formErrors[`proofFile-${index}`]}</span>
+                                                )}
+                                                {isMinor && !formErrors[`proofFile-${index}`] && (
+                                                    <small className="helper-text important">Required for minors under 18</small>
+                                                )}
+                                                <small className="helper-text">Accepts PDF, JPG, PNG (Max 2MB)</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
-                )}
-
-                <div className="nominee-form-container">
-                    {nominees.map((nominee, index) => {
-                        const isMinor = calculateAge(nominee.dob) < 18;
-                        return (
-                            <div key={index} className="nominee-form-section">
-                                <div className="nominee-form-header">
-                                    <h4>Nominee {index + 1}</h4>
-                                    {nominees.length > 1 && (
-                                        <button
-                                            className="delete-nominee-button"
-                                            onClick={() => handleDeleteNominee(nominee, index)}
-                                            title="Remove nominee"
-                                        >
-                                            <FontAwesomeIcon icon={faTrashAlt} />
-                                        </button>
-                                    )}
-                                </div>
-
-                                <div className="nominee-fields-grid">
-                                    <div className="form-group">
-                                        <label>Name<span className="required">*</span></label>
-                                        <input
-                                            type="text"
-                                            value={nominee.name || ''}
-                                            onChange={(e) => handleInputChange(index, 'name', e.target.value)}
-                                            placeholder="Enter nominee name"
-                                            className={formErrors[`name-${index}`] ? 'input-error' : ''}
-                                        />
-                                        {formErrors[`name-${index}`] && (
-                                            <span className="error-message">{formErrors[`name-${index}`]}</span>
-                                        )}
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label>Relation<span className="required">*</span></label>
-                                        <input
-                                            type="text"
-                                            value={nominee.relation || ''}
-                                            onChange={(e) => handleInputChange(index, 'relation', e.target.value)}
-                                            placeholder="Enter relation"
-                                            className={formErrors[`relation-${index}`] ? 'input-error' : ''}
-                                        />
-                                        {formErrors[`relation-${index}`] && (
-                                            <span className="error-message">{formErrors[`relation-${index}`]}</span>
-                                        )}
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label>Date of Birth<span className="required">*</span></label>
-                                        <input
-                                            type="date"
-                                            value={nominee.dob || ''}
-                                            onChange={(e) => handleInputChange(index, 'dob', e.target.value)}
-                                            max={new Date().toISOString().split('T')[0]} // Prevent future dates
-                                            className={formErrors[`dob-${index}`] ? 'input-error' : ''}
-                                        />
-                                        {formErrors[`dob-${index}`] && (
-                                            <span className="error-message">{formErrors[`dob-${index}`]}</span>
-                                        )}
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label>Percentage<span className="required">*</span></label>
-                                        <div className="percentage-input-container">                                                <input
-                                            type="number"
-                                            min="0"
-                                            max="100"
-                                            step="1"
-                                            value={Math.round(nominee.percentage) || 0}
-                                            onChange={(e) => handleInputChange(index, 'percentage', e.target.value)}
-                                            className={formErrors[`percentage-${index}`] ? 'input-error' : ''}
-                                        />
-                                            <span className="percentage-symbol">%</span>
-                                        </div>
-                                        {formErrors[`percentage-${index}`] && (
-                                            <span className="error-message">{formErrors[`percentage-${index}`]}</span>
-                                        )}
-                                        {nominees.length === 2 && (
-                                            <small className="helper-text">Adjusting this will update the other nominee's percentage</small>
-                                        )}
-                                    </div>
-
-                                    {/* Modified proof ID field */}
-                                    <div className="form-group">
-                                        <label>Proof ID {isMinor && <span className="required">*</span>}</label>
-                                        <input
-                                            type="text"
-                                            value={nominee.proofId || ''}
-                                            onChange={(e) => handleInputChange(index, 'proofId', e.target.value)}
-                                            placeholder="Enter proof ID (Aadhar, etc.)"
-                                            className={formErrors[`proofId-${index}`] ? 'input-error' : ''}
-                                        />
-                                        {formErrors[`proofId-${index}`] ? (
-                                            <span className="error-message">{formErrors[`proofId-${index}`]}</span>
-                                        ) : (
-                                            isMinor && <small className="helper-text important">Required for minors under 18</small>
-                                        )}
-                                    </div>
-
-                                    {/* Remark field */}
-                                    <div className="form-group">
-                                        <label>Remark</label>
-                                        <input
-                                            type="text"
-                                            value={nominee.remark || ''}
-                                            onChange={(e) => handleInputChange(index, 'remark', e.target.value)}
-                                            placeholder="Enter remarks if any"
-                                            className={formErrors[`remark-${index}`] ? 'input-error' : ''}
-                                        />
-                                        {formErrors[`remark-${index}`] && (
-                                            <span className="error-message">{formErrors[`remark-${index}`]}</span>
-                                        )}
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label>Proof Document {isMinor && <span className="required">*</span>}</label>
-                                        <div className="file-upload-container">
-                                            <label className={`file-upload-label ${formErrors[`proofFile-${index}`] ? 'input-error' : ''}`}>
-                                                {nominee.proofFileName || 'Choose file'}
-                                                <input
-                                                    type="file"
-                                                    onChange={(e) => handleFileUpload(index, e.target.files[0])}
-                                                    accept=".pdf,.jpg,.jpeg,.png"
-                                                    style={{ display: 'none' }}
-                                                />
-                                            </label>
-                                            {nominee.proofFile && (
-                                                <button
-                                                    className="remove-file-button"
-                                                    onClick={() => {
-                                                        const updatedNominees = [...nominees];
-                                                        updatedNominees[index] = {
-                                                            ...updatedNominees[index],
-                                                            proofFile: null,
-                                                            proofFileName: ''
-                                                        };
-                                                        setNominees(updatedNominees);
-                                                    }}
-                                                >
-                                                    <FontAwesomeIcon icon={faTimes} />
-                                                </button>
-                                            )}
-                                        </div>
-                                        <div className="file-messages-container">
-                                            {formErrors[`proofFile-${index}`] && (
-                                                <span className="error-message">{formErrors[`proofFile-${index}`]}</span>
-                                            )}
-                                            {isMinor && !formErrors[`proofFile-${index}`] && (
-                                                <small className="helper-text important">Required for minors under 18</small>
-                                            )}
-                                            <small className="helper-text">Accepts PDF, JPG, PNG (Max 2MB)</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
                 </div>
 
-                <div className="nominee-modal-footer">
-                    <div className="button-group">
-                        <button
-                            className="add-nominee-button"
-                            onClick={handleAddNominee}
-                            disabled={nominees.length >= 2 || isSubmitting}
-                        >
-                            Add Another Nominee
-                        </button>
-
-                        <button
-                            className="save-nominees-button"
-                            onClick={handleSaveAll}
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? 'Saving...' : 'Save Nominees'}
-                        </button>
-                    </div>
+                {/* Footer */}
+                <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
+                    <button
+                        onClick={onClose}
+                        className="px-6 py-2.5 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleSaveAll}
+                        className="px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 font-medium transform hover:scale-105"
+                    >
+                        {isSubmitting ? 'Saving...' : 'Save Nominees'}
+                    </button>
                 </div>
             </div>
         </div>
