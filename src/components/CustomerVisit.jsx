@@ -1,23 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFingerprint, faUser, faArrowsRotate, faCamera, faCheck, faTimes, faLock, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
+import { faFingerprint, faUser, faArrowsRotate, faCamera, faCheck, faTimes, faLock, faInfoCircle, faHistory, faIdCard, faMapMarkerAlt, faPhone, faEnvelope, faKey, faHashtag } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
-
-const mockCustomerData = {
-    firstName: 'John',
-    lastName: 'Doe',
-    customerId: 'CUS123456',
-    customerType: 'PRIMARY',
-    mobileNo: '+91 98765 43210',
-    email: 'john.doe@example.com',
-    panNo: 'ABCDE1234F',
-    lockerNo: 'L001',
-    lockerKey: 'KEY001',
-    address: '123 Main Street, Sector 1',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    photo: 'https://randomuser.me/api/portraits/men/1.jpg'
-};
+import axios from 'axios';
+import { API_URL } from '../assets/config';
 
 const CustomerVisit = () => {
     const [isScanning, setIsScanning] = useState(false);
@@ -25,23 +11,134 @@ const CustomerVisit = () => {
     const [visitPhoto, setVisitPhoto] = useState(null);
     const [loading, setLoading] = useState(false);
     const [showPhotoModal, setShowPhotoModal] = useState(false);
+    const [visitHistory, setVisitHistory] = useState([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
+
+    // Fetch customer details by ID
+    const fetchCustomerDetails = async (customerId) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.get(
+                `https://newuat.support-backend.onefin.app/customers/details-by-id?customer_id=${customerId}`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                }
+            );
+
+            if (response.data?.status_code === 200 && response.data?.data) {
+                const customerInfo = response.data.data;
+                return {
+                    customerId: customerInfo.customer_id,
+                    memberCode: customerInfo.member_id,
+                    firstName: customerInfo.first_name,
+                    lastName: customerInfo.last_name,
+                    middleName: customerInfo.middle_name,
+                    name: customerInfo.name,
+                    customerType: customerInfo.type?.toUpperCase() || 'PRIMARY',
+                    mobileNo: customerInfo.mobile_number,
+                    email: customerInfo.email,
+                    panNo: customerInfo.pan,
+                    lockerNo: customerInfo.locker_number,
+                    lockerId: customerInfo.locker_id,
+                    lockerKey: customerInfo.locker_id,
+                    address: customerInfo.address,
+                    city: customerInfo.city,
+                    state: customerInfo.state,
+                    photo: customerInfo.profile_img,
+                    dob: customerInfo.dob,
+                    gender: customerInfo.gender,
+                    aadhar: customerInfo.aadhar,
+                    guardian: customerInfo.guardian
+                };
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching customer details:', error);
+            throw error;
+        }
+    };
+
+    // Fetch customer visit history
+    const fetchCustomerVisitHistory = async (customerId) => {
+        if (!customerId) return;
+
+        setHistoryLoading(true);
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.get(
+                `http://localhost:3000/customers/visits/${customerId}?page=1&limit=10`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                }
+            );
+
+            if (response.data?.status_code === 200 && response.data?.data?.visits) {
+                const formattedHistory = response.data.data.visits.map(visit => ({
+                    visit_id: visit.visit_id,
+                    accessedBy: customerData?.name || `${customerData?.firstName} ${customerData?.lastName}` || 'Customer',
+                    customerType: customerData?.customerType,
+                    time: new Date(visit.entry_time).toLocaleTimeString('en-US',
+                        {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        }),
+                    date: new Date(visit.visit_date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    }),
+                    purpose: visit.locker_number ? `Locker ${visit.locker_number}` : 'Locker Access',
+                    duration: visit.duration_minutes ? `${visit.duration_minutes} min` : visit.exit_time ? 'Completed' : 'In Progress',
+                    status: visit.exit_time ? 'COMPLETED' : 'IN_PROGRESS',
+                    authenticated_by: visit.authenticated_by
+                }));
+                setVisitHistory(formattedHistory);
+            }
+        } catch (error) {
+            console.error('Error fetching visit history:', error);
+            toast.error('Failed to fetch visit history');
+        } finally {
+            setHistoryLoading(false);
+        }
+    };
 
     const handleScanFingerprint = async () => {
         try {
             setIsScanning(true);
-            // Simulate API call
+            // Simulate biometric authentication
             await new Promise(resolve => setTimeout(resolve, 2000));
-            setCustomerData(mockCustomerData);
-            toast.success("Customer identified successfully");
+
+            // For demo purposes, using customer ID 1
+            // In real implementation, this would come from biometric authentication
+            const mockCustomerId = 1;
+
+            const customerDetails = await fetchCustomerDetails(mockCustomerId);
+            if (customerDetails) {
+                setCustomerData(customerDetails);
+                toast.success("Customer identified successfully");
+
+                // Fetch visit history after successful authentication
+                await fetchCustomerVisitHistory(mockCustomerId);
+            } else {
+                toast.error("Customer not found");
+            }
         } catch (error) {
             console.error('Error during fingerprint identification:', error);
             toast.error(`Identification failed: ${error.message || 'Unknown error'}`);
         } finally {
             setIsScanning(false);
         }
-    }; const startCamera = async () => {
+    };
+    const startCamera = async () => {
         try {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 toast.error('Webcam not supported on this browser.');
@@ -50,8 +147,9 @@ const CustomerVisit = () => {
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: 'user',
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
+                    width: { ideal: 1280, max: 1920 },
+                    height: { ideal: 720, max: 1080 },
+                    aspectRatio: { ideal: 16 / 9 }
                 }
             });
             if (videoRef.current) {
@@ -81,7 +179,8 @@ const CustomerVisit = () => {
                 stream.getTracks().forEach(track => track.stop());
             }
         }
-    }; const handleAccessVaultClick = () => {
+    };
+    const handleAccessVaultClick = () => {
         setShowPhotoModal(true);
         startCamera();
     };
@@ -92,6 +191,7 @@ const CustomerVisit = () => {
             await new Promise(resolve => setTimeout(resolve, 1500));
             toast.success("Visit recorded successfully. You may now access the vault.");
             setLoading(false);
+            setShowPhotoModal(false);
         } catch (error) {
             console.error('Error recording visit:', error);
             toast.error(`Failed to record visit: ${error.message || 'Unknown error'}`);
@@ -105,303 +205,322 @@ const CustomerVisit = () => {
         setShowPhotoModal(false);
         setIsScanning(false);
         setLoading(false);
-        toast.info("Reset successful");
+        setVisitHistory([]); // Clear visit history on reset
+        // toast.info("Reset successful");
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-6xl mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="flex flex-col gap-6">
-                        {/* Biometric Scan Section - Always Visible */}
-                        <div className="bg-white rounded-lg shadow-lg p-6">
-                            <div className="mx-auto">
-                                <div className={`relative rounded-lg p-6 ${isScanning ? 'bg-blue-50' : 'bg-gray-50'}`}>
-                                    <div className="mb-4">
-                                        <FontAwesomeIcon
-                                            icon={faFingerprint}
-                                            className={`text-5xl ${isScanning ? 'text-blue-500 animate-pulse' : 'text-gray-400'}`}
-                                        />
+        <div className="min-h-screen bg-gray-50 py-4">
+            <div className="max-w-6xl mx-auto px-4">
+                {/* Header */}
+                <div className="mb-6">
+
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                    {/* Left Column - Biometric & History */}
+                    <div className="xl:col-span-1 space-y-4">
+                        {/* Biometric Scan Section */}
+                        <div className="bg-white rounded-lg border border-blue-100 shadow-lg shadow-blue-100/30 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-blue-100/40 hover:-translate-y-1">
+                            <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 border-b border-blue-200">
+                                <h2 className="text-sm font-semibold text-gray-900 flex items-center">
+                                    <FontAwesomeIcon icon={faFingerprint} className="mr-2 w-4 h-4 text-blue-600" />
+                                    Biometric Scanner
+                                </h2>
+                            </div>
+                            <div className="p-4">
+                                <div className={`relative rounded-lg p-4 text-center transition-all duration-300 ${isScanning
+                                    ? 'bg-blue-50 border border-blue-200'
+                                    : 'bg-gray-50 border border-gray-200'
+                                    }`}>
+                                    <div className="mb-3">
+                                        <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full mb-2 transition-all duration-300 ${isScanning ? 'bg-blue-100 animate-pulse' : 'bg-gray-100'
+                                            }`}>
+                                            <FontAwesomeIcon
+                                                icon={faFingerprint}
+                                                className={`text-lg transition-all duration-300 ${isScanning ? 'text-blue-600 animate-pulse' : 'text-gray-400'}`}
+                                            />
+                                        </div>
                                     </div>
-                                    <h2 className="text-xl font-semibold mb-3">
-                                        {isScanning ? 'Scanning...' : 'Ready to Scan'}
-                                    </h2>
-                                    <p className="text-sm text-gray-600 mb-4">
+                                    <h3 className={`text-sm font-medium mb-2 transition-all duration-300 ${isScanning ? 'text-blue-800' : 'text-gray-700'}`}>
+                                        {isScanning ? 'Scanning...' : 'Ready to Authenticate'}
+                                    </h3>
+                                    <p className="text-xs text-gray-600 mb-3 leading-relaxed">
                                         {isScanning
-                                            ? 'Please keep your finger on the scanner'
-                                            : 'Place your finger on the scanner to verify your identity'
+                                            ? 'Keep your finger steady on the scanner'
+                                            : 'Place your finger on the biometric scanner'
                                         }
                                     </p>
-                                    <div className="space-y-3">
+                                    <div className="space-y-2">
                                         <button
                                             onClick={handleScanFingerprint}
                                             disabled={isScanning}
-                                            className={`w-full py-2.5 px-4 rounded-lg font-medium transition-colors text-sm
-                                                ${isScanning
-                                                    ? 'bg-blue-100 text-blue-400 cursor-not-allowed'
-                                                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                                            className={`w-full py-2 px-3 rounded text-sm font-medium transition-all duration-200 ${isScanning
+                                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transform hover:scale-105'
                                                 }`}
                                         >
-                                            {isScanning ? 'Scanning...' : 'Start Scan'}
+                                            {isScanning ? (
+                                                <div className="flex items-center justify-center">
+                                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-400 mr-2"></div>
+                                                    Authenticating...
+                                                </div>
+                                            ) : (
+                                                'Start Authentication'
+                                            )}
                                         </button>
                                         <button
                                             onClick={handleReset}
-                                            className="w-full py-2.5 px-4 rounded-lg font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors text-sm"
+                                            className="w-full py-2 px-3 rounded text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-200 transform hover:scale-105"
                                         >
-                                            <FontAwesomeIcon icon={faArrowsRotate} className="mr-2" />
-                                            Reset
+                                            <FontAwesomeIcon icon={faArrowsRotate} className="mr-2 w-3 h-3" />
+                                            Reset Session
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        {/* Access History Block */}
-                        <div className="bg-white rounded-lg shadow-lg flex-1 relative">
-                            <div className="flex items-center px-4 py-3 bg-green-50 border-b border-green-300">
-                                <div className="flex items-center">
-                                    <FontAwesomeIcon icon={faLock} className="text-green-800 w-4 h-4" />
-                                    <h3 className="text-sm font-semibold text-green-800 ml-2">Access History</h3>
-                                </div>
+
+                        {/* Access History */}
+                        <div className="bg-white rounded-lg border border-blue-100 shadow-lg shadow-blue-100/30 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-blue-100/40 hover:-translate-y-1">
+                            <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 border-b border-blue-200">
+                                <h3 className="text-sm font-semibold text-gray-900 flex items-center">
+                                    <FontAwesomeIcon icon={faHistory} className="mr-2 w-4 h-4 text-blue-600" />
+                                    Recent Access History
+                                    {historyLoading && (
+                                        <div className="ml-2 animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                                    )}
+                                </h3>
                             </div>
-                            <div className="overflow-y-auto overflow-x-hidden scrollbar-hide" style={{ maxHeight: '400px', minHeight: '300px' }}>
-                                {[
-                                    {
-                                        date: '2025-06-01',
-                                        time: '2:30 PM',
-                                        purpose: 'Document Update',
-                                        accessedBy: 'John Doe',
-                                        customerType: 'PRIMARY',
-                                        lockerAccessed: 'L001',
-                                        duration: '15 mins'
-                                    },
-                                    {
-                                        date: '2025-05-28',
-                                        time: '11:15 AM',
-                                        purpose: 'Locker Access',
-                                        accessedBy: 'John Doe',
-                                        customerType: 'PRIMARY',
-                                        lockerAccessed: 'L001',
-                                        duration: '20 mins'
-                                    },
-                                    {
-                                        date: '2025-05-20',
-                                        time: '4:45 PM',
-                                        purpose: 'Locker Access',
-                                        accessedBy: 'Sarah Smith',
-                                        customerType: 'NOMINEE',
-                                        lockerAccessed: 'L001',
-                                        duration: '25 mins'
-                                    },
-                                    {
-                                        date: '2025-05-20',
-                                        time: '4:45 PM',
-                                        purpose: 'Locker Access',
-                                        accessedBy: 'Sarah Smith',
-                                        customerType: 'NOMINEE',
-                                        lockerAccessed: 'L001',
-                                        duration: '25 mins'
-                                    },
-                                    {
-                                        date: '2025-05-20',
-                                        time: '4:45 PM',
-                                        purpose: 'Locker Access',
-                                        accessedBy: 'Sarah Smith',
-                                        customerType: 'NOMINEE',
-                                        lockerAccessed: 'L001',
-                                        duration: '25 mins'
-                                    },
-                                    {
-                                        date: '2025-05-20',
-                                        time: '4:45 PM',
-                                        purpose: 'Locker Access',
-                                        accessedBy: 'Sarah Smith',
-                                        customerType: 'NOMINEE',
-                                        lockerAccessed: 'L001',
-                                        duration: '25 mins'
-                                    },
-                                    {
-                                        date: '2025-05-20',
-                                        time: '4:45 PM',
-                                        purpose: 'Locker Access',
-                                        accessedBy: 'Sarah Smith',
-                                        customerType: 'NOMINEE',
-                                        lockerAccessed: 'L001',
-                                        duration: '25 mins'
-                                    },
-                                    {
-                                        date: '2025-05-20',
-                                        time: '4:45 PM',
-                                        purpose: 'Locker Access',
-                                        accessedBy: 'Sarah Smith',
-                                        customerType: 'NOMINEE',
-                                        lockerAccessed: 'L001',
-                                        duration: '25 mins'
-                                    },
-                                    {
-                                        date: '2025-05-20',
-                                        time: '4:45 PM',
-                                        purpose: 'Locker Access',
-                                        accessedBy: 'Sarah Smith',
-                                        customerType: 'NOMINEE',
-                                        lockerAccessed: 'L001',
-                                        duration: '25 mins'
-                                    },
-                                    {
-                                        date: '2025-05-20',
-                                        time: '4:45 PM',
-                                        purpose: 'Locker Access',
-                                        accessedBy: 'Sarah Smith',
-                                        customerType: 'NOMINEE',
-                                        lockerAccessed: 'L001',
-                                        duration: '25 mins'
-                                    }
-                                ].map((access, index) => (
-                                    <div key={index}
-                                        className="px-4 py-2.5 border-b border-green-100 hover:bg-green-50/50 transition-colors"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-600 to-green-500 flex items-center justify-center text-white text-sm font-semibold shadow-sm">
+                            <div className="max-h-64 overflow-y-auto">
+                                {visitHistory.length > 0 ? (
+                                    visitHistory.map((access, index) => (
+                                        <div key={access.visit_id || index} className="p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                                            <div className="flex items-center space-x-3">
+                                                <div className="w-7 h-7 rounded-full bg-gray-600 flex items-center justify-center text-white font-medium text-xs">
                                                     {access.accessedBy.split(' ').map(n => n[0]).join('')}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="text-sm font-medium text-gray-800 truncate">
-                                                            {access.accessedBy}
-                                                        </p>
-                                                        <span className="px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded-full">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <h4 className="font-medium text-gray-900 truncate text-xs">{access.accessedBy}</h4>
+                                                        <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${access.customerType === 'PRIMARY'
+                                                            ? 'bg-blue-100 text-blue-700'
+                                                            : 'bg-gray-100 text-gray-700'
+                                                            }`}>
                                                             {access.customerType}
                                                         </span>
+                                                        <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${access.status === 'COMPLETED'
+                                                            ? 'bg-green-100 text-green-700'
+                                                            : 'bg-yellow-100 text-yellow-700'
+                                                            }`}>
+                                                            {access.status === 'COMPLETED' ? 'Done' : 'Active'}
+                                                        </span>
                                                     </div>
-                                                    <div className="flex items-center gap-2 text-xs mt-0.5">
-                                                        <span className="text-green-700">{access.time}</span>
-                                                        <span className="text-gray-400">•</span>
-                                                        <span className="text-gray-500">{access.date}</span>
-                                                        <span className="text-gray-400">•</span>
-                                                        <span className="text-gray-600">{access.purpose}</span>
+                                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                        <span className="font-medium">{access.time}</span>
+                                                        <span>•</span>
+                                                        <span>{access.date}</span>
+                                                        <span>•</span>
+                                                        <span>{access.purpose}</span>
+                                                    </div>
+                                                    <div className="text-xs text-gray-400 mt-0.5">
+                                                        Duration: {access.duration} | Auth: {access.authenticated_by}
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center">
-                                                <span className="text-xs text-green-600 font-medium">
-                                                    {access.duration}
-                                                </span>
-                                            </div>
+                                        </div>
+                                    ))
+                                ) : customerData && !historyLoading ? (
+                                    <div className="p-4 text-center text-gray-500">
+                                        <FontAwesomeIcon icon={faHistory} className="w-8 h-8 text-gray-300 mb-2" />
+                                        <p className="text-sm">No recent visits found</p>
+                                    </div>
+                                ) : !customerData ? (
+                                    <div className="p-4 text-center text-gray-500">
+                                        <FontAwesomeIcon icon={faInfoCircle} className="w-6 h-6 text-gray-300 mb-2" />
+                                        <p className="text-sm">Authenticate to view access history</p>
+                                    </div>
+                                ) : (
+                                    <div className="p-4 text-center">
+                                        <div className="animate-pulse space-y-2">
+                                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                                         </div>
                                     </div>
-                                ))}
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Customer Details Section */}
-                    <div className="bg-white rounded-lg shadow-lg p-8">
-                        {customerData ? (
-                            <div>                                <div className="text-center mb-6">
-                                <div className="mb-3">
-                                    <div className="inline-flex items-center justify-center w-15 h-15 rounded-full bg-green-100">
-                                        <FontAwesomeIcon icon={faCheck} className="text-green-600 text-3xl" />
+                    {/* Right Column - Customer Details */}
+                    <div className="xl:col-span-2">
+                        <div className="bg-white rounded-lg border border-blue-100 shadow-lg shadow-blue-100/30 h-full transition-all duration-300 hover:shadow-xl hover:shadow-blue-100/40 hover:-translate-y-1">
+
+                            {customerData ? (
+                                <div className="p-6">
+                                    {/* Success Header */}
+                                    <div className="text-center mb-6">
+                                        <div className="inline-flex items-center justify-center w-10 h-10 bg-green-100 rounded-full mb-3">
+                                            <FontAwesomeIcon icon={faCheck} className="text-green-600 w-5 h-5" />
+                                        </div>
+                                        <h2 className="text-lg font-semibold text-gray-900 mb-1">Authentication Successful</h2>
+                                        <p className="text-green-600 font-medium text-sm">Customer verified and authorized for vault access</p>
                                     </div>
-                                </div>
-                                <h2 className="text-2xl font-bold text-green-700">Authentication Successful</h2>
-                                <p className="text-sm font-bold text-green-600 mt-2">Customer verified successfully</p>
-                            </div><div className="space-y-6">
-                                    <div className="flex items-start space-x-6 mb-6">
-                                        <div className="flex-shrink-0">
-                                            {customerData.photo ? (
-                                                <img
-                                                    src={customerData.photo}
-                                                    alt="Customer"
-                                                    className="w-24 h-24 rounded-lg object-cover border-2 border-gray-200"
-                                                />
-                                            ) : (
-                                                <div className="w-24 h-24 rounded-lg bg-gray-200 flex items-center justify-center">
-                                                    <FontAwesomeIcon icon={faUser} className="text-3xl text-gray-400" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex-grow">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <h3 className="text-2xl text-blue-800">
-                                                    {`${customerData.firstName} ${customerData.lastName}`}
-                                                </h3>
-                                                <span className="px-2 py-1 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold">
-                                                    {customerData.customerType}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>                                <div className="bg-blue-50 rounded-lg p-4">
-                                        <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                                            <div className="col-span-2">
-                                                <div className="flex items-center justify-between bg-blue-100 rounded-md px-3 py-2">
-                                                    <span className="text-sm font-semibold text-blue-800">LOCKER DETAILS</span>
-                                                    <FontAwesomeIcon icon={faLock} className="text-blue-600" />
+
+                                    {/* Customer Profile */}
+                                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-6 border border-blue-200 shadow-md shadow-blue-100/40 transition-all duration-300 hover:shadow-lg hover:shadow-blue-100/50">
+                                        <div className="flex items-start space-x-4">
+                                            <div className="flex-shrink-0">
+                                                {customerData.photo ? (
+                                                    <img
+                                                        src={customerData.photo}
+                                                        alt="Customer"
+                                                        className="w-14 h-14 rounded-lg object-cover border border-gray-200"
+                                                        onError={(e) => {
+                                                            e.target.style.display = 'none';
+                                                            e.target.nextSibling.style.display = 'flex';
+                                                        }}
+                                                    />
+                                                ) : null}
+                                                <div className="w-14 h-14 rounded-lg bg-gray-300 flex items-center justify-center border border-gray-200" style={{ display: customerData.photo ? 'none' : 'flex' }}>
+                                                    <FontAwesomeIcon icon={faUser} className="text-lg text-gray-500" />
                                                 </div>
                                             </div>
-                                            <div className="flex justify-between items-center px-3">
-                                                <span className="text-xs font-medium text-gray-500">LOCKER No:</span>
-                                                <span className="text-sm font-semibold text-blue-800">{customerData.lockerNo}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center px-3">
-                                                <span className="text-xs font-medium text-gray-500">KEY ID</span>
-                                                <span className="text-sm font-semibold text-blue-800">{customerData.lockerKey}</span>
-                                            </div>
-                                            <div className="col-span-2 mt-2">
-                                                <div className="flex items-center justify-between bg-blue-100 rounded-md px-3 py-2">
-                                                    <span className="text-sm font-semibold text-blue-800">CONTACT & ADDRESS</span>
-                                                    <FontAwesomeIcon icon={faUser} className="text-blue-600" />
+                                            <div className="flex-grow">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <h3 className="text-lg font-semibold text-gray-900">
+                                                        {customerData.name || `${customerData.firstName} ${customerData.lastName}`}
+                                                    </h3>
+                                                    <span className={`px-2 py-1 rounded text-xs font-medium ${customerData.customerType === 'PRIMARY'
+                                                        ? 'bg-blue-100 text-blue-700'
+                                                        : 'bg-gray-100 text-gray-700'
+                                                        }`}>
+                                                        {customerData.customerType}
+                                                    </span>
                                                 </div>
-                                            </div>                                            <div className="col-span-2">
-                                                <div className="grid grid-cols-2 gap-4 px-3">
-                                                    <div>
-                                                        <span className="text-xs font-medium text-gray-500 block mb-1">EMAIL</span>
-                                                        <span className="text-sm text-blue-800">{customerData.email}</span>
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-xs font-medium text-gray-500 block mb-1">PHONE</span>
-                                                        <span className="text-sm text-blue-800">{customerData.mobileNo}</span>
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-xs font-medium text-gray-500 block mb-1">CITY</span>
-                                                        <span className="text-sm text-blue-800">{customerData.city}</span>
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-xs font-medium text-gray-500 block mb-1">STATE</span>
-                                                        <span className="text-sm text-blue-800">{customerData.state}</span>
-                                                    </div>
-                                                    <div className="col-span-2">
-                                                        <span className="text-xs font-medium text-gray-500 block mb-1">ADDRESS</span>
-                                                        <span className="text-sm text-blue-800">{customerData.address}</span>
-                                                    </div>
-                                                </div>                                            </div>
+                                                <div className="text-sm text-gray-600 space-y-1">
+                                                    <p><span className="font-medium text-gray-400">Member ID:</span> {customerData.memberCode}</p>
+                                                    <p><span className="font-medium text-gray-400">Customer ID:</span> {customerData.customerId}</p>
+                                                    <p><span className="font-medium text-gray-400">PAN:</span> {customerData.panNo}</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <button
-                                        onClick={handleAccessVaultClick}
-                                        className="w-full py-3 px-4 rounded-lg font-medium bg-green-600 text-white hover:bg-green-700 transition-colors cursor-pointer"
-                                        disabled={loading}
-                                    >
-                                        <FontAwesomeIcon icon={faLock} className="mr-2" />
-                                        Access Vault
-                                    </button>
+                                    {/* Unified Details Section with Blue Shadow */}
+                                    <div className="bg-white rounded-lg p-6 mb-6 border border-blue-200 shadow-xl shadow-blue-100/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-200/60 hover:-translate-y-1">
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                            {/* Locker Information */}
+                                            <div>
+                                                <div className="flex items-center mb-4">
+                                                    <div className="w-6 h-6 bg-blue-400 rounded-lg flex items-center justify-center mr-3">
+                                                        <FontAwesomeIcon icon={faLock} className="text-white w-3 h-3" />
+                                                    </div>
+                                                    <h4 className="text-lg font-semibold text-gray-900">Locker Details</h4>
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <div className="flex items-center py-2 border-b border-gray-100">
+                                                        <FontAwesomeIcon icon={faHashtag} className="text-blue-600 w-3 h-3 mr-3" />
+                                                        <span className="text-sm font-medium text-gray-600 flex-1">Locker Number</span>
+                                                        <span className="font-semibold text-gray-900 text-sm">{customerData.lockerNo}</span>
+                                                    </div>
+                                                    <div className="flex items-center py-2 border-b border-gray-100">
+                                                        <FontAwesomeIcon icon={faKey} className="text-blue-600 w-3 h-3 mr-3" />
+                                                        <span className="text-sm font-medium text-gray-600 flex-1">Locker Key</span>
+                                                        <span className="font-semibold text-gray-900 text-sm">{customerData.lockerKey}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Contact Information */}
+                                            <div>
+                                                <div className="flex items-center mb-4">
+                                                    <div className="w-6 h-6 bg-blue-400 rounded-lg flex items-center justify-center mr-3">
+                                                        <FontAwesomeIcon icon={faIdCard} className="text-white w-4 h-4" />
+                                                    </div>
+                                                    <h4 className="text-lg font-semibold text-gray-900">Contact Details</h4>
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <div className="flex items-center space-x-3">
+                                                        <FontAwesomeIcon icon={faPhone} className="text-blue-600 w-3 h-3" />
+                                                        <span className="text-xs font-medium text-gray-500 min-w-[60px]">Phone:</span>
+                                                        <span className="text-sm text-gray-900">{customerData.mobileNo}</span>
+                                                    </div>
+                                                    <div className="flex items-center space-x-3">
+                                                        <FontAwesomeIcon icon={faEnvelope} className="text-blue-600 w-3 h-3" />
+                                                        <span className="text-xs font-medium text-gray-500 min-w-[60px]">Email:</span>
+                                                        <span className="text-sm text-gray-900">{customerData.email}</span>
+                                                    </div>
+                                                    <div className="flex items-start space-x-3">
+                                                        <FontAwesomeIcon icon={faMapMarkerAlt} className="text-blue-600 w-3 h-3 mt-0.5" />
+                                                        <div className="flex-1">
+                                                            <div className="text-sm text-gray-900 space-y-1">
+                                                                <div className="flex">
+                                                                    <span className="text-xs font-medium text-gray-500 min-w-[60px]">Address:</span>
+                                                                    <span className="ml-2">{customerData.address}</span>
+                                                                </div>
+                                                                <div className="flex">
+                                                                    <span className="text-xs font-medium text-gray-500 min-w-[60px]">City:</span>
+                                                                    <span className="ml-2">{customerData.city}</span>
+                                                                </div>
+                                                                <div className="flex">
+                                                                    <span className="text-xs font-medium text-gray-500 min-w-[60px]">State:</span>
+                                                                    <span className="ml-2">{customerData.state}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Access Button */}
+                                    <div className="text-center">
+                                        <button
+                                            onClick={handleAccessVaultClick}
+                                            disabled={loading}
+                                            className="inline-flex items-center px-6 py-2.5 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm"
+                                        >
+                                            <FontAwesomeIcon icon={faLock} className="mr-2 w-4 h-4" />
+                                            {loading ? 'Processing...' : 'Access Vault'}
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="text-center py-12">
-                                <FontAwesomeIcon icon={faUser} className="text-6xl text-gray-300 mb-4" />
-                                <h3 className="text-xl font-medium text-gray-600">No Customer Selected</h3>
-                                <p className="text-gray-500 mt-2">Please scan fingerprint to view customer details</p>
-                            </div>
-                        )}
+                            ) : (
+                                /* No Customer State */
+                                <div className="flex items-center justify-center h-full p-6">
+                                    <div className="text-center max-w-md">
+                                        <div className="w-14 h-14 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <FontAwesomeIcon icon={faUser} className="text-xl text-gray-400" />
+                                        </div>
+                                        <h3 className="text-lg font-semibold text-gray-700 mb-2">No Customer Authenticated</h3>
+                                        <p className="text-gray-500 text-sm leading-relaxed">
+                                            Please use the biometric scanner to authenticate and view customer details.
+                                        </p>
+                                        <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
+                                            <div className="flex items-center justify-center text-blue-700">
+                                                <FontAwesomeIcon icon={faInfoCircle} className="mr-2 w-4 h-4" />
+                                                <span className="text-sm font-medium">Secure authentication required</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>            {/* Photo Capture Modal */}
+            </div>
+
+            {/* Photo Capture Modal */}
             {showPhotoModal && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-8 max-w-4xl  mx-4">
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+                    <div className=" bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 max-w-2xl w-full mx-4 shadow-2xl shadow-blue-500/20 transform transition-all duration-300 animate-scale-in">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-semibold">Capture Image</h3>
+                            <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                                <FontAwesomeIcon icon={faCamera} className="mr-3 w-5 h-5 text-blue-600" />
+                                Capture Visit Photo
+                            </h3>
                             <button
                                 onClick={() => {
                                     setShowPhotoModal(false);
@@ -410,59 +529,73 @@ const CustomerVisit = () => {
                                         stream.getTracks().forEach(track => track.stop());
                                     }
                                 }}
-                                className="text-gray-500 hover:text-gray-700"
+                                className="w-8 h-8 cursor-pointer rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center transition-all duration-300 transform hover:scale-110 border border-red-200"
                             >
-                                <FontAwesomeIcon className='text-gray-500 text-2xl cursor-pointer hover:text-red-700 hover:scale-110 transition-transform duration-200'
-                                    icon={faTimes} />
+                                <FontAwesomeIcon
+                                    icon={faTimes}
+                                    className="text-red-500 w-6 h-6"
+                                />
                             </button>
                         </div>
 
-                        <div className="photo-capture-container">
+                        <div className="photo-capture-container flex flex-col items-center space-y-6">
                             {!visitPhoto ? (
-                                <div className="camera-container">
-                                    <video
-                                        ref={videoRef}
-                                        autoPlay
-                                        playsInline
-                                        muted
-                                        className="camera-video"
-                                        style={{ width: '100%', maxHeight: '500px', objectFit: 'cover' }}
-                                    />
-                                    <canvas
-                                        ref={canvasRef}
-                                        style={{ display: 'none' }}
-                                    />
-                                    <div className="camera-controls mt-4 flex justify-center">
+                                <div className="camera-container text-center space-y-4 animate-fade-in">
+                                    <div className=" relative rounded-xl overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 p-4 shadow-lg shadow-blue-100/50 inline-block border border-blue-200 transform transition-all duration-300 hover:shadow-xl hover:shadow-blue-200/60">
+                                        <video
+                                            ref={videoRef}
+                                            autoPlay
+                                            playsInline
+                                            muted
+                                            className="max-h-80 max-w-full object-contain rounded-lg"
+                                            style={{
+                                                aspectRatio: 'auto',
+                                                width: 'auto',
+                                                height: 'auto'
+                                            }}
+                                        />
+                                    </div>
+                                    <canvas ref={canvasRef} style={{ display: 'none' }} />
+                                    <div className="text-center">
                                         <button
                                             onClick={handleCapturePhoto}
-                                            className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                                            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 cursor-pointer text-sm shadow-lg shadow-blue-500/30 transform hover:scale-105 hover:shadow-xl hover:shadow-blue-500/40"
                                         >
-                                            <FontAwesomeIcon icon={faCamera} className="mr-2" />
+                                            <FontAwesomeIcon icon={faCamera} className="mr-2 w-4 h-4" beatFade />
                                             Capture Photo
                                         </button>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="captured-photo-container text-center">
-                                    <img
-                                        src={visitPhoto}
-                                        alt="Captured"
-                                        className="mx-auto max-h-[70vh] object-contain rounded-lg"
-                                    />
-                                    <div className="mt-4 space-x-4">
+                                <div className="captured-photo-container text-center space-y-4 animate-fade-in">
+                                    <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 p-4 shadow-lg shadow-blue-100/50 inline-block border border-blue-200 transform transition-all duration-300 hover:shadow-xl hover:shadow-blue-200/60">
+                                        <img
+                                            src={visitPhoto}
+                                            alt="Captured Visit"
+                                            className="max-h-80 max-w-full object-contain rounded-lg"
+                                            style={{
+                                                aspectRatio: 'auto',
+                                                width: 'auto',
+                                                height: 'auto'
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-center space-x-4">
                                         <button
                                             onClick={() => {
                                                 setVisitPhoto(null);
                                                 startCamera();
                                             }}
-                                            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                                            className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-all duration-300 text-sm transform hover:scale-105 shadow-md hover:shadow-lg"
                                         >
+                                            <FontAwesomeIcon icon={faArrowsRotate} className="mr-2 w-3 h-3" />
                                             Retake Photo
                                         </button>
                                         <button
                                             onClick={handleSaveVisit}
-                                            className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                                            className="px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all duration-300 cursor-pointer text-sm transform hover:scale-105"
                                         >
+                                            <FontAwesomeIcon icon={faCheck} className="mr-2 w-4 h-4" bounce />
                                             Save & Continue
                                         </button>
                                     </div>
@@ -471,20 +604,34 @@ const CustomerVisit = () => {
                         </div>
                     </div>
                 </div>
-            )
-            }
+            )}
 
-            {/* Loading State */}
-            {
-                loading && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-lg p-8">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                            <p className="text-center mt-4">Processing...</p>
-                        </div>
-                    </div>
-                )
-            }
+            {/* Add CSS animations */}
+            <style jsx>{`
+                @keyframes fade-in {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+
+                @keyframes scale-in {
+                    from {
+                        opacity: 0;
+                        transform: scale(0.9);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                }
+
+                .animate-fade-in {
+                    animation: fade-in 0.3s ease-out;
+                }
+
+                .animate-scale-in {
+                    animation: scale-in 0.3s ease-out;
+                }
+            `}</style>
         </div >
     );
 };
