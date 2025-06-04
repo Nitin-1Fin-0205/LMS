@@ -13,6 +13,6 @@ export const LOCKER_TYPES = {
 
 export const LOCKER_SIZES = {
     SMALL: 'Small',
-    MEDIUM: 'Medium',
+    MEDIUM: 'Medium ',
     LARGE: 'Large'
 };
