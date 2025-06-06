@@ -66,7 +66,8 @@ const HolderDetails = ({ holderType }) => {
             case HOLDER_STAGES.CUSTOMER_INFO:
                 return (
                     <CustomerInfo
-                        initialData={holderData.customerInfo}
+                        // initialData={holderData.customerInfo}
+                        customerId={holderData?.customerInfo?.customerId}
                         holderType={holderType}
                         onSuccess={handleCustomerInfoSuccess}
                         onBack={() => navigate(-1)}

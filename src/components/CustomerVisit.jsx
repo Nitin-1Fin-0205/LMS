@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFingerprint, faUser, faArrowsRotate, faCamera, faCheck, faTimes, faLock, faInfoCircle, faHistory, faIdCard, faMapMarkerAlt, faPhone, faEnvelope, faKey, faHashtag } from '@fortawesome/free-solid-svg-icons';
+import { faFingerprint, faUser, faArrowsRotate, faCamera, faCheck, faTimes, faLock, faInfoCircle, faHistory, faIdCard, faMapMarkerAlt, faPhone, faEnvelope, faKey, faHashtag, faMobileAlt } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { API_URL } from '../assets/config';
+import OtpVerification from './OtpVerification';
 
 const CustomerVisit = () => {
     const [isScanning, setIsScanning] = useState(false);
@@ -13,6 +14,8 @@ const CustomerVisit = () => {
     const [showPhotoModal, setShowPhotoModal] = useState(false);
     const [visitHistory, setVisitHistory] = useState([]);
     const [historyLoading, setHistoryLoading] = useState(false);
+    const [showOtpModal, setShowOtpModal] = useState(false);
+    const [otpType, setOtpType] = useState('mobile');
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
 
@@ -21,7 +24,7 @@ const CustomerVisit = () => {
         try {
             const token = localStorage.getItem('authToken');
             const response = await axios.get(
-                `https://newuat.support-backend.onefin.app/customers/details-by-id?customer_id=${customerId}`,
+                `${API_URL}/customers/details-by-id?customer_id=${customerId}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -35,25 +38,42 @@ const CustomerVisit = () => {
                 return {
                     customerId: customerInfo.customer_id,
                     memberCode: customerInfo.member_id,
+                    customerCode: customerInfo.customer_code,
                     firstName: customerInfo.first_name,
                     lastName: customerInfo.last_name,
                     middleName: customerInfo.middle_name,
                     name: customerInfo.name,
-                    customerType: customerInfo.type?.toUpperCase() || 'PRIMARY',
+                    customerType: customerInfo.type?.toUpperCase(),
                     mobileNo: customerInfo.mobile_number,
                     email: customerInfo.email,
                     panNo: customerInfo.pan,
                     lockerNo: customerInfo.locker_number,
                     lockerId: customerInfo.locker_id,
                     lockerKey: customerInfo.locker_id,
-                    address: customerInfo.address,
-                    city: customerInfo.city,
-                    state: customerInfo.state,
+                    address: `${customerInfo.permanent_address_line1 || ''} ${customerInfo.permanent_address_line2 || ''} ${customerInfo.permanent_address_line3 || ''}`.trim(),
+                    permanentAddressLine1: customerInfo.permanent_address_line1,
+                    permanentAddressLine2: customerInfo.permanent_address_line2,
+                    permanentAddressLine3: customerInfo.permanent_address_line3,
+                    city: customerInfo.permanent_city,
+                    state: customerInfo.permanent_state,
+                    permanentCity: customerInfo.permanent_city,
+                    permanentState: customerInfo.permanent_state,
+                    permanentStateCode: customerInfo.permanent_state_code,
+                    correspondenceAddressLine1: customerInfo.correspondence_address_line1,
+                    correspondenceAddressLine2: customerInfo.correspondence_address_line2,
+                    correspondenceAddressLine3: customerInfo.correspondence_address_line3,
+                    correspondenceCity: customerInfo.correspondence_city,
+                    correspondenceState: customerInfo.correspondence_state,
+                    correspondenceStateCode: customerInfo.correspondence_state_code,
                     photo: customerInfo.profile_img,
                     dob: customerInfo.dob,
                     gender: customerInfo.gender,
                     aadhar: customerInfo.aadhar,
-                    guardian: customerInfo.guardian
+                    guardian: customerInfo.guardian,
+                    lockerCenterId: customerInfo.locker_center_id,
+                    parentCustomerId: customerInfo.parent_customer_id,
+                    secondaryHolderId: customerInfo.secondary_holder_id,
+                    thirdHolderId: customerInfo.third_holder_id
                 };
             }
             return null;
@@ -71,7 +91,7 @@ const CustomerVisit = () => {
         try {
             const token = localStorage.getItem('authToken');
             const response = await axios.get(
-                `http://localhost:3000/customers/visits/${customerId}?page=1&limit=10`,
+                `${API_URL}/customers/visits/${customerId}?page=1&limit=10`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -199,14 +219,33 @@ const CustomerVisit = () => {
         }
     };
 
+    // Handle OTP verification success
+    const handleOtpSuccess = async (otpData) => {
+        try {
+            const customerDetails = await fetchCustomerDetails(otpData.customerId);
+            if (customerDetails) {
+                setCustomerData(customerDetails);
+                toast.success("Customer verified via OTP successfully");
+
+                // Fetch visit history after successful authentication
+                await fetchCustomerVisitHistory(otpData.customerId);
+            } else {
+                toast.error("Customer details not found");
+            }
+        } catch (error) {
+            console.error('Error after OTP verification:', error);
+            toast.error('Failed to fetch customer details after OTP verification');
+        }
+    };
+
     const handleReset = () => {
         setCustomerData(null);
         setVisitPhoto(null);
         setShowPhotoModal(false);
+        setShowOtpModal(false);
         setIsScanning(false);
         setLoading(false);
-        setVisitHistory([]); // Clear visit history on reset
-        // toast.info("Reset successful");
+        setVisitHistory([]);
     };
 
     return (
@@ -276,6 +315,62 @@ const CustomerVisit = () => {
                                             <FontAwesomeIcon icon={faArrowsRotate} className="mr-2 w-3 h-3" />
                                             Reset Session
                                         </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* OTP Verification Section */}
+                        <div className="bg-white rounded-lg border border-green-100 shadow-lg shadow-green-100/30 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-green-100/40 hover:-translate-y-1">
+                            <div className="bg-gradient-to-r from-green-50 to-green-100 px-4 py-3 border-b border-green-200">
+                                <h2 className="text-sm font-semibold text-gray-900 flex items-center">
+                                    <FontAwesomeIcon icon={faMobileAlt} className="mr-2 w-4 h-4 text-green-600" />
+                                    OTP Verification
+                                </h2>
+                            </div>
+                            <div className="p-4">
+                                <div className="relative rounded-lg p-4 text-center transition-all duration-300 bg-gray-50 border border-gray-200">
+                                    <div className="mb-3">
+                                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-2 transition-all duration-300 bg-gray-100">
+                                            <FontAwesomeIcon
+                                                icon={faMobileAlt}
+                                                className="text-lg transition-all duration-300 text-gray-400"
+                                            />
+                                        </div>
+                                    </div>
+                                    <h3 className="text-sm font-medium mb-2 transition-all duration-300 text-gray-700">
+                                        Alternative Authentication
+                                    </h3>
+                                    <p className="text-xs text-gray-600 mb-3 leading-relaxed">
+                                        Verify customer identity using mobile or email OTP
+                                    </p>
+                                    <div className="space-y-2">
+                                        <button
+                                            onClick={() => setShowOtpModal(true)}
+                                            disabled={isScanning}
+                                            className="w-full py-2 px-3 rounded text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <FontAwesomeIcon icon={faMobileAlt} className="mr-2 w-3 h-3" />
+                                            Verify via OTP
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* OTP Options Info */}
+                                <div className="mt-4 p-3 bg-green-50 rounded border border-green-200">
+                                    <div className="text-center">
+                                        <p className="text-xs text-green-700 font-medium mb-1">Verification Options</p>
+                                        <div className="flex items-center justify-center space-x-4 text-xs text-green-600">
+                                            <span className="flex items-center">
+                                                <FontAwesomeIcon icon={faPhone} className="mr-1 w-3 h-3" />
+                                                Mobile OTP
+                                            </span>
+                                            <span>•</span>
+                                            <span className="flex items-center">
+                                                <FontAwesomeIcon icon={faEnvelope} className="mr-1 w-3 h-3" />
+                                                Email OTP
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -605,6 +700,16 @@ const CustomerVisit = () => {
                     </div>
                 </div>
             )}
+
+            {/* OTP Verification Modal */}
+            <OtpVerification
+                isVisible={showOtpModal}
+                onClose={() => setShowOtpModal(false)}
+                onSuccess={handleOtpSuccess}
+                otpType={otpType}
+                title="Customer Verification"
+                onTypeChange={setOtpType}
+            />
 
             {/* Add CSS animations */}
             <style jsx>{`

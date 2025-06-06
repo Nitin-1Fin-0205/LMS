@@ -12,10 +12,25 @@ import { submitCustomerInfo, fetchCustomerById, updateHolderSection } from '../s
 import { HOLDER_TYPES, HOLDER_SECTIONS } from '../constants/holderConstants';
 import { ROUTES } from '../constants/routes';
 
-const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
+const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const primaryHolder = useSelector(state => state.customer.form.primaryHolder);
+
+    // Get customer data from Redux store based on holder type
+    const holderData = useSelector(state => {
+        switch (holderType) {
+            case HOLDER_TYPES.PRIMARY:
+                return state.customer.form.primaryHolder.customerInfo;
+            case HOLDER_TYPES.SECONDARY:
+                return state.customer.form.secondaryHolder.customerInfo;
+            case HOLDER_TYPES.THIRD:
+                return state.customer.form.thirdHolder.customerInfo;
+            default:
+                return {};
+        }
+    });
+
     // Customer Data State
     const [customerData, setCustomerData] = useState({
         customerId: null,
@@ -40,8 +55,7 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
         panNo: '',
         gender: '',
         emailId: '',
-        aadharNo: '',
-        ...(initialData || {})
+        aadharNo: ''
     });
     const [stateList, setStateList] = useState([]);
 
@@ -90,7 +104,6 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
     useEffect(() => {
         const fetchCustomerDetails = async () => {
             try {
-                const customerId = initialData?.customerId;
                 if (customerId) {
                     setIsLoadingCustomer(true);
                     await dispatch(fetchCustomerById({
@@ -106,50 +119,55 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
             }
         };
 
-        console.log("Initial Data:", initialData);
-
         fetchCustomerDetails();
-        // // Auto-verify mobile and email if they exist in initial data
-        if (initialData.mobileNo || initialData.emailId) {
-            setIsMobileVerified(!!initialData.mobileNo);
-            setIsEmailVerified(!!initialData.emailId);
-        }
-    }, [dispatch, holderType, initialData?.customerId]);
+    }, [dispatch, holderType, customerId]);
 
+    // Update local state when Redux store data changes
     useEffect(() => {
-        if (initialData) {
-            setCustomerData(prev => ({
-                ...prev,
-                ...initialData,
-                customerId: Number(initialData.customerId) || null,
-                firstName: initialData.firstName || '',
-                middleName: initialData.middleName || '',
-                lastName: initialData.lastName || '',
-                fatherOrHusbandName: initialData.fatherOrHusbandName || '',
-                permanentAddressLine1: initialData.permanentAddressLine1 || '',
-                permanentAddressLine2: initialData.permanentAddressLine2 || '',
-                permanentAddressLine3: initialData.permanentAddressLine3 || '',
-                permanentCity: initialData.permanentCity || '',
-                permanentState: initialData.permanentState || '',
-                permanentStatecode: initialData.permanentStatecode || '',
-                correspondenceAddressLine1: initialData.correspondenceAddressLine1 || '',
-                correspondenceAddressLine2: initialData.correspondenceAddressLine2 || '',
-                correspondenceAddressLine3: initialData.correspondenceAddressLine3 || '',
-                correspondenceCity: initialData.correspondenceCity || '',
-                correspondenceState: initialData.correspondenceState || '',
-                correspondenceStatecode: initialData.correspondenceStatecode || '',
-                dateOfBirth: initialData.dateOfBirth || '',
-                mobileNo: initialData.mobileNo || '',
-                panNo: initialData.panNo || '',
-                gender: initialData.gender || '',
-                emailId: initialData.emailId || '',
-                aadharNo: initialData.aadharNo || '',
-                city: initialData.city || '',
-                state: initialData.state || '',
-                statecode: initialData.statecode || ''
-            }));
+        if (holderData && Object.keys(holderData).length > 0) {
+            setCustomerData({
+                customerId: holderData.customerId || null,
+                firstName: holderData.firstName || '',
+                middleName: holderData.middleName || '',
+                lastName: holderData.lastName || '',
+                fatherOrHusbandName: holderData.fatherOrHusbandName || '',
+                permanentAddressLine1: holderData.permanentAddressLine1 || '',
+                permanentAddressLine2: holderData.permanentAddressLine2 || '',
+                permanentAddressLine3: holderData.permanentAddressLine3 || '',
+                permanentCity: holderData.permanentCity || '',
+                permanentState: holderData.permanentState || '',
+                permanentStatecode: holderData.permanentStatecode || '',
+                correspondenceAddressLine1: holderData.correspondenceAddressLine1 || '',
+                correspondenceAddressLine2: holderData.correspondenceAddressLine2 || '',
+                correspondenceAddressLine3: holderData.correspondenceAddressLine3 || '',
+                correspondenceCity: holderData.correspondenceCity || '',
+                correspondenceState: holderData.correspondenceState || '',
+                correspondenceStatecode: holderData.correspondenceStatecode || '',
+                dateOfBirth: holderData.dateOfBirth || '',
+                mobileNo: holderData.mobileNo || '',
+                panNo: holderData.panNo || '',
+                gender: holderData.gender || '',
+                emailId: holderData.emailId || '',
+                aadharNo: holderData.aadharNo || ''
+            });
+
+            // Set verification states if data exists
+            if (holderData.mobileNo) {
+                setIsMobileVerified(true);
+            }
+            if (holderData.emailId) {
+                setIsEmailVerified(true);
+            }
+
+            // Check if addresses are the same and set checkbox accordingly
+            if (holderData.permanentAddressLine1 && holderData.correspondenceAddressLine1 &&
+                holderData.permanentAddressLine1 === holderData.correspondenceAddressLine1 &&
+                holderData.permanentCity === holderData.correspondenceCity &&
+                holderData.permanentState === holderData.correspondenceState) {
+                setIsSameAddress(true);
+            }
         }
-    }, [initialData]);
+    }, [holderData]);
 
     // Fetch state list from API
     const fetchStateList = async () => {
