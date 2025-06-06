@@ -8,38 +8,53 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark, faUpload, faCheck, faMessage, faEnvelope, faSms } from '@fortawesome/free-solid-svg-icons';
 import { ValidationService } from '../services/ValidationService';
 import { otpService } from '../services/otpService';
-import { submitCustomerInfo, fetchCustomerById } from '../store/slices/customerSlice';
-import { HOLDER_TYPES, HOLDER_STAGES } from '../constants/holderConstants';
+import { submitCustomerInfo, fetchCustomerById, updateHolderSection } from '../store/slices/customerSlice';
+import { HOLDER_TYPES, HOLDER_SECTIONS } from '../constants/holderConstants';
 import { ROUTES } from '../constants/routes';
 
 const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const primaryHolder = useSelector(state => state.customer.form.primaryHolder);
+    // Customer Data State
     const [customerData, setCustomerData] = useState({
         customerId: null,
         firstName: '',
         middleName: '',
         lastName: '',
         fatherOrHusbandName: '',
-        address: '',
+        permanentAddressLine1: '',
+        permanentAddressLine2: '',
+        permanentAddressLine3: '',
+        permanentCity: '',
+        permanentState: '',
+        permanentStatecode: '',
+        correspondenceAddressLine1: '',
+        correspondenceAddressLine2: '',
+        correspondenceAddressLine3: '',
+        correspondenceCity: '',
+        correspondenceState: '',
+        correspondenceStatecode: '',
         dateOfBirth: '',
         mobileNo: '',
         panNo: '',
         gender: '',
         emailId: '',
         aadharNo: '',
-        city: '',
-        state: '',
-        statecode: '',
-        ...initialData
+        ...(initialData || {})
     });
     const [stateList, setStateList] = useState([]);
+
+    // Separate verification states
+    const [isMobileVerified, setIsMobileVerified] = useState(false);
+    const [isEmailVerified, setIsEmailVerified] = useState(false);
+
+    // Add state for address checkbox
+    const [isSameAddress, setIsSameAddress] = useState(false);
+
     const [otpVerification, setOtpVerification] = useState({
         emailOtp: '',
         mobileOtp: '',
-        isEmailVerified: false,
-        isMobileVerified: false,
         isEmailOtpSent: false,
         isMobileOtpSent: false
     });
@@ -52,19 +67,23 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
     const [isLoadingStates, setIsLoadingStates] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingCustomer, setIsLoadingCustomer] = useState(false);
+    // Update field errors state to include new address fields
     const [fieldErrors, setFieldErrors] = useState({
         firstName: '',
         lastName: '',
         fatherOrHusbandName: '',
-        address: '',
+        permanentAddressLine1: '',
+        permanentCity: '',
+        permanentState: '',
+        correspondenceAddressLine1: '',
+        correspondenceCity: '',
+        correspondenceState: '',
         dateOfBirth: '',
         mobileNo: '',
         panNo: '',
         gender: '',
         emailId: '',
-        aadharNo: '',
-        city: '',
-        state: ''
+        aadharNo: ''
     });
 
     // Fetch existing customer data if customerId exists
@@ -87,7 +106,14 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
             }
         };
 
+        console.log("Initial Data:", initialData);
+
         fetchCustomerDetails();
+        // // Auto-verify mobile and email if they exist in initial data
+        if (initialData.mobileNo || initialData.emailId) {
+            setIsMobileVerified(!!initialData.mobileNo);
+            setIsEmailVerified(!!initialData.emailId);
+        }
     }, [dispatch, holderType, initialData?.customerId]);
 
     useEffect(() => {
@@ -100,7 +126,18 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
                 middleName: initialData.middleName || '',
                 lastName: initialData.lastName || '',
                 fatherOrHusbandName: initialData.fatherOrHusbandName || '',
-                address: initialData.address || '',
+                permanentAddressLine1: initialData.permanentAddressLine1 || '',
+                permanentAddressLine2: initialData.permanentAddressLine2 || '',
+                permanentAddressLine3: initialData.permanentAddressLine3 || '',
+                permanentCity: initialData.permanentCity || '',
+                permanentState: initialData.permanentState || '',
+                permanentStatecode: initialData.permanentStatecode || '',
+                correspondenceAddressLine1: initialData.correspondenceAddressLine1 || '',
+                correspondenceAddressLine2: initialData.correspondenceAddressLine2 || '',
+                correspondenceAddressLine3: initialData.correspondenceAddressLine3 || '',
+                correspondenceCity: initialData.correspondenceCity || '',
+                correspondenceState: initialData.correspondenceState || '',
+                correspondenceStatecode: initialData.correspondenceStatecode || '',
                 dateOfBirth: initialData.dateOfBirth || '',
                 mobileNo: initialData.mobileNo || '',
                 panNo: initialData.panNo || '',
@@ -111,15 +148,6 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
                 state: initialData.state || '',
                 statecode: initialData.statecode || ''
             }));
-
-            // Auto-verify mobile and email if they exist in initial data
-            if (initialData.mobileNo || initialData.emailId) {
-                setOtpVerification(prev => ({
-                    ...prev,
-                    isMobileVerified: !!initialData.mobileNo,
-                    isEmailVerified: !!initialData.emailId
-                }));
-            }
         }
     }, [initialData]);
 
@@ -191,10 +219,15 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
     // Validate all fields at once
     const validateAllFields = () => {
         const requiredFields = [
-            'firstName', 'lastName', 'fatherOrHusbandName', 'address',
-            'dateOfBirth', 'mobileNo', 'panNo', 'gender', 'emailId',
-            'aadharNo', 'city', 'state'
+            'firstName', 'lastName', 'fatherOrHusbandName', 'permanentAddressLine1',
+            'permanentCity', 'permanentState', 'dateOfBirth', 'mobileNo', 'panNo',
+            'gender', 'emailId', 'aadharNo'
         ];
+
+        // Add correspondence address to required fields if not same as permanent
+        if (!isSameAddress) {
+            requiredFields.push('correspondenceAddressLine1', 'correspondenceCity', 'correspondenceState');
+        }
 
         const newErrors = {};
         let hasErrors = false;
@@ -359,7 +392,7 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
                         firstName: names[0] || '',
                         middleName: names[1] || '',
                         lastName: names[2] || '',
-                        address: data?.address || '',
+                        permanentAddress: data?.address || '',
                         mobileNo: data?.mobileNumber || ''
                     };
                     handleCustomerInfoUpdate(updatedData);
@@ -427,10 +460,10 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
             // Limit to 10 digits
             if (value.length <= 10) {
                 // If the number is changing and was previously verified, reset verification
-                if (otpVerification.isMobileVerified && value !== customerData.mobileNo) {
+                if (isMobileVerified && value !== customerData.mobileNo) {
+                    setIsMobileVerified(false);
                     setOtpVerification(prev => ({
                         ...prev,
-                        isMobileVerified: false,
                         mobileOtp: ''
                     }));
                 }
@@ -443,10 +476,10 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
         const value = e.target.value;
 
         // If the email is changing and was previously verified, reset verification
-        if (otpVerification.isEmailVerified && value !== customerData.emailId) {
+        if (isEmailVerified && value !== customerData.emailId) {
+            setIsEmailVerified(false);
             setOtpVerification(prev => ({
                 ...prev,
-                isEmailVerified: false,
                 emailOtp: ''
             }));
         }
@@ -468,7 +501,6 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
 
     const handleVerifyOtp = async (type) => {
         try {
-            // const value = type === 'email' ? customerData.emailId : customerData.mobileNo;
             const otp = type === 'email' ? otpVerification.emailOtp : otpVerification.mobileOtp;
 
             if (!otp) {
@@ -477,10 +509,14 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
             }
 
             await otpService.verifyOtp(request_id, otp);
-            setOtpVerification(prev => ({
-                ...prev,
-                [type === 'email' ? 'isEmailVerified' : 'isMobileVerified']: true
-            }));
+
+            // Update separate verification states
+            if (type === 'email') {
+                setIsEmailVerified(true);
+            } else {
+                setIsMobileVerified(true);
+            }
+
             toast.success(`${type} verified successfully`);
             setShowOtpModal(false);
         } catch (error) {
@@ -631,17 +667,15 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
             // Validate all fields before submission
             const isValid = validateAllFields();
             if (!isValid) {
-                // toast.error('Please fill all required fields correctly');
                 return;
             }
 
-            if (!otpVerification.isMobileVerified) {
+            if (!isMobileVerified) {
                 toast.error('Please verify your mobile number');
                 return;
             }
 
-            // Check if email and mobile are verified(optional - remove if not required)
-            if (!otpVerification.isEmailVerified) {
+            if (!isEmailVerified) {
                 toast.error('Please verify your email address');
                 return;
             }
@@ -655,15 +689,23 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
                 pan: customerData.panNo,
                 aadhar: customerData.aadharNo,
                 gender: customerData.gender,
-                address: customerData.address,
+                permanent_address_line1: customerData.permanentAddressLine1,
+                permanent_address_line2: customerData.permanentAddressLine2,
+                permanent_address_line3: customerData.permanentAddressLine3,
+                permanent_city: customerData.permanentCity,
+                permanent_state: customerData.permanentState,
+                permanent_state_code: customerData.permanentStatecode,
+                correspondence_address_line1: customerData.correspondenceAddressLine1,
+                correspondence_address_line2: customerData.correspondenceAddressLine2,
+                correspondence_address_line3: customerData.correspondenceAddressLine3,
+                correspondence_city: customerData.correspondenceCity,
+                correspondence_state: customerData.correspondenceState,
+                correspondence_state_code: customerData.correspondenceStatecode,
                 guardian_name: customerData.fatherOrHusbandName,
                 dob: customerData.dateOfBirth,
                 mobile_number: customerData.mobileNo,
                 email: customerData.emailId,
-                locker_center_id: 1,
-                city: customerData.city,
-                state: customerData.state,
-                state_code: customerData.statecode
+                locker_center_id: 1
             };
 
             // Add parent customer ID for secondary and third holders
@@ -709,6 +751,92 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
         const baseClasses = 'form-input';
         const errorClasses = fieldErrors[fieldName] ? 'border-red-500' : '';
         return `${baseClasses} ${errorClasses}`.trim();
+    };
+
+    // Handle address checkbox change
+    const handleSameAddressChange = (e) => {
+        const checked = e.target.checked;
+        setIsSameAddress(checked);
+
+        if (checked) {
+            // Copy all permanent address fields to correspondence address
+            const updatedData = {
+                ...customerData,
+                correspondenceAddressLine1: customerData.permanentAddressLine1,
+                correspondenceAddressLine2: customerData.permanentAddressLine2,
+                correspondenceAddressLine3: customerData.permanentAddressLine3,
+                correspondenceCity: customerData.permanentCity,
+                correspondenceState: customerData.permanentState,
+                correspondenceStatecode: customerData.permanentStatecode
+            };
+            setCustomerData(updatedData);
+            handleCustomerInfoUpdate(updatedData);
+        } else {
+            // Clear correspondence address fields when unchecked
+            const updatedData = {
+                ...customerData,
+                correspondenceAddressLine1: '',
+                correspondenceAddressLine2: '',
+                correspondenceAddressLine3: '',
+                correspondenceCity: '',
+                correspondenceState: '',
+                correspondenceStatecode: ''
+            };
+            setCustomerData(updatedData);
+            handleCustomerInfoUpdate(updatedData);
+        }
+    };
+
+    // Handle permanent address field changes
+    const handlePermanentAddressFieldChange = (field, value) => {
+        let updatedData = {
+            ...customerData,
+            [field]: value
+        };
+
+        // If same address is checked, also update corresponding correspondence field
+        if (isSameAddress) {
+            const correspondenceField = field.replace('permanent', 'correspondence');
+            updatedData[correspondenceField] = value;
+        }
+
+        setCustomerData(updatedData);
+        handleCustomerInfoUpdate(updatedData);
+    };
+
+    // Handle permanent state selection
+    const handlePermanentStateSelect = (e) => {
+        const selectedState = stateList.find(state => state.state_code === parseInt(e.target.value));
+        if (selectedState) {
+            let updatedData = {
+                ...customerData,
+                permanentState: selectedState.state_name,
+                permanentStatecode: selectedState.state_code.toString()
+            };
+
+            // If same address is checked, also update correspondence state
+            if (isSameAddress) {
+                updatedData.correspondenceState = selectedState.state_name;
+                updatedData.correspondenceStatecode = selectedState.state_code.toString();
+            }
+
+            setCustomerData(updatedData);
+            handleCustomerInfoUpdate(updatedData);
+        }
+    };
+
+    // Handle correspondence state selection
+    const handleCorrespondenceStateSelect = (e) => {
+        const selectedState = stateList.find(state => state.state_code === parseInt(e.target.value));
+        if (selectedState) {
+            const updatedData = {
+                ...customerData,
+                correspondenceState: selectedState.state_name,
+                correspondenceStatecode: selectedState.state_code.toString()
+            };
+            setCustomerData(updatedData);
+            handleCustomerInfoUpdate(updatedData);
+        }
     };
 
     return (
@@ -869,7 +997,7 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
                                     placeholder="Enter mobile number"
                                     required
                                 />
-                                {otpVerification.isMobileVerified ? (
+                                {isMobileVerified ? (
                                     <span className="verified-badge">
                                         <FontAwesomeIcon className='fontIcon' icon={faCheck} bounce={true} style={{ paddingTop: '4px' }} /> Verified
                                     </span>
@@ -898,7 +1026,7 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
                                     placeholder="Enter email"
                                     required
                                 />
-                                {otpVerification.isEmailVerified ? (
+                                {isEmailVerified ? (
                                     <span className="verified-badge">
                                         <FontAwesomeIcon className='fontIcon' icon={faCheck} bounce={true} style={{ paddingTop: '4px' }} /> Verified
                                     </span>
@@ -915,58 +1043,228 @@ const CustomerInfo = ({ initialData, holderType, onSuccess, onBack }) => {
                             {fieldErrors.emailId && (
                                 <div className="text-red-500 text-sm mt-1">{fieldErrors.emailId}</div>
                             )}
-                        </div>                <div className="form-group full-width">
-                            <label>Address<span className='required'>*</span></label>
-                            <textarea
-                                value={customerData.address}
-                                onChange={(e) => handleInputChange('address', e.target.value)}
-                                onBlur={() => handleBlur('address')}
-                                className={getInputClassName('address')}
-                                placeholder="Enter address"
+                        </div>
+                        {/* Permanent Address Section */}
+                        <div className="form-group full-width address-section">
+                            <h3 className="address-section-title">Permanent Address</h3>
+                        </div>
+
+                        {/* Permanent Address Line 1 */}
+                        <div className="form-group">
+                            <label>Address Line 1<span className='required'>*</span></label>
+                            <input
+                                type="text"
+                                value={customerData.permanentAddressLine1 || ''}
+                                onChange={(e) => {
+                                    handleInputChange('permanentAddressLine1', e.target.value);
+                                    handlePermanentAddressFieldChange('permanentAddressLine1', e.target.value);
+                                }}
+                                onBlur={() => handleBlur('permanentAddressLine1')}
+                                className={getInputClassName('permanentAddressLine1')}
+                                placeholder="Enter address line 1"
                                 required
-                            ></textarea>
-                            {fieldErrors.address && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.address}</div>
+                            />
+                            {fieldErrors.permanentAddressLine1 && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.permanentAddressLine1}</div>
                             )}
-                        </div>                <div className="form-group">
+                        </div>
+
+                        {/* Permanent Address Line 2 */}
+                        <div className="form-group">
+                            <label>Address Line 2</label>
+                            <input
+                                type="text"
+                                value={customerData.permanentAddressLine2 || ''}
+                                onChange={(e) => {
+                                    handleInputChange('permanentAddressLine2', e.target.value);
+                                    handlePermanentAddressFieldChange('permanentAddressLine2', e.target.value);
+                                }}
+                                placeholder="Enter address line 2"
+                            />
+                        </div>
+
+                        {/* Permanent Address Line 3 */}
+                        <div className="form-group">
+                            <label>Address Line 3</label>
+                            <input
+                                type="text"
+                                value={customerData.permanentAddressLine3 || ''}
+                                onChange={(e) => {
+                                    handleInputChange('permanentAddressLine3', e.target.value);
+                                    handlePermanentAddressFieldChange('permanentAddressLine3', e.target.value);
+                                }}
+                                placeholder="Enter address line 3"
+                            />
+                        </div>
+
+                        {/* Permanent City */}
+                        <div className="form-group">
                             <label>City<span className='required'>*</span></label>
                             <input
                                 type="text"
-                                value={customerData.city}
-                                onChange={(e) => handleInputChange('city', e.target.value)}
-                                onBlur={() => handleBlur('city')}
-                                className={getInputClassName('city')}
+                                value={customerData.permanentCity || ''}
+                                onChange={(e) => {
+                                    handleInputChange('permanentCity', e.target.value);
+                                    handlePermanentAddressFieldChange('permanentCity', e.target.value);
+                                }}
+                                onBlur={() => handleBlur('permanentCity')}
+                                className={getInputClassName('permanentCity')}
                                 placeholder="Enter city"
                                 required
                             />
-                            {fieldErrors.city && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.city}</div>
+                            {fieldErrors.permanentCity && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.permanentCity}</div>
                             )}
-                        </div>                <div className="form-group">
+                        </div>
+
+                        {/* Permanent State */}
+                        <div className="form-group">
                             <label>State<span className='required'>*</span></label>
                             <select
-                                value={customerData.statecode}
-                                onChange={handleStateSelect}
-                                onBlur={() => handleBlur('state')}
-                                className={getInputClassName('state')}
+                                value={customerData.permanentStatecode || ''}
+                                onChange={handlePermanentStateSelect}
+                                onBlur={() => handleBlur('permanentState')}
+                                className={getInputClassName('permanentState')}
                                 disabled={isLoadingStates}
                                 required
                             >
                                 <option value="">Select State</option>
                                 {stateList.map(state => (
-                                    <option
-                                        key={state.state_code}
-                                        value={state.state_code}
-                                    >
+                                    <option key={state.state_code} value={state.state_code}>
                                         {state.state_name}
                                     </option>
                                 ))}
                             </select>
                             {isLoadingStates && <span className="loading-states">Loading states...</span>}
-                            {fieldErrors.state && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.state}</div>
+                            {fieldErrors.permanentState && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.permanentState}</div>
                             )}
-                        </div>            </div>
+                        </div>
+
+                        {/* Same Address Checkbox */}
+                        <div className="form-group full-width">
+                            <label className="checkbox-container">
+                                <input
+                                    type="checkbox"
+                                    checked={isSameAddress}
+                                    onChange={handleSameAddressChange}
+                                    className="address-checkbox"
+                                />
+                                <span className="checkmark"></span>
+                                Correspondence address is same as permanent address
+                            </label>
+                        </div>
+
+                        {/* Correspondence Address Section */}
+                        <div className="form-group full-width address-section">
+                            <h3 className="address-section-title">Correspondence Address</h3>
+                        </div>
+
+                        {/* Correspondence Address Line 1 */}
+                        <div className="form-group">
+                            <label>Address Line 1<span className='required'>*</span></label>
+                            <input
+                                type="text"
+                                value={customerData.correspondenceAddressLine1 || ''}
+                                onChange={(e) => handleInputChange('correspondenceAddressLine1', e.target.value)}
+                                onBlur={() => handleBlur('correspondenceAddressLine1')}
+                                className={getInputClassName('correspondenceAddressLine1')}
+                                placeholder="Enter address line 1"
+                                required={!isSameAddress}
+                                disabled={isSameAddress}
+                                style={{
+                                    backgroundColor: isSameAddress ? '#f5f5f5' : 'white',
+                                    cursor: isSameAddress ? 'not-allowed' : 'text'
+                                }}
+                            />
+                            {fieldErrors.correspondenceAddressLine1 && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.correspondenceAddressLine1}</div>
+                            )}
+                        </div>
+
+                        {/* Correspondence Address Line 2 */}
+                        <div className="form-group">
+                            <label>Address Line 2</label>
+                            <input
+                                type="text"
+                                value={customerData.correspondenceAddressLine2 || ''}
+                                onChange={(e) => handleInputChange('correspondenceAddressLine2', e.target.value)}
+                                placeholder="Enter address line 2"
+                                disabled={isSameAddress}
+                                style={{
+                                    backgroundColor: isSameAddress ? '#f5f5f5' : 'white',
+                                    cursor: isSameAddress ? 'not-allowed' : 'text'
+                                }}
+                            />
+                        </div>
+
+                        {/* Correspondence Address Line 3 */}
+                        <div className="form-group">
+                            <label>Address Line 3</label>
+                            <input
+                                type="text"
+                                value={customerData.correspondenceAddressLine3 || ''}
+                                onChange={(e) => handleInputChange('correspondenceAddressLine3', e.target.value)}
+                                placeholder="Enter address line 3"
+                                disabled={isSameAddress}
+                                style={{
+                                    backgroundColor: isSameAddress ? '#f5f5f5' : 'white',
+                                    cursor: isSameAddress ? 'not-allowed' : 'text'
+                                }}
+                            />
+                        </div>
+
+                        {/* Correspondence City */}
+                        <div className="form-group">
+                            <label>City<span className='required'>*</span></label>
+                            <input
+                                type="text"
+                                value={customerData.correspondenceCity || ''}
+                                onChange={(e) => handleInputChange('correspondenceCity', e.target.value)}
+                                onBlur={() => handleBlur('correspondenceCity')}
+                                className={getInputClassName('correspondenceCity')}
+                                placeholder="Enter city"
+                                required={!isSameAddress}
+                                disabled={isSameAddress}
+                                style={{
+                                    backgroundColor: isSameAddress ? '#f5f5f5' : 'white',
+                                    cursor: isSameAddress ? 'not-allowed' : 'text'
+                                }}
+                            />
+                            {fieldErrors.correspondenceCity && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.correspondenceCity}</div>
+                            )}
+                        </div>
+
+                        {/* Correspondence State */}
+                        <div className="form-group">
+                            <label>State<span className='required'>*</span></label>
+                            <select
+                                value={customerData.correspondenceStatecode || ''}
+                                onChange={handleCorrespondenceStateSelect}
+                                onBlur={() => handleBlur('correspondenceState')}
+                                className={getInputClassName('correspondenceState')}
+                                disabled={isLoadingStates || isSameAddress}
+                                required={!isSameAddress}
+                                style={{
+                                    backgroundColor: isSameAddress ? '#f5f5f5' : 'white',
+                                    cursor: isSameAddress ? 'not-allowed' : 'text'
+                                }}
+                            >
+                                <option value="">Select State</option>
+                                {stateList.map(state => (
+                                    <option key={state.state_code} value={state.state_code}>
+                                        {state.state_name}
+                                    </option>
+                                ))}
+                            </select>
+                            {isLoadingStates && <span className="loading-states">Loading states...</span>}
+                            {fieldErrors.correspondenceState && (
+                                <div className="text-red-500 text-sm mt-1">{fieldErrors.correspondenceState}</div>
+                            )}
+                        </div>
+
+                    </div>
 
                     {/* Form Actions */}
                     <div className="stage-actions">

@@ -175,10 +175,23 @@ const customerSlice = createSlice({
                     customerCode: action.payload.customer_code,
                     lockerCenterId: action.payload.locker_center_id,
                     type: action.payload.type,
-                    address: action.payload.address,
-                    city: action.payload.city,
-                    state: action.payload.state,
-                    statecode: action.payload.state_code
+                    permanentAddressLine1: action.payload.permanent_address_line1,
+                    permanentAddressLine2: action.payload.permanent_address_line2,
+                    permanentAddressLine3: action.payload.permanent_address_line3,
+                    permanentCity: action.payload.permanent_city,
+                    permanentState: action.payload.permanent_state,
+                    permanentStatecode: action.payload.permanent_state_code,
+                    correspondenceAddressLine1: action.payload.correspondence_address_line1,
+                    correspondenceAddressLine2: action.payload.correspondence_address_line2,
+                    correspondenceAddressLine3: action.payload.correspondence_address_line3,
+                    correspondenceCity: action.payload.correspondence_city,
+                    correspondenceState: action.payload.correspondence_state,
+                    correspondenceStatecode: action.payload.correspondence_state_code,
+                    // // Legacy address fields (for backward compatibility)
+                    // address: action.payload.address,
+                    // city: action.payload.city,
+                    // state: action.payload.state,
+                    // statecode: action.payload.state_code
                 };
 
                 state.form.secondaryHolder.customerInfo = {
@@ -218,10 +231,24 @@ const customerSlice = createSlice({
                     emailId: customerData.email,
                     mobileNo: customerData.mobile_number,
                     panNo: customerData.pan,
-                    gender: customerData.gender.toUpperCase(),
+                    gender: customerData.gender ? customerData.gender.toUpperCase() : '',
                     aadharNo: customerData.aadhar,
                     fatherOrHusbandName: customerData.guardian,
                     photo: customerData.profile_img,
+                    // New address fields
+                    permanentAddressLine1: customerData.permanent_address_line1,
+                    permanentAddressLine2: customerData.permanent_address_line2,
+                    permanentAddressLine3: customerData.permanent_address_line3,
+                    permanentCity: customerData.permanent_city,
+                    permanentState: customerData.permanent_state,
+                    permanentStatecode: customerData.permanent_state_code,
+                    correspondenceAddressLine1: customerData.correspondence_address_line1,
+                    correspondenceAddressLine2: customerData.correspondence_address_line2,
+                    correspondenceAddressLine3: customerData.correspondence_address_line3,
+                    correspondenceCity: customerData.correspondence_city,
+                    correspondenceState: customerData.correspondence_state,
+                    correspondenceStatecode: customerData.correspondence_state_code,
+                    // Legacy address fields (for backward compatibility)
                     address: customerData.address,
                     city: customerData.city,
                     state: customerData.state,

@@ -145,7 +145,7 @@ const CustomerDetailsOverlay = ({
                             <div className="detail-grid">
                                 <div className="detail-row">
                                     <div className="detail-label">Full Name:</div>
-                                    <div className="detail-value">{`${holder.firstName} ${holder.middleName} ${holder.lastName}`}</div>
+                                    <div className="detail-value">{`${holder.firstName} ${holder.middleName || ''} ${holder.lastName}`}</div>
                                 </div>
                                 <div className="detail-row">
                                     <div className="detail-label">Mobile:</div>
@@ -167,17 +167,67 @@ const CustomerDetailsOverlay = ({
                                     <div className="detail-label">Date of Birth:</div>
                                     <div className="detail-value">{holder.dateOfBirth}</div>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Permanent Address Section */}
+                        <div className="detail-section">
+                            <h4>PERMANENT ADDRESS</h4>
+                            <div className="detail-grid">
                                 <div className="detail-row">
-                                    <div className="detail-label">Address:</div>
-                                    <div className="detail-value">{holder.address}</div>
+                                    <div className="detail-label">Address Line 1:</div>
+                                    <div className="detail-value">{holder.permanentAddress?.line1 || '-'}</div>
                                 </div>
+                                {holder.permanentAddress?.line2 && (
+                                    <div className="detail-row">
+                                        <div className="detail-label">Address Line 2:</div>
+                                        <div className="detail-value">{holder.permanentAddress.line2}</div>
+                                    </div>
+                                )}
+                                {holder.permanentAddress?.line3 && (
+                                    <div className="detail-row">
+                                        <div className="detail-label">Address Line 3:</div>
+                                        <div className="detail-value">{holder.permanentAddress.line3}</div>
+                                    </div>
+                                )}
                                 <div className="detail-row">
                                     <div className="detail-label">City:</div>
-                                    <div className="detail-value">{holder.city}</div>
+                                    <div className="detail-value">{holder.permanentAddress?.city || '-'}</div>
                                 </div>
                                 <div className="detail-row">
                                     <div className="detail-label">State:</div>
-                                    <div className="detail-value">{holder.state}</div>
+                                    <div className="detail-value">{holder.permanentAddress?.state || '-'}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Correspondence Address Section */}
+                        <div className="detail-section">
+                            <h4>CORRESPONDENCE ADDRESS</h4>
+                            <div className="detail-grid">
+                                <div className="detail-row">
+                                    <div className="detail-label">Address Line 1:</div>
+                                    <div className="detail-value">{holder.correspondenceAddress?.line1 || '-'}</div>
+                                </div>
+                                {holder.correspondenceAddress?.line2 && (
+                                    <div className="detail-row">
+                                        <div className="detail-label">Address Line 2:</div>
+                                        <div className="detail-value">{holder.correspondenceAddress.line2}</div>
+                                    </div>
+                                )}
+                                {holder.correspondenceAddress?.line3 && (
+                                    <div className="detail-row">
+                                        <div className="detail-label">Address Line 3:</div>
+                                        <div className="detail-value">{holder.correspondenceAddress.line3}</div>
+                                    </div>
+                                )}
+                                <div className="detail-row">
+                                    <div className="detail-label">City:</div>
+                                    <div className="detail-value">{holder.correspondenceAddress?.city || '-'}</div>
+                                </div>
+                                <div className="detail-row">
+                                    <div className="detail-label">State:</div>
+                                    <div className="detail-value">{holder.correspondenceAddress?.state || '-'}</div>
                                 </div>
                             </div>
                         </div>
