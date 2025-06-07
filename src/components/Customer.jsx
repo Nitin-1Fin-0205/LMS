@@ -17,17 +17,18 @@ import CustomerDetailsOverlay from './CustomerDetailsOverlay';
 const Customer = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { pan: urlPan } = useParams(); // Get PAN from URL parameters
+    const { pan: urlPan } = useParams();
+    console.log('URL PAN:', useParams());
     const { form, isSubmitting } = useSelector(state => state.customer);
     const primaryHolder = form.primaryHolder;
     const secondaryHolder = form.secondaryHolder;
-    const thirdHolder = form.thirdHolder;
-    const lockerData = useSelector(state => state.locker);
+    // const thirdHolder = form.thirdHolder;    // const lockerData = useSelector(state => state.locker);
 
     const [formData, setFormData] = useState({
-        pan: urlPan || '' // Initialize with URL PAN if available
+        pan: urlPan || ''
     });
 
+    const [panError, setPanError] = useState('');
     const [activeCard, setActiveCard] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
     const [showDetailOverlay, setShowDetailOverlay] = useState(false);
@@ -49,15 +50,15 @@ const Customer = () => {
         if (primaryHolder?.customerInfo?.customerId) {
             navigate(ROUTES.LOCKER_DETAILS);
         }
-    };
-
-    // Fix: Add the missing handlePanChange function
-    const handlePanChange = (e) => {
+    }; const handlePanChange = (e) => {
         const pan = e.target.value.toUpperCase();
         const validation = ValidationService.isValidPAN(pan);
 
-        if (pan.length === 10 && !validation.isValid) {
-            toast.error(validation.error);
+        // Clear error when PAN is valid or empty
+        if (pan.length === 0 || validation.isValid) {
+            setPanError('');
+        } else if (pan.length === 10 && !validation.isValid) {
+            setPanError(validation.error);
         }
 
         setFormData(prev => ({
@@ -66,24 +67,32 @@ const Customer = () => {
         }));
     };
 
-    // Simplified useEffect - fetch customer when component mounts or PAN changes
     useEffect(() => {
         if (urlPan) {
             setFormData({ pan: urlPan });
-            // Auto-fetch when PAN is in URL
             handleSubmitWithPan(urlPan);
         }
     }, [urlPan]);
 
-    // New method to handle submit with specific PAN
+    // Redirect to customer page if PAN is available in primaryHolder
+    useEffect(() => {
+        if (primaryHolder?.customerInfo?.panNo) {
+            navigate(`/customer/${primaryHolder?.customerInfo?.panNo?.toUpperCase()}`, { replace: true });
+
+        }
+    }, [primaryHolder?.customerInfo?.panNo]);
+
     const handleSubmitWithPan = async (panValue) => {
         if (!panValue) return;
 
         const panValidated = ValidationService.validateField('pan', panValue);
         if (!panValidated.isValid) {
-            toast.error(panValidated.error);
+            setPanError(panValidated.error);
             return;
         }
+
+        // Clear error if validation passes
+        setPanError('');
 
         dispatch(resetForm());
         dispatch(clearAllLockerData());
@@ -106,14 +115,14 @@ const Customer = () => {
         }
 
         if (!formData.pan) {
-            if (e) toast.error('Please enter PAN number');
+            if (e) setPanError('Please enter PAN number');
             return;
         }
 
         // Update URL when searching manually
         if (formData.pan !== urlPan) {
             navigate(`/customer/${formData.pan.toUpperCase()}`);
-            return; // Let useEffect handle the fetch
+            return;
         }
 
         await handleSubmitWithPan(formData.pan);
@@ -121,11 +130,15 @@ const Customer = () => {
 
     const handleReset = () => {
         setFormData({ pan: '' });
+        setPanError('');
         dispatch(resetForm());
         dispatch(clearAllLockerData());
+        setActiveCard(null);
         // Navigate back to customer page without PAN
         navigate('/customer');
-    }; const toggleDetailOverlay = () => {
+    };
+
+    const toggleDetailOverlay = () => {
         setShowDetailOverlay(!showDetailOverlay);
     };
 
@@ -187,35 +200,61 @@ const Customer = () => {
 
     return (
         <div className="new-customer-container">
-            <form onSubmit={handleSubmit} className="initial-form">
-                <div className="form-group">
-                    <label>PAN Number</label>
-                    <input
-                        type="text"
-                        value={formData.pan || ''}
-                        onChange={handlePanChange}
-                        maxLength={10}
-                        required
-                    />
+            <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-4 mb-6 max-w-6xl mx-auto">            <div className="flex items-end gap-3">
+                <div className="flex items-end gap-2 flex-1">
+                    <div className="flex-1 max-w-lg">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            PAN Number
+                        </label>
+                        <input
+                            type="text"
+                            value={formData.pan || ''}
+                            onChange={handlePanChange}
+                            maxLength={10}
+                            required
+                            className={`w-full px-3 py-2 border rounded-md text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 transition-all duration-200 ${panError
+                                ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                                : 'border-gray-300 focus:border-blue-500 focus:ring-blue-200'
+                                }`}
+                            placeholder="Enter PAN number"
+                        />
+                    </div>
+                    {panError && (
+                        <div className="flex-1 min-w-0 pb-2">
+                            <p className="text-xs text-red-600 flex items-center gap-1">
+                                {panError}
+                            </p>
+                        </div>
+                    )}
                 </div>
-                <div className="fetch-cust-actions">
-                    <button type="submit" className="fetch-button" disabled={isSubmitting}>
+                <div className="flex gap-2">
+                    <button
+                        type="submit"
+                        className="flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 text-sm cursor-pointer"
+                        disabled={isSubmitting}
+                    >
                         {isSubmitting ? (
-                            <span>Fetching... &nbsp; <FontAwesomeIcon icon={faSpinner} spin /></span>
+                            <>
+                                <span>Fetching...</span>
+                                <FontAwesomeIcon icon={faSpinner} spin className="text-xs" />
+                            </>
                         ) : (
-                            <span>
-                                Fetch Customer &nbsp; <FontAwesomeIcon icon={faDownload} />
-                            </span>
+                            <>
+                                <span>Fetch Customer</span>
+                                <FontAwesomeIcon icon={faDownload} className="text-xs" />
+                            </>
                         )}
                     </button>
                     <button
                         type="button"
-                        className="reset-button"
+                        className="flex items-center gap-1 px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors duration-200 text-sm cursor-pointer"
                         onClick={handleReset}
                     >
-                        Reset <FontAwesomeIcon icon={faArrowsRotate} />
+                        <span>Reset</span>
+                        <FontAwesomeIcon icon={faArrowsRotate} className="text-xs" />
                     </button>
                 </div>
+            </div>
             </form>
 
             <div className="action-cards">

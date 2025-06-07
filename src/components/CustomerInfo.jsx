@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
-import '../styles/CustomerInfo.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark, faUpload, faCheck, faMessage, faEnvelope, faSms } from '@fortawesome/free-solid-svg-icons';
 import { ValidationService } from '../services/ValidationService';
@@ -604,9 +603,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
             if (e.key === 'Enter') {
                 onEnter();
             }
-        };
-
-        return (
+        }; return (
             <input
                 ref={inputRef}
                 type="text"
@@ -615,23 +612,21 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                 value={value}
                 onChange={handleChange}
                 onKeyPress={handleKeyPress}
-                className="otp-input"
+                className="w-full px-4 py-3 text-lg text-center border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition-colors duration-200 tracking-widest"
                 autoComplete="off"
             />
         );
-    });
-
-    const OtpModal = () => (
-        <div className="otp-modal-overlay">
-            <div className="otp-modal">
+    }); const OtpModal = () => (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md relative">
                 <button
-                    className="modal-close-btn"
+                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all duration-200"
                     onClick={() => setShowOtpModal(false)}
                 >
                     <FontAwesomeIcon icon={faXmark} />
                 </button>
-                <h3>Verify {otpType === 'email' ? 'Email' : 'Mobile'}</h3>
-                <p>Enter OTP sent to {otpType === 'email' ? customerData.emailId : customerData.mobileNo}</p>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">Verify {otpType === 'email' ? 'Email' : 'Mobile'}</h3>
+                <p className="text-gray-600 mb-4">Enter OTP sent to {otpType === 'email' ? customerData.emailId : customerData.mobileNo}</p>
                 <OtpInput
                     value={otpVerification[`${otpType}Otp`]}
                     onChange={(value) => setOtpVerification(prev => ({
@@ -640,17 +635,17 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                     }))}
                     onEnter={() => handleVerifyOtp(otpType)}
                 />
-                <div className="otp-actions">
+                <div className="flex gap-3 mt-4">
                     <button
                         onClick={() => handleVerifyOtp(otpType)}
-                        className="verify-otp-btn"
+                        className="flex-1 px-4 py-2 bg-blue-600 text-white border-none rounded-md hover:bg-blue-700 transition-colors duration-200 font-medium"
                     >
                         Verify OTP
                     </button>
                     <button
                         onClick={() => handleOtpClick(otpType)}
                         disabled={resendTimer[otpType] > 0}
-                        className="resend-otp-btn"
+                        className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                     >
                         {resendTimer[otpType] > 0
                             ? `Resend OTP (${resendTimer[otpType]}s)`
@@ -754,21 +749,12 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
         } finally {
             setIsSubmitting(false);
         }
-    };
-
-    const handleCustomerInfoUpdate = (data) => {
+    }; const handleCustomerInfoUpdate = (data) => {
         dispatch(updateHolderSection({
             holder: holderType,
             section: HOLDER_SECTIONS.CUSTOMER_INFO,
             data
         }));
-    };
-
-    // Helper function to get input classes with error styling
-    const getInputClassName = (fieldName) => {
-        const baseClasses = 'form-input';
-        const errorClasses = fieldErrors[fieldName] ? 'border-red-500' : '';
-        return `${baseClasses} ${errorClasses}`.trim();
     };
 
     // Handle address checkbox change
@@ -855,43 +841,38 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
             setCustomerData(updatedData);
             handleCustomerInfoUpdate(updatedData);
         }
-    };
-
-    return (
-        <div className="form-section">
+    }; return (
+        <div className="bg-white rounded-xl shadow-lg p-4">
             {isLoadingCustomer ? (
-                <div className="loading-container">
-                    <p>Loading customer details...</p>
+                <div className="flex justify-center items-center min-h-48">
+                    <p className="text-gray-600">Loading customer details...</p>
                 </div>
             ) : (
                 <>
-                    <h2>Customer Information</h2>
-                    <div className="customer-info-grid">
-                        <div className="form-group">
-                            <label>PAN No<span className='required'>*</span></label>
-                            <input
-                                type="text"
-                                value={customerData.panNo}
-                                onChange={handlePanInput}
-                                onBlur={() => handleBlur('panNo')}
-                                className={getInputClassName('panNo')}
-                                placeholder="Enter PAN no here"
-                                maxLength={10}
-                                required
-                            />
-                            {fieldErrors.panNo && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.panNo}</div>
-                            )}
-                        </div>
-                        <div className="form-group  pan-group">
-                            <label>D.O.B<span className='required'>*</span></label>
-                            <div className="input-button-group">
+                    <h2 className="text-slate-700 text-xl font-semibold mb-4 pb-2 border-b border-gray-200">Customer Information</h2>
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-2 lg:gap-4 mt-4 p-4">                        <div className="flex flex-col min-w-0">
+                        <label className="text-sm text-gray-600 font-medium mb-1">PAN No<span className='text-red-500'>*</span></label>
+                        <input
+                            type="text"
+                            value={customerData.panNo}
+                            onChange={handlePanInput}
+                            onBlur={() => handleBlur('panNo')}
+                            className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.panNo ? 'border-red-400 border-[1px]' : ''}`}
+                            placeholder="Enter PAN no here"
+                            maxLength={10}
+                            required
+                        />                            {fieldErrors.panNo && (
+                            <div className="text-red-500 text-xs mt-1">{fieldErrors.panNo}</div>
+                        )}
+                    </div>                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">D.O.B<span className='text-red-500'>*</span></label>
+                            <div className="flex gap-2 items-center w-full min-w-0">
                                 <input
                                     type="date"
                                     value={customerData.dateOfBirth}
                                     onChange={(e) => handleDobChange(e)}
                                     onBlur={() => handleBlur('dateOfBirth')}
-                                    className={getInputClassName('dateOfBirth')}
+                                    className={`flex-1 h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.dateOfBirth ? 'border-red-400 border-[1px]' : ''}`}
                                     max={new Date().toISOString().split('T')[0]}
                                     required
                                 />
@@ -914,17 +895,14 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                         />
                                     </label>
                                 </div> */}
-                            </div>
-                            {fieldErrors.dateOfBirth && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.dateOfBirth}</div>
+                            </div>                            {fieldErrors.dateOfBirth && (
+                                <div className="text-red-500 text-xs mt-1">{fieldErrors.dateOfBirth}</div>
                             )}
-                        </div>
-                        <div className="form-group first-name-group">
-                            <label>First Name<span className='required'>*</span></label>
+                        </div>                        <div className="flex flex-col min-w-0 col-start-1">
+                            <label className="text-sm text-gray-600 font-medium mb-1">First Name<span className='text-red-500'>*</span></label>
                             <input
                                 type="text"
-                                id="firstName"
-                                className={getInputClassName('firstName')}
+                                id="firstName" className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.firstName ? 'border-red-400 border-[1px]' : ''}`}
                                 value={customerData.firstName || ''}
                                 onChange={(e) => handleInputChange('firstName', e.target.value)}
                                 onBlur={() => handleBlur('firstName')}
@@ -932,52 +910,49 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                 required
                             />
                             {fieldErrors.firstName && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.firstName}</div>
+                                <div className="text-red-500 text-xs mt-1">{fieldErrors.firstName}</div>
                             )}
-                        </div>
-                        <div className="form-group">
-                            <label>Middle Name</label>
+                        </div>                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">Middle Name</label>
                             <input
                                 type="text"
                                 value={customerData.middleName}
                                 onChange={(e) => handleInputChange('middleName', e.target.value)}
                                 placeholder="Enter middle name"
+                                className="w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none"
                             />
-                        </div>                <div className="form-group">
-                            <label>Last Name<span className='required'>*</span></label>
+                        </div>                <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">Last Name<span className='text-red-500'>*</span></label>
                             <input
                                 type="text"
                                 value={customerData.lastName}
                                 onChange={(e) => handleInputChange('lastName', e.target.value)}
-                                onBlur={() => handleBlur('lastName')}
-                                className={getInputClassName('lastName')}
+                                onBlur={() => handleBlur('lastName')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.lastName ? 'border-red-400 border-[1px]' : ''}`}
                                 placeholder="Enter last name"
                                 required
                             />
                             {fieldErrors.lastName && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.lastName}</div>
+                                <div className="text-red-500 text-xs mt-1">{fieldErrors.lastName}</div>
                             )}
-                        </div>                <div className="form-group">
-                            <label>Father's / Husband's Name<span className='required'>*</span></label>
+                        </div>                <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">Father's / Husband's Name<span className='text-red-500'>*</span></label>
                             <input
                                 type="text"
                                 value={customerData.fatherOrHusbandName}
                                 onChange={(e) => handleInputChange('fatherOrHusbandName', e.target.value)}
-                                onBlur={() => handleBlur('fatherOrHusbandName')}
-                                className={getInputClassName('fatherOrHusbandName')}
+                                onBlur={() => handleBlur('fatherOrHusbandName')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.fatherOrHusbandName ? 'border-red-400 border-[1px]' : ''}`}
                                 placeholder="Enter father/husband name"
                                 required
                             />
                             {fieldErrors.fatherOrHusbandName && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.fatherOrHusbandName}</div>
+                                <div className="text-red-500 text-xs mt-1">{fieldErrors.fatherOrHusbandName}</div>
                             )}
-                        </div>                <div className="form-group">
-                            <label>Gender<span className='required'>*</span></label>
+                        </div>                <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">Gender<span className='text-red-500'>*</span></label>
                             <select
                                 value={customerData.gender}
                                 onChange={(e) => handleInputChange('gender', e.target.value)}
-                                onBlur={() => handleBlur('gender')}
-                                className={getInputClassName('gender')}
+                                onBlur={() => handleBlur('gender')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.gender ? 'border-red-400 border-[1px]' : ''}`}
                                 required
                             >
                                 <option value="">Select Gender</option>
@@ -986,43 +961,41 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                 <option value="OTHER">OTHER</option>
                             </select>
                             {fieldErrors.gender && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.gender}</div>
+                                <div className="text-red-500 text-xs mt-1">{fieldErrors.gender}</div>
                             )}
-                        </div>                <div className="form-group">
-                            <label>Aadhaar No<span className='required'>*</span></label>
+                        </div>                <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">Aadhaar No<span className='text-red-500'>*</span></label>
                             <input
                                 type="text"
                                 value={formatAadhar(customerData?.aadharNo)}
                                 onChange={handleAadharInput}
-                                onBlur={() => handleBlur('aadharNo')}
-                                className={getInputClassName('aadharNo')}
+                                onBlur={() => handleBlur('aadharNo')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.aadharNo ? 'border-red-400 border-[1px]' : ''}`}
                                 placeholder="Enter Aadhaar (e.g., 1234 5678 9012)"
                                 maxLength={14}
                                 required
                             />
                             {fieldErrors.aadharNo && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.aadharNo}</div>
+                                <div className="text-red-500 text-xs mt-1">{fieldErrors.aadharNo}</div>
                             )}
-                        </div>                <div className="form-group mobile-group">
-                            <label>Mobile No<span className='required'>*</span></label>
-                            <div className="input-verify-group">
+                        </div>                <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">Mobile No<span className='text-red-500'>*</span></label>
+                            <div className="flex gap-2 w-full min-w-0">
                                 <input
                                     type="tel"
                                     value={customerData.mobileNo}
                                     onChange={handleMobileInput}
-                                    onBlur={() => handleBlur('mobileNo')}
-                                    className={getInputClassName('mobileNo')}
+                                    onBlur={() => handleBlur('mobileNo')} className={`flex-1 h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.mobileNo ? 'border-red-400 border-[1px]' : ''}`}
                                     placeholder="Enter mobile number"
                                     required
                                 />
                                 {isMobileVerified ? (
-                                    <span className="verified-badge">
-                                        <FontAwesomeIcon className='fontIcon' icon={faCheck} bounce={true} style={{ paddingTop: '4px' }} /> Verified
+                                    <span className="text-green-500 text-xs font-bold flex items-center gap-1 h-7 px-2">
+                                        <FontAwesomeIcon className='pt-1' icon={faCheck} bounce={true} /> Verified
                                     </span>
                                 ) : (
                                     <button
                                         type="button"
-                                        className="verify-button"
+                                        className="px-2 bg-green-600 text-white border-none rounded cursor-pointer flex items-center gap-1.5 text-sm transition-all duration-300 h-7 hover:bg-green-700"
                                         onClick={() => handleOtpClick('mobile')}
                                     >
                                         <FontAwesomeIcon icon={faSms} /> Verify
@@ -1030,28 +1003,27 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                 )}
                             </div>
                             {fieldErrors.mobileNo && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.mobileNo}</div>
+                                <div className="text-red-500 text-xs mt-1">{fieldErrors.mobileNo}</div>
                             )}
-                        </div>                <div className="form-group email-group">
-                            <label>Email ID<span className='required'>*</span></label>
-                            <div className="input-verify-group">
+                        </div>                <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">Email ID<span className='text-red-500'>*</span></label>
+                            <div className="flex gap-2 w-full min-w-0">
                                 <input
                                     type="email"
                                     value={customerData.emailId}
                                     onChange={handleEmailInput}
-                                    onBlur={() => handleBlur('emailId')}
-                                    className={getInputClassName('emailId')}
+                                    onBlur={() => handleBlur('emailId')} className={`flex-1 h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.emailId ? 'border-red-400 border-[1px]' : ''}`}
                                     placeholder="Enter email"
                                     required
                                 />
                                 {isEmailVerified ? (
-                                    <span className="verified-badge">
-                                        <FontAwesomeIcon className='fontIcon' icon={faCheck} bounce={true} style={{ paddingTop: '4px' }} /> Verified
+                                    <span className="text-green-500 text-xs font-bold flex items-center gap-1 h-7 px-2">
+                                        <FontAwesomeIcon className='pt-1' icon={faCheck} bounce={true} /> Verified
                                     </span>
                                 ) : (
                                     <button
                                         type="button"
-                                        className="verify-button"
+                                        className="px-2 bg-green-600 text-white border-none rounded cursor-pointer flex items-center gap-1.5 text-sm transition-all duration-300 h-7 hover:bg-green-700"
                                         onClick={() => handleOtpClick('email')}
                                     >
                                         <FontAwesomeIcon icon={faEnvelope} /> Verify
@@ -1059,17 +1031,14 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                 )}
                             </div>
                             {fieldErrors.emailId && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.emailId}</div>
+                                <div className="text-red-500 text-xs mt-1">{fieldErrors.emailId}</div>
                             )}
                         </div>
-                        {/* Permanent Address Section */}
-                        <div className="form-group full-width address-section">
-                            <h3 className="address-section-title">Permanent Address</h3>
-                        </div>
-
-                        {/* Permanent Address Line 1 */}
-                        <div className="form-group">
-                            <label>Address Line 1<span className='required'>*</span></label>
+                        {/* Permanent Address Section */}                        <div className="col-span-full mt-5 mb-2.5">
+                            <h3 className="text-base font-semibold text-gray-700 m-0 pb-2 border-b-2 border-gray-200">Permanent Address</h3>
+                        </div>                        {/* Permanent Address Line 1 */}
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">Address Line 1<span className='text-red-500'>*</span></label>
                             <input
                                 type="text"
                                 value={customerData.permanentAddressLine1 || ''}
@@ -1077,19 +1046,18 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                     handleInputChange('permanentAddressLine1', e.target.value);
                                     handlePermanentAddressFieldChange('permanentAddressLine1', e.target.value);
                                 }}
-                                onBlur={() => handleBlur('permanentAddressLine1')}
-                                className={getInputClassName('permanentAddressLine1')}
+                                onBlur={() => handleBlur('permanentAddressLine1')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.permanentAddressLine1 ? 'border-red-400 border-[1px]' : ''}`}
                                 placeholder="Enter address line 1"
                                 required
                             />
                             {fieldErrors.permanentAddressLine1 && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.permanentAddressLine1}</div>
+                                <div className="text-red-500 text-xs mt-1">{fieldErrors.permanentAddressLine1}</div>
                             )}
                         </div>
 
                         {/* Permanent Address Line 2 */}
-                        <div className="form-group">
-                            <label>Address Line 2</label>
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">Address Line 2</label>
                             <input
                                 type="text"
                                 value={customerData.permanentAddressLine2 || ''}
@@ -1097,13 +1065,14 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                     handleInputChange('permanentAddressLine2', e.target.value);
                                     handlePermanentAddressFieldChange('permanentAddressLine2', e.target.value);
                                 }}
+                                className="w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none"
                                 placeholder="Enter address line 2"
                             />
                         </div>
 
                         {/* Permanent Address Line 3 */}
-                        <div className="form-group">
-                            <label>Address Line 3</label>
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">Address Line 3</label>
                             <input
                                 type="text"
                                 value={customerData.permanentAddressLine3 || ''}
@@ -1111,13 +1080,14 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                     handleInputChange('permanentAddressLine3', e.target.value);
                                     handlePermanentAddressFieldChange('permanentAddressLine3', e.target.value);
                                 }}
+                                className="w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none"
                                 placeholder="Enter address line 3"
                             />
                         </div>
 
                         {/* Permanent City */}
-                        <div className="form-group">
-                            <label>City<span className='required'>*</span></label>
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">City<span className='text-red-500'>*</span></label>
                             <input
                                 type="text"
                                 value={customerData.permanentCity || ''}
@@ -1125,24 +1095,22 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                     handleInputChange('permanentCity', e.target.value);
                                     handlePermanentAddressFieldChange('permanentCity', e.target.value);
                                 }}
-                                onBlur={() => handleBlur('permanentCity')}
-                                className={getInputClassName('permanentCity')}
+                                onBlur={() => handleBlur('permanentCity')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.permanentCity ? 'border-red-400 border-[1px]' : ''}`}
                                 placeholder="Enter city"
                                 required
                             />
                             {fieldErrors.permanentCity && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.permanentCity}</div>
+                                <div className="text-red-500 text-xs mt-1">{fieldErrors.permanentCity}</div>
                             )}
                         </div>
 
                         {/* Permanent State */}
-                        <div className="form-group">
-                            <label>State<span className='required'>*</span></label>
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">State<span className='text-red-500'>*</span></label>
                             <select
                                 value={customerData.permanentStatecode || ''}
                                 onChange={handlePermanentStateSelect}
-                                onBlur={() => handleBlur('permanentState')}
-                                className={getInputClassName('permanentState')}
+                                onBlur={() => handleBlur('permanentState')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.permanentState ? 'border-red-400 border-[1px]' : ''}`}
                                 disabled={isLoadingStates}
                                 required
                             >
@@ -1153,121 +1121,95 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                     </option>
                                 ))}
                             </select>
-                            {isLoadingStates && <span className="loading-states">Loading states...</span>}
+                            {isLoadingStates && <span className="text-gray-500 text-sm">Loading states...</span>}
                             {fieldErrors.permanentState && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.permanentState}</div>
+                                <div className="text-red-500 text-xs mt-1">{fieldErrors.permanentState}</div>
                             )}
-                        </div>
-
-                        {/* Same Address Checkbox */}
-                        <div className="form-group full-width">
-                            <label className="checkbox-container">
+                        </div>                        {/* Same Address Checkbox */}
+                        <div className="col-span-full flex items-center space-x-2 mt-4">
+                            <div className="relative">
                                 <input
                                     type="checkbox"
                                     checked={isSameAddress}
                                     onChange={handleSameAddressChange}
-                                    className="address-checkbox"
+                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                                 />
-                                <span className="checkmark"></span>
+                            </div>
+                            <label className="text-sm text-gray-700 cursor-pointer">
                                 Correspondence address is same as permanent address
                             </label>
-                        </div>
-
-                        {/* Correspondence Address Section */}
-                        <div className="form-group full-width address-section">
-                            <h3 className="address-section-title">Correspondence Address</h3>
-                        </div>
-
-                        {/* Correspondence Address Line 1 */}
-                        <div className="form-group">
-                            <label>Address Line 1<span className='required'>*</span></label>
+                        </div>                        {/* Correspondence Address Section */}
+                        <div className="col-span-full mt-5 mb-2.5">
+                            <h3 className="text-base font-semibold text-gray-700 m-0 pb-2 border-b-2 border-gray-200">Correspondence Address</h3>
+                        </div>                        {/* Correspondence Address Line 1 */}
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">Address Line 1<span className='text-red-500'>*</span></label>
                             <input
                                 type="text"
                                 value={customerData.correspondenceAddressLine1 || ''}
                                 onChange={(e) => handleInputChange('correspondenceAddressLine1', e.target.value)}
-                                onBlur={() => handleBlur('correspondenceAddressLine1')}
-                                className={getInputClassName('correspondenceAddressLine1')}
+                                onBlur={() => handleBlur('correspondenceAddressLine1')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.correspondenceAddressLine1 ? 'border-red-400 border-[1px]' : ''} ${isSameAddress ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
                                 placeholder="Enter address line 1"
                                 required={!isSameAddress}
                                 disabled={isSameAddress}
-                                style={{
-                                    backgroundColor: isSameAddress ? '#f5f5f5' : 'white',
-                                    cursor: isSameAddress ? 'not-allowed' : 'text'
-                                }}
                             />
                             {fieldErrors.correspondenceAddressLine1 && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.correspondenceAddressLine1}</div>
+                                <div className="text-red-500 text-xs mt-1">{fieldErrors.correspondenceAddressLine1}</div>
                             )}
                         </div>
 
                         {/* Correspondence Address Line 2 */}
-                        <div className="form-group">
-                            <label>Address Line 2</label>
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">Address Line 2</label>
                             <input
                                 type="text"
                                 value={customerData.correspondenceAddressLine2 || ''}
                                 onChange={(e) => handleInputChange('correspondenceAddressLine2', e.target.value)}
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${isSameAddress ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
                                 placeholder="Enter address line 2"
                                 disabled={isSameAddress}
-                                style={{
-                                    backgroundColor: isSameAddress ? '#f5f5f5' : 'white',
-                                    cursor: isSameAddress ? 'not-allowed' : 'text'
-                                }}
                             />
                         </div>
 
                         {/* Correspondence Address Line 3 */}
-                        <div className="form-group">
-                            <label>Address Line 3</label>
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">Address Line 3</label>
                             <input
                                 type="text"
                                 value={customerData.correspondenceAddressLine3 || ''}
                                 onChange={(e) => handleInputChange('correspondenceAddressLine3', e.target.value)}
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${isSameAddress ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
                                 placeholder="Enter address line 3"
                                 disabled={isSameAddress}
-                                style={{
-                                    backgroundColor: isSameAddress ? '#f5f5f5' : 'white',
-                                    cursor: isSameAddress ? 'not-allowed' : 'text'
-                                }}
                             />
                         </div>
 
                         {/* Correspondence City */}
-                        <div className="form-group">
-                            <label>City<span className='required'>*</span></label>
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">City<span className='text-red-500'>*</span></label>
                             <input
                                 type="text"
                                 value={customerData.correspondenceCity || ''}
                                 onChange={(e) => handleInputChange('correspondenceCity', e.target.value)}
-                                onBlur={() => handleBlur('correspondenceCity')}
-                                className={getInputClassName('correspondenceCity')}
+                                onBlur={() => handleBlur('correspondenceCity')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.correspondenceCity ? 'border-red-400 border-[1px]' : ''} ${isSameAddress ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
                                 placeholder="Enter city"
                                 required={!isSameAddress}
                                 disabled={isSameAddress}
-                                style={{
-                                    backgroundColor: isSameAddress ? '#f5f5f5' : 'white',
-                                    cursor: isSameAddress ? 'not-allowed' : 'text'
-                                }}
                             />
                             {fieldErrors.correspondenceCity && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.correspondenceCity}</div>
+                                <div className="text-red-500 text-xs mt-1">{fieldErrors.correspondenceCity}</div>
                             )}
                         </div>
 
                         {/* Correspondence State */}
-                        <div className="form-group">
-                            <label>State<span className='required'>*</span></label>
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">State<span className='text-red-500'>*</span></label>
                             <select
                                 value={customerData.correspondenceStatecode || ''}
                                 onChange={handleCorrespondenceStateSelect}
-                                onBlur={() => handleBlur('correspondenceState')}
-                                className={getInputClassName('correspondenceState')}
+                                onBlur={() => handleBlur('correspondenceState')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.correspondenceState ? 'border-red-400 border-[1px]' : ''} ${isSameAddress ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
                                 disabled={isLoadingStates || isSameAddress}
                                 required={!isSameAddress}
-                                style={{
-                                    backgroundColor: isSameAddress ? '#f5f5f5' : 'white',
-                                    cursor: isSameAddress ? 'not-allowed' : 'text'
-                                }}
                             >
                                 <option value="">Select State</option>
                                 {stateList.map(state => (
@@ -1276,44 +1218,44 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                     </option>
                                 ))}
                             </select>
-                            {isLoadingStates && <span className="loading-states">Loading states...</span>}
+                            {isLoadingStates && <span className="text-gray-500 text-sm">Loading states...</span>}
                             {fieldErrors.correspondenceState && (
-                                <div className="text-red-500 text-sm mt-1">{fieldErrors.correspondenceState}</div>
+                                <div className="text-red-500 text-xs mt-1">{fieldErrors.correspondenceState}</div>
                             )}
                         </div>
 
-                    </div>
-
-                    {/* Form Actions */}
-                    <div className="stage-actions">
+                    </div>                    {/* Form Actions */}
+                    <div className="flex justify-between items-center gap-4 mt-6 pt-4 border-t border-gray-200">
                         {onBack && (
                             <button
                                 type="button"
-                                className="back-button"
+                                className="px-6 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 onClick={onBack}
                                 disabled={isSubmitting || isLoadingCustomer}
                             >
                                 Back
                             </button>
                         )}
-                        <button
-                            type="button"
-                            className="save-button"
-                            onClick={handleSubmit}
-                            disabled={isSubmitting || isLoadingCustomer}
-                        >
-                            {isSubmitting ? 'Saving...' : 'Save'}
-                        </button>
-                        {onSuccess && (
+                        <div className="flex gap-3 ml-auto">
                             <button
                                 type="button"
-                                className="next-button"
-                                onClick={onSuccess}
-                                disabled={!customerData.customerId || isLoadingCustomer}
+                                className="px-6 py-2 bg-blue-600 text-white border-none rounded-md hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={handleSubmit}
+                                disabled={isSubmitting || isLoadingCustomer}
                             >
-                                Next
+                                {isSubmitting ? 'Saving...' : 'Save'}
                             </button>
-                        )}
+                            {onSuccess && (
+                                <button
+                                    type="button"
+                                    className="px-6 py-2 bg-green-600 text-white border-none rounded-md hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    onClick={onSuccess}
+                                    disabled={!customerData.customerId || isLoadingCustomer}
+                                >
+                                    Next
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {showOtpModal && <OtpModal />}

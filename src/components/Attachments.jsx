@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileUpload, faEye, faTrash, faTimes, faFilePdf, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faFileUpload, faEye, faTrash, faTimes, faFilePdf, faPlus, faFileImage, faFile, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import { API_URL } from '../assets/config';
-import '../styles/Attachments.css';
 
 const Attachments = ({ customerId, holderType, onSuccess, onBack }) => {
     const [selectedCategory, setSelectedCategory] = useState('identityProof');
@@ -282,28 +281,53 @@ const Attachments = ({ customerId, holderType, onSuccess, onBack }) => {
         }
     };
 
-    const [previewDoc, setPreviewDoc] = useState(null);
-
-    const renderPreview = (doc, isListItem = true) => {
+    const [previewDoc, setPreviewDoc] = useState(null); const renderPreview = (doc, isListItem = true) => {
         const isRemoteUrl = doc.data.startsWith('http');
 
         if (doc.type.startsWith('image/')) {
+            if (isListItem) {
+                // Show icon for list view
+                return (
+                    <div className="flex items-center justify-center w-full h-full">
+                        <FontAwesomeIcon
+                            icon={faFileImage}
+                            className="text-blue-500 text-sm"
+                        />
+                    </div>
+                );
+            } else {
+                // Show actual image for modal preview
+                return (
+                    <div className="max-w-[85vw] max-h-[70vh] flex items-center justify-center">
+                        <img
+                            src={isRemoteUrl ? doc.data : doc.data}
+                            alt={doc.name}
+                            className="max-w-full max-h-[70vh] object-contain rounded shadow-xl"
+                        />
+                    </div>
+                );
+            }
+        }
+
+        if (doc.type === 'application/pdf') {
             return (
-                <div className={isListItem ? "document-preview-container" : "modal-preview-container"}>
-                    <img
-                        src={isRemoteUrl ? doc.data : doc.data}
-                        alt={doc.name}
-                        className="document-preview-image"
+                <div className="flex items-center justify-center w-full h-full">
+                    <FontAwesomeIcon
+                        icon={faFilePdf}
+                        className={isListItem ? "text-red-500 text-sm" : "text-red-500 text-4xl"}
                     />
                 </div>
             );
         }
 
-        if (doc.type === 'application/pdf') {
-            return <FontAwesomeIcon icon={faFilePdf} size="2x" color="#344767" />;
-        }
-
-        return <FontAwesomeIcon icon={faFileUpload} size="3x" />;
+        return (
+            <div className="flex items-center justify-center w-full h-full">
+                <FontAwesomeIcon
+                    icon={faFileUpload}
+                    className={isListItem ? "text-gray-400 text-sm" : "text-gray-400 text-4xl"}
+                />
+            </div>
+        );
     };
 
     const handlePreview = (doc) => {
@@ -378,131 +402,234 @@ const Attachments = ({ customerId, holderType, onSuccess, onBack }) => {
         } finally {
             setIsSubmitting(false);
         }
-    };
+    }; return (
+        <div className="bg-white rounded-xl shadow-lg p-4">
+            {/* Header Section */}
+            <div className="mb-6">
+                <h2 className="text-xl font-semibold text-gray-800 mb-2">Document Attachments</h2>
+            </div>            {/* Upload Form Section */}
+            <div className="bg-white rounded-lg shadow border border-gray-200 p-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {/* Document Category */}
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-700">
+                            Document Category
+                        </label>
+                        <select
+                            value={selectedCategory}
+                            onChange={handleCategoryChange}
+                            className="w-full h-9 px-3 border border-gray-300 rounded text-sm text-gray-700 bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            disabled={documentCategories.length === 0}
+                        >
+                            {documentCategories.map(({ key, label }) => {
+                                const currentCount = documents[key]?.length || 0;
+                                const limit = documentCategories.find(c => c.key === key)?.limit;
+                                return (
+                                    <option key={key} value={key}>
+                                        {`${label} (${currentCount}/${limit})`}
+                                    </option>
+                                );
+                            })}
+                        </select>
+                    </div>
 
-    return (
-        <div className="attachments-container">
-            <h2 className='mb-6 align-middle text-lg font-semibold text-gray-800'>
-                {/* <span className="mr-2  text-2xl text-blue-500"><FontAwesomeIcon icon={faFileUpload} /></span> */}
-                Document Attachments</h2>
-
-            <div className="attachments-header">
-                <div className="upload-section">
-                    <select
-                        value={selectedCategory}
-                        onChange={handleCategoryChange}
-                        className="category-select"
-                        disabled={documentCategories.length === 0}
-                    >
-                        {documentCategories.map(({ key, label }) => {
-                            const currentCount = documents[key]?.length || 0;
-                            const limit = documentCategories.find(c => c.key === key)?.limit;
-                            return (
-                                <option key={key} value={key}>
-                                    {`${label} (${currentCount}/${limit})`}
-                                </option>
-                            );
-                        })}
-                    </select>
+                    {/* Remarks Input (conditional) */}
                     {Number(selectedCategory) == 5 && (
-                        <input
-                            type="text"
-                            value={remarks}
-                            onChange={(e) => setRemarks(e.target.value)}
-                            placeholder="Enter document remarks"
-                            className="remarks-input"
-                            required
-                        />
-                    )}
-                    <label className={`upload-button ${isUploadDisabled() ? 'disabled' : ''}`}>
-                        <FontAwesomeIcon icon={faPlus} />
-                        Add Document
-                        <input
-                            type="file"
-                            accept="image/*,.pdf"
-                            onChange={handleFileUpload}
-                            style={{ display: 'none' }}
-                            multiple={true}
-                            disabled={isUploadDisabled()}
-                        />
-                    </label>
+                        <div className="space-y-1">
+                            <label className="text-sm font-medium text-gray-700">
+                                Document Remarks
+                            </label>
+                            <input
+                                type="text"
+                                value={remarks}
+                                onChange={(e) => setRemarks(e.target.value)}
+                                placeholder="Enter document remarks"
+                                className="w-full h-9 px-3 border border-gray-300 rounded text-sm text-gray-700 bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                required
+                            />
+                        </div>
+                    )}                    {/* Upload Button */}
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-700">
+                            Upload Document
+                        </label>
+                        <label className={`
+                            relative cursor-pointer 
+                            ${isUploadDisabled()
+                                ? 'bg-gray-100 border border-dashed border-gray-300 text-gray-500 cursor-not-allowed'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                            } 
+                            h-9 px-4 rounded flex items-center justify-center gap-2 text-sm font-medium transition-all duration-200
+                        `}>
+                            <FontAwesomeIcon
+                                icon={faPlus}
+                                className={`text-sm ${isUploadDisabled() ? 'text-gray-500' : 'text-white'}`}
+                            />
+                            <span className={isUploadDisabled() ? 'text-gray-500' : 'text-white'}>
+                                {isUploadDisabled() ? 'Upload Disabled' : 'Choose Files'}
+                            </span>
+                            <input
+                                type="file"
+                                accept="image/*,.pdf"
+                                onChange={handleFileUpload}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                multiple={true}
+                                disabled={isUploadDisabled()}
+                            />
+                        </label>
+                        {!isUploadDisabled() && (
+                            <p className="text-xs text-gray-500 text-center">
+                                Images & PDF up to 5MB
+                            </p>
+                        )}
+                    </div>
                 </div>
-            </div>
-
-            <div className="documents-list">
+            </div>            {/* Documents List Section */}
+            <div className="space-y-3">
                 {documentCategories.map(({ key, label }) => (
                     documents[key]?.length > 0 && (
-                        <div key={key} className="document-category">
-                            <h4>{label}</h4>
-                            <div className="document-items">
-                                {documents[key].map((doc) => (
-                                    <div key={doc.id} className="document-item">
-                                        <div className="document-preview">
-                                            {renderPreview(doc, true)}
-                                        </div>
-                                        <div className="document-info">
-                                            <span className="document-name">{doc.name}</span>
-                                            {Number(key) == 5 && doc.remark && (
-                                                <span className="document-remarks">
-                                                    Remarks: {doc.remark}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="document-actions">
-                                            <button onClick={() => handlePreview(doc)} title="Preview">
-                                                <FontAwesomeIcon icon={faEye} />
-                                            </button>
-                                            <button onClick={() => removeDocument(key, doc.id)} title="Remove">
-                                                <FontAwesomeIcon icon={faTrash} />
-                                            </button>
+                        <div key={key} className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                            {/* Category Header */}
+                            <div className="bg-gray-50 border-b border-gray-200 p-2">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div>
+                                            <h3 className="text-xs font-semibold text-gray-800">{label}</h3>
                                         </div>
                                     </div>
-                                ))}
+                                    <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                        <span className="text-xs font-medium">
+                                            {documents[key].length} file{documents[key].length !== 1 ? 's' : ''}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Documents Grid */}
+                            <div className="p-2">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                                    {documents[key].map((doc) => (
+                                        <div key={doc.id} className="flex items-center gap-2 p-2 bg-gray-50 hover:bg-gray-100 rounded border border-gray-200 transition-colors duration-200">
+                                            {/* Document Preview */}
+                                            <div className="w-8 h-8 bg-white rounded border border-gray-200 flex items-center justify-center flex-shrink-0">
+                                                {renderPreview(doc, true)}
+                                            </div>
+
+                                            {/* Document Info */}
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-medium text-xs text-gray-800 truncate">
+                                                    {doc.name}
+                                                </h4>
+                                                {/* <div className="flex items-center gap-1 mt-1">
+                                                    <span className={`text-xs px-1 py-0.5 rounded ${doc.type === 'application/pdf' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                        {doc.type === 'application/pdf' ? 'pdf' : 'Image'}
+                                                    </span>
+                                                    {doc.size && (
+                                                        <span className="text-xs text-gray-500">
+                                                            {(doc.size / (1024 * 1024)).toFixed(1)}MB
+                                                        </span>
+                                                    )}
+                                                </div> */}
+                                                {doc.remark && (
+                                                    <div className="">
+                                                        <span className="text-xs text-blue-800 bold">
+                                                            {doc.remark}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Action Buttons */}
+                                            <div className="flex gap-1 flex-shrink-0">
+                                                <button
+                                                    onClick={() => handlePreview(doc)}
+                                                    title="Preview Document"
+                                                    className="w-6 h-6 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded flex items-center justify-center transition-colors duration-200 cursor-pointer"
+                                                >
+                                                    <FontAwesomeIcon icon={faEye} className="text-xs" />
+                                                </button>
+                                                <button
+                                                    onClick={() => removeDocument(key, doc.id)}
+                                                    title="Remove Document"
+                                                    className="w-6 h-6 bg-red-100 hover:bg-red-200 text-red-600 rounded flex items-center justify-center transition-colors duration-200 cursor-pointer"
+                                                >
+                                                    <FontAwesomeIcon icon={faTrashAlt} className="text-xs" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     )
                 ))}
-            </div>
-
-            {/* Stage Actions */}
-            <div className="stage-actions">
+            </div>            {/* Action Buttons */}
+            <div className="flex justify-between items-center gap-4 mt-6 pt-4 border-t border-gray-200">
                 {onBack && (
                     <button
                         type="button"
-                        className="back-button"
+                        className="px-6 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={onBack}
                         disabled={isSubmitting}
                     >
                         Back
                     </button>
-                )}
-                <button
-                    type="button"
-                    className="next-button"
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
-                >
-                    {isSubmitting ? 'Processing...' : 'Next'}
-                </button>
-            </div>
-
-            {
-                previewDoc && (
-                    <div className="preview-modal" onClick={() => setPreviewDoc(null)}>
-                        <div className="preview-content">
-                            <button className="close-preview">
-                                <FontAwesomeIcon icon={faTimes} />
+                )}                <div className="flex gap-3 ml-auto">
+                    {onSuccess && (
+                        <button
+                            type="button"
+                            className="px-6 py-2 bg-green-600 text-white border-none rounded-md hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={onSuccess}
+                            disabled={isSubmitting}
+                        >
+                            Next
+                        </button>
+                    )}
+                </div>
+            </div>{/* Preview Modal */}
+            {previewDoc && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[1000] p-5" onClick={() => setPreviewDoc(null)}>
+                    <div className="bg-white rounded-lg shadow-lg max-w-4xl max-h-[90vh] overflow-hidden relative">
+                        <div className="bg-gray-50 border-b border-gray-200 p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+                                    <FontAwesomeIcon icon={previewDoc.type === 'application/pdf' ? faFilePdf : faFileUpload} className="text-blue-600 text-sm" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-gray-800 text-lg">{previewDoc.name}</h3>
+                                    <p className="text-gray-600 text-sm">
+                                        {previewDoc.type === 'application/pdf' ? 'PDF Document' : 'Image File'}
+                                        {previewDoc.size && ` • ${(previewDoc.size / (1024 * 1024)).toFixed(2)} MB`}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                className="w-8 h-8 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded flex items-center justify-center transition-colors duration-200"
+                                onClick={() => setPreviewDoc(null)}
+                                title="Close Preview"
+                            >
+                                <FontAwesomeIcon icon={faTimes} className="text-sm" />
                             </button>
+                        </div>
+                        <div className="p-6">
                             {previewDoc.type.startsWith('image/') ? (
                                 renderPreview(previewDoc, false)
                             ) : (
-                                <div>Unsupported file type</div>
+                                <div className="flex items-center justify-center py-16 text-gray-500">
+                                    <div className="text-center">
+                                        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <FontAwesomeIcon icon={faFilePdf} className="text-red-500 text-2xl" />
+                                        </div>
+                                        <p className="text-lg font-medium text-gray-700 mb-2">PDF Preview</p>
+                                        <p className="text-gray-500">Click the file to open in a new tab</p>
+                                    </div>
+                                </div>
                             )}
                         </div>
                     </div>
-                )
-            }
-        </div >
+                </div>
+            )}
+        </div>
     );
 };
 

@@ -1,6 +1,6 @@
 export const ROLE_IDS = {
-    ADMIN: 1,
-    CUSTOMER_EXECUTIVE: 2
+    ADMIN: 2,
+    CUSTOMER_EXECUTIVE: 1
 };
 
 export const ROLES = {
