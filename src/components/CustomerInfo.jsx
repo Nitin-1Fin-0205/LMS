@@ -308,7 +308,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
             [field]: value || ''
         };
         setCustomerData(updatedData);
-        handleCustomerInfoUpdate(updatedData);
+        // handleCustomerInfoUpdate(updatedData);
     };
     // Simplified blur handler to validate single field
     const handleBlur = (field) => {

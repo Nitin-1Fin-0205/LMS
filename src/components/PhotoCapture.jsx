@@ -200,6 +200,7 @@ const PhotoCapture = ({ customerId }) => {
             );
 
             toast.success('Profile photo updated successfully!');
+            setIsSaveEnabled(false);
         } catch (error) {
             console.error('Error uploading photo:', error);
             toast.error('Failed to upload photo');

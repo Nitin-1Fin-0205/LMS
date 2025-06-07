@@ -230,8 +230,25 @@ const Customer = () => {
                 <div className="flex gap-2">
                     <button
                         type="submit"
-                        className="flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 text-sm cursor-pointer"
+                        className="flex items-center gap-1 px-4 py-2  text-white rounded-md  disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 text-sm cursor-pointer"
                         disabled={isSubmitting}
+                        style={{
+                            backgroundColor: 'var(--primary-green-background)',
+                            transition: 'all 0.3s ease',
+                            ':hover': {
+                                backgroundColor: '#38a169'
+                            }
+                        }}
+                        onMouseOver={(e) => {
+                            if (!isSendingAgreement) {
+                                e.currentTarget.style.backgroundColor = '#38a169';
+                            }
+                        }}
+                        onMouseOut={(e) => {
+                            if (!isSendingAgreement) {
+                                e.currentTarget.style.backgroundColor = 'var(--primary-green-background)';
+                            }
+                        }}
                     >
                         {isSubmitting ? (
                             <>
