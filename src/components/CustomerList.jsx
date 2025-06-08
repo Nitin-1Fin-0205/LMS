@@ -19,14 +19,20 @@ const CustomerList = () => {
         totalCustomers: 0
     });
     const [filterModel, setFilterModel] = useState({ items: [] });
-    const navigate = useNavigate();
-
-    const columns = [
+    const navigate = useNavigate(); const columns = [
         { field: 'id', headerName: 'ID', flex: 0.3, minWidth: 40 },
         { field: 'name', headerName: 'Customer Name', flex: 1, minWidth: 180 },
         { field: 'mobileNo', headerName: 'Mobile', flex: 0.8, minWidth: 120 },
         { field: 'email', headerName: 'Email', flex: 1, minWidth: 180 },
         { field: 'pan', headerName: 'PAN', flex: 0.8, minWidth: 120 },
+        {
+            field: 'center',
+            headerName: 'Center',
+            flex: 1,
+            minWidth: 150,
+            align: 'center',
+            headerAlign: 'center'
+        },
         { field: 'lockerNo', headerName: 'Locker No', flex: 1, minWidth: 150 },
         {
             field: 'rent',
@@ -87,12 +93,13 @@ const CustomerList = () => {
             });
 
             if (response.data?.data) {
-                const mappedCustomers = response.data.data.customers.map(customer => ({
+                const mappedCustomers = response.data.data?.customers?.map(customer => ({
                     id: customer.customer_id,
                     name: [customer.first_name, customer.middle_name, customer.last_name].filter(Boolean).join(' '),
                     mobileNo: customer.mobile_number || '-',
                     email: customer.email || '-',
                     pan: customer.pan || '-',
+                    center: customer.center || '-',
                     lockerNo: customer.locker_number || '-',
                     rent: customer.rent ? parseFloat(customer.rent) : 0,
                 }));
