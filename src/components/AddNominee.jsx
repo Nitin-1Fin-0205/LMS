@@ -105,17 +105,12 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
             }
             if (percentage > 100) {
                 errors[`percentage-${index}`] = 'Percentage cannot exceed 100%';
+            }            // Validate proof requirement for all nominees
+            if (!nominee.proofId?.trim()) {
+                errors[`proofId-${index}`] = 'Proof ID is required';
             }
-
-            // Validate proof requirement for minors
-            const age = calculateAge(nominee.dob);
-            if (age < 18 && !isNaN(new Date(nominee.dob).getTime())) {
-                if (!nominee.proofId?.trim()) {
-                    errors[`proofId-${index}`] = 'Proof ID is required for minors';
-                }
-                if (!nominee.proofFile) {
-                    errors[`proofFile-${index}`] = 'Proof document is required for minors';
-                }
+            if (!nominee.proofFile) {
+                errors[`proofFile-${index}`] = 'Proof document is required';
             }
         });
 
@@ -264,7 +259,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
 
     const handleSaveAll = async () => {
         if (!validateForm()) {
-            toast.error('Please Fill All Required Fields Correctly');
+            // toast.error('Please Fill All Required Fields Correctly');
             return;
         }
 
@@ -344,7 +339,6 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                             {formErrors.total}
                         </div>
                     )}
-
                     <div className="nominee-form-container">
                         {nominees.map((nominee, index) => {
                             const isMinor = calculateAge(nominee.dob) < 18;
@@ -364,6 +358,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                                     </div>
 
                                     <div className="nominee-fields-grid">
+                                        {/* ...existing nominee form fields... */}
                                         <div className="form-group">
                                             <label>Name<span className="required">*</span></label>
                                             <input
@@ -408,15 +403,16 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
 
                                         <div className="form-group">
                                             <label>Percentage<span className="required">*</span></label>
-                                            <div className="percentage-input-container">                                                <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                step="1"
-                                                value={Math.round(nominee.percentage) || 0}
-                                                onChange={(e) => handleInputChange(index, 'percentage', e.target.value)}
-                                                className={formErrors[`percentage-${index}`] ? 'input-error' : ''}
-                                            />
+                                            <div className="percentage-input-container">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    step="1"
+                                                    value={Math.round(nominee.percentage) || 0}
+                                                    onChange={(e) => handleInputChange(index, 'percentage', e.target.value)}
+                                                    className={formErrors[`percentage-${index}`] ? 'input-error' : ''}
+                                                />
                                                 <span className="percentage-symbol">%</span>
                                             </div>
                                             {formErrors[`percentage-${index}`] && (
@@ -427,20 +423,18 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                                             )}
                                         </div>
 
-                                        {/* Modified proof ID field */}
+                                        {/* Proof ID field - Always required */}
                                         <div className="form-group">
-                                            <label>Proof ID {isMinor && <span className="required">*</span>}</label>
+                                            <label>Proof ID<span className="required">*</span></label>
                                             <input
                                                 type="text"
                                                 value={nominee.proofId || ''}
                                                 onChange={(e) => handleInputChange(index, 'proofId', e.target.value)}
-                                                placeholder="Enter proof ID (Aadhar, etc.)"
+                                                placeholder="Enter proof ID (e.g. Aadhar number, PAN number)"
                                                 className={formErrors[`proofId-${index}`] ? 'input-error' : ''}
                                             />
-                                            {formErrors[`proofId-${index}`] ? (
+                                            {formErrors[`proofId-${index}`] && (
                                                 <span className="error-message">{formErrors[`proofId-${index}`]}</span>
-                                            ) : (
-                                                isMinor && <small className="helper-text important">Required for minors under 18</small>
                                             )}
                                         </div>
 
@@ -460,7 +454,7 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                                         </div>
 
                                         <div className="form-group">
-                                            <label>Proof Document {isMinor && <span className="required">*</span>}</label>
+                                            <label>Proof Document<span className="required">*</span></label>
                                             <div className="file-upload-container">
                                                 <label className={`file-upload-label ${formErrors[`proofFile-${index}`] ? 'input-error' : ''}`}>
                                                     {nominee.proofFileName || 'Choose file'}
@@ -492,33 +486,62 @@ const AddNominee = ({ isOpen, onClose, onSave }) => {
                                                 {formErrors[`proofFile-${index}`] && (
                                                     <span className="error-message">{formErrors[`proofFile-${index}`]}</span>
                                                 )}
-                                                {isMinor && !formErrors[`proofFile-${index}`] && (
-                                                    <small className="helper-text important">Required for minors under 18</small>
-                                                )}
                                                 <small className="helper-text">Accepts PDF, JPG, PNG (Max 2MB)</small>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             );
-                        })}
-                    </div>
-                </div>
+                        })}                    </div>
+                </div>                {/* Footer */}
+                <div className="flex justify-between items-center gap-3 p-6 border-t border-gray-200">
+                    {/* Add Nominee Button */}
+                    <button
+                        onClick={handleAddNominee}
+                        disabled={nominees.length >= 2}
+                        className={`px-4 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 ${nominees.length >= 2
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-blue-500 text-white hover:bg-blue-600 transform hover:scale-105'
+                            }`}
+                    >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                        </svg>
+                        {nominees.length === 0 ? 'Add Nominee' : nominees.length === 1 ? 'Add Second Nominee' : 'Maximum Nominees Added'}
+                    </button>
 
-                {/* Footer */}
-                <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
-                    <button
-                        onClick={onClose}
-                        className="px-6 py-2.5 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleSaveAll}
-                        className="px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 font-medium transform hover:scale-105"
-                    >
-                        {isSubmitting ? 'Saving...' : 'Save Nominees'}
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="flex gap-3">
+                        <button
+                            onClick={onClose}
+                            className="px-6 py-2.5 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleSaveAll}
+                            className="px-6 py-2.5  text-white rounded-lg  hover:scale-102 cursor-pointer"
+                            style={{
+                                backgroundColor: 'var(--primary-green-background)',
+                                transition: 'all 0.3s ease',
+                                ':hover': {
+                                    backgroundColor: '#38a169'
+                                }
+                            }}
+                            onMouseOver={(e) => {
+                                if (!isSendingAgreement) {
+                                    e.currentTarget.style.backgroundColor = '#38a169';
+                                }
+                            }}
+                            onMouseOut={(e) => {
+                                if (!isSendingAgreement) {
+                                    e.currentTarget.style.backgroundColor = 'var(--primary-green-background)';
+                                }
+                            }}
+                        >
+                            {isSubmitting ? 'Saving...' : 'Save Nominees'}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

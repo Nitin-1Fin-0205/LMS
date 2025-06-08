@@ -445,7 +445,24 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                                                 href={nominee.proofFile}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-md transition-all duration-200 group shadow-sm hover:shadow-md transform hover:scale-105 cursor-pointer"
+                                                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white  rounded-md transition-all duration-200 group shadow-sm hover:shadow-md transform hover:scale-105 cursor-pointer"
+                                                style={{
+                                                    backgroundColor: 'var(--primary-green-background)',
+                                                    transition: 'all 0.3s ease',
+                                                    ':hover': {
+                                                        backgroundColor: '#38a169'
+                                                    }
+                                                }}
+                                                onMouseOver={(e) => {
+                                                    if (!isSendingAgreement) {
+                                                        e.currentTarget.style.backgroundColor = '#38a169';
+                                                    }
+                                                }}
+                                                onMouseOut={(e) => {
+                                                    if (!isSendingAgreement) {
+                                                        e.currentTarget.style.backgroundColor = 'var(--primary-green-background)';
+                                                    }
+                                                }}
                                             >
                                                 <svg className="w-3 h-3 mr-1.5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 20 20">
                                                     <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
