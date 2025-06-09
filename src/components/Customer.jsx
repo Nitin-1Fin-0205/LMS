@@ -9,7 +9,7 @@ import { ROUTES } from '../constants/routes';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faUserPlus, faVault, faFileAlt, faEye, faPhone, faEnvelope, faSpinner, faUpLong, faDownload, faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 import { fetchCustomerByPan, resetForm, updateHolderSection } from '../store/slices/customerSlice';
-import { updateLockerDetails, updateRentDetails, clearAllLockerData } from '../store/slices/lockerSlice';
+import { clearAllLockerData } from '../store/slices/lockerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS } from '../constants/holderConstants';
 import { ValidationService } from '../services/ValidationService';
 import CustomerDetailsOverlay from './CustomerDetailsOverlay';

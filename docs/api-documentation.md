@@ -344,6 +344,40 @@ Note:
 - Each plan includes tax details (CGST, IGST, SGST)
 - Amount fields are returned as strings to handle currency values
 - The response includes the total amount in words
+
+### Surrender Locker
+- **Endpoint:** `${API_URL}/lockers/surrender`
+- **Method:** POST
+- **Headers:**
+  - Content-Type: application/json
+  - Authorization: Bearer {token}
+  - Accept: application/json
+- **Request Body:**
+```json
+{
+  "customer_id": "string",
+  "locker_id": "string",
+  "otp_token": "string"
+}
+```
+- **Response:**
+```json
+{
+  "status": "success",
+  "message": "Locker surrendered successfully",
+  "data": {
+    "surrenderDate": "string",
+    "refundAmount": "number",
+    "lockerId": "string"
+  }
+}
+```
+
+Note: 
+- The OTP token is required for verification before surrender
+- The customer must verify their identity using mobile OTP before surrendering
+- Once surrendered, the locker becomes available for assignment to other customers
+- Any applicable refund amount will be calculated and returned in the response
 ```
 
 Note: All these APIs are currently mocked in the codebase and will need to be implemented on the backend. The actual API endpoints and response formats may need to be adjusted based on the backend implementation.

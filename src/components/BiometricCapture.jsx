@@ -400,7 +400,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                                 {fingerprints[selectedFinger] ? (
                                     <div className="fingerprint-details">
                                         <div className={`quality-indicator ${getQualityClass(fingerprints[selectedFinger].quality)}`}>
-                                            Quality: {fingerprints[selectedFinger].quality}%
+                                            Quality:{fingerprints[selectedFinger].quality}%
                                         </div>
                                         <div className="timestamp">
                                             Captured: {new Date(fingerprints[selectedFinger].timestamp).toLocaleTimeString()}

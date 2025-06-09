@@ -6,8 +6,6 @@ import { LockerDetailsModel, RentDetailsModel } from '../../models/LockerModel';
 const initialState = {
     loading: false,
     error: null,
-    lockerDetails: { ...LockerDetailsModel },
-    // rentDetails: { ...RentDetailsModel },
     plans: [],
     lockerData: null,
     mappedLockers: []
@@ -144,6 +142,81 @@ export const updateNominees = createAsyncThunk(
     }
 );
 
+// Thunk for initiating surrender (sends OTP)
+export const initiateSurrenderLocker = createAsyncThunk(
+    'locker/initiateSurrenderLocker',
+    async ({ customerId, lockerId }, { rejectWithValue }) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            // const response = await axios.post(
+            //     `${API_URL}/lockers/surrender/initiate`,
+            //     {
+            //         customer_id: customerId,
+            //         locker_id: lockerId
+            //     },
+            //     {
+            //         headers: {
+            //             'Authorization': `Bearer ${token}`,
+            //             'Content-Type': 'application/json'
+            //         }
+            //     }
+            // );
+
+
+            // Mocked response for OTP initiation
+            const response = {
+                "status": 200,
+                "success": true,
+                "message": "OTP sent successfully",
+                "data": {
+                    "mobile": "+1234567890",
+                    "request_id": "req_123456789abcdef",
+                    "customer_id": 12345,
+                    "locker_id": 67890,
+                    "expires_at": "2025-06-09T10:30:00Z"
+                }
+            }
+
+            if (response.status === 200 || response.status === 201) {
+                return response.data;
+            }
+            throw new Error('Failed to initiate surrender');
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to initiate surrender');
+        }
+    }
+);
+
+// Thunk for completing surrender after OTP verification
+export const surrenderLocker = createAsyncThunk(
+    'locker/surrenderLocker',
+    async ({ customerId, lockerId }, { rejectWithValue }) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.post(
+                `${API_URL}/lockers/surrender/complete`,
+                {
+                    customer_id: customerId,
+                    locker_id: lockerId
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (response.status === 200 || response.status === 201) {
+                return response.data;
+            }
+            throw new Error('Failed to surrender locker');
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to surrender locker');
+        }
+    }
+);
+
 const lockerSlice = createSlice({
     name: 'locker',
     initialState,
@@ -152,21 +225,6 @@ const lockerSlice = createSlice({
             state.lockerData = null;
             state.loading = false;
             state.error = null;
-        },
-        updateLockerDetails: (state, action) => {
-            state.lockerDetails = {
-                ...state.lockerDetails,
-                ...action.payload
-            };
-        },
-        updateRentDetails: (state, action) => {
-            state.rentDetails = {
-                ...state.rentDetails,
-                deposit: action.payload.deposit,
-                rent: action.payload.rent,
-                admissionFees: action.payload.admissionFees,
-                total: action.payload.total
-            };
         },
         setLockerData: (state, action) => {
             state.lockerData = action.payload;
@@ -194,26 +252,11 @@ const lockerSlice = createSlice({
             .addCase(fetchLockerDetails.pending, (state) => {
                 state.loading = true;
                 state.error = null;
-            })
-            .addCase(fetchLockerDetails.fulfilled, (state, action) => {
+            }).addCase(fetchLockerDetails.fulfilled, (state, action) => {
                 state.loading = false;
                 state.error = null;
-                const lockerData = action.payload.data.lockers[0];
-
-                state.lockerDetails = {
-                    ...state.lockerDetails,
-                    assignedLocker: lockerData.lockerNumber,
-                    lockerId: lockerData.lockerId,
-                    center: lockerData.center_id,
-                    lockerKey: lockerData.locker_key,
-                    selectedPlan: lockerData.plan_id,
-                    rentDetails: lockerData.rent_details || {
-                        deposit: 0,
-                        rent: 0,
-                        admissionFees: 0,
-                        total: 0
-                    }
-                };
+                // Store raw locker data for other components that might need it
+                state.lockerData = action.payload;
             })
             .addCase(fetchLockerDetails.rejected, (state, action) => {
                 state.loading = false;
@@ -221,16 +264,11 @@ const lockerSlice = createSlice({
             })
             .addCase(fetchNominees.fulfilled, (state, action) => {
                 state.loading = false;
-                state.lockerDetails.nominees = action.payload.data.nominees.map(nominee => ({
-                    ...nominee,
-                    id: nominee.unique_id,
-                }));
+                // Nominees are now managed by individual components
             })
             .addCase(deleteNominee.fulfilled, (state, action) => {
                 state.loading = false;
-                state.lockerDetails.nominees = state.lockerDetails.nominees.filter(
-                    nominee => nominee.unique_id !== action.payload
-                );
+                // Nominee deletion is now managed by individual components
             })
             .addCase(assignLocker.pending, (state) => {
                 state.loading = true;
@@ -240,8 +278,20 @@ const lockerSlice = createSlice({
                 state.loading = false;
                 state.error = null;
                 // Update locker details after successful assignment if needed
+            }).addCase(assignLocker.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
             })
-            .addCase(assignLocker.rejected, (state, action) => {
+            .addCase(initiateSurrenderLocker.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(initiateSurrenderLocker.fulfilled, (state, action) => {
+                state.loading = false;
+                state.error = null;
+                // OTP has been sent, ready for user input
+            })
+            .addCase(initiateSurrenderLocker.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             })
@@ -256,14 +306,25 @@ const lockerSlice = createSlice({
             .addCase(updateNominees.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+            })
+            .addCase(surrenderLocker.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            }).addCase(surrenderLocker.fulfilled, (state, action) => {
+                state.loading = false;
+                state.error = null;
+                // Clear stored locker data after successful surrender
+                state.lockerData = null;
+            })
+            .addCase(surrenderLocker.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
             });
     }
 });
 
 export const {
     clearLockerData,
-    updateLockerDetails,
-    updateRentDetails,
     setLockerData,
     clearAllLockerData
 } = lockerSlice.actions;

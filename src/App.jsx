@@ -27,6 +27,8 @@ const AppContent = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem('authToken');
   const { validateToken } = useAuth();
+  const [sideNavCollapsed, setSideNavCollapsed] = React.useState(true);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const token = params.get('access_token');
@@ -43,21 +45,26 @@ const AppContent = () => {
     }
   }, [location.search, navigate]);
 
+  const handleSideNavToggle = (collapsed) => {
+    setSideNavCollapsed(collapsed);
+  };
+
   // Helper function to determine required roles
   const getRequiredRoles = (defaultRoles) => {
     return [ROLES.ADMIN, ...defaultRoles];
   };
-
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      {/* <SideNav /> */}
-      {token && <SideNav />}
+      {token && <SideNav onToggle={handleSideNavToggle} />}
       <Box sx={{
         flexGrow: 1,
-        paddingLeft: '60px',
-        width: '100%',
-        boxSizing: 'border-box'
-      }}>        <Routes>
+        marginLeft: token ? (sideNavCollapsed ? '60px' : '240px') : '0px',
+        width: token ? (sideNavCollapsed ? 'calc(100% - 60px)' : 'calc(100% - 240px)') : '100%',
+        transition: 'margin-left 0.3s ease, width 0.3s ease',
+        boxSizing: 'border-box',
+        overflow: 'hidden'
+      }}>
+        <Routes>
           <Route path="/" element={
             <PrivateRoute>
               <HomePage />

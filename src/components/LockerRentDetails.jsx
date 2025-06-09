@@ -1,39 +1,175 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { toast } from 'react-toastify';
-import { API_URL } from '../assets/config';
-import { updateLockerDetails, updateRentDetails, fetchNominees } from '../store/slices/lockerSlice';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faKey } from '@fortawesome/free-solid-svg-icons';
-import AssignLocker from './AssignLocker';
-import AddNominee from './AddNominee';
-import axios from 'axios';
+import React, { useState, useEffect, useCallback } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
+import { API_URL } from "../assets/config";
+import {
+    surrenderLocker,
+    initiateSurrenderLocker,
+} from "../store/slices/lockerSlice";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+    faPlus,
+    faKey,
+    faMinus,
+    faRemove,
+    faEraser,
+} from "@fortawesome/free-solid-svg-icons";
+import AssignLocker from "./AssignLocker";
+import { otpService } from "../services/otpService";
+import axios from "axios";
 
-const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
+const LockerRentDetails = ({ holderType, onLockerDataChange, showSurrenderButton, setShowSurrenderButton }) => {
     const dispatch = useDispatch();
-    const { lockerDetails } = useSelector(state => state.locker);
-    const [lockerPlans, setLockerPlans] = useState([]);
-    const [isLoadingPlans, setIsLoadingPlans] = useState(false);
 
-    const primaryHolder = useSelector(state => state.customer.form.primaryHolder);
+    // Centers state management
+    const [centers, setCenters] = useState([]);
+    const [isLoadingCenters, setIsLoadingCenters] = useState(false);
+    const [lockerDetails, setLockerDetails] = useState({
+        lockerId: "",
+        center: "",
+        assignedLocker: "",
+        remarks: "",
+        lockerSize: "",
+        lockerKey: "",
+        selectedPlan: "",
+        upiId: "",
+        rentDetails: {
+            deposit: "",
+            rent: "",
+            admissionFees: "",
+            total: "",
+        },
+        isModalOpen: false,
+    });
+
+    const [loading, setLoading] = useState(false);
+    const [lockerPlans, setLockerPlans] = useState([]);
+    const [isLoadingPlans, setIsLoadingPlans] = useState(false); // Surrender locker states
+    const [showSurrenderModal, setShowSurrenderModal] = useState(false);
+    const [surrenderStep, setSurrenderStep] = useState("confirm"); // 'confirm', 'otp', 'processing'
+    const [otpRequestId, setOtpRequestId] = useState(null);
+    const [otp, setOtp] = useState("");
+    const [otpError, setOtpError] = useState("");
+    const [resendTimer, setResendTimer] = useState(0);
+    const [responseMobile, setResponseMobile] = useState(null);
+    const primaryHolder = useSelector(
+        (state) => state.customer.form.primaryHolder
+    );
+
+    const fetchCenters = async () => {
+        try {
+            setIsLoadingCenters(true);
+            const token = localStorage.getItem("authToken");
+            const response = await axios.get(`${API_URL}/lockers/locker-centers`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setCenters(response.data);
+        } catch (error) {
+            toast.error("Failed to fetch centers");
+        } finally {
+            setIsLoadingCenters(false);
+        }
+    };
+
+    // Function to fetch locker details directly from API
+    const fetchLockerDetails = async (customerId) => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem("authToken");
+            const response = await axios.get(
+                `${API_URL}/lockers/locker-details?customer_id=${customerId}`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+
+            if (response.data?.data?.lockers?.[0]) {
+                const lockerData = response.data.data.lockers[0];
+
+                setLockerDetails((prev) => ({
+                    ...prev,
+                    assignedLocker: lockerData.lockerNumber || "",
+                    lockerId: lockerData.lockerId || "",
+                    center: lockerData.center_id || "",
+                    lockerKey: lockerData.locker_key || "",
+                    selectedPlan: lockerData.plan_id || "",
+                    lockerSize: lockerData.size || "",
+                    upiId: lockerData.upi_id || "",
+                    rentDetails: lockerData.rent_details || {
+                        deposit: "",
+                        rent: "",
+                        admissionFees: "",
+                        total: "",
+                    },
+                }));
+
+                // If plan exists, fetch the plans and set the details
+                if (lockerData.plan_id && lockerData.lockerId) {
+                    await fetchPlansForLocker(lockerData.lockerId);
+                }
+
+                setShowSurrenderButton(true);
+            }
+        } catch (error) {
+            console.error("Error fetching locker details:", error);
+            // Don't show error toast if no locker is assigned yet
+            if (error.response?.status !== 404) {
+                toast.error("Failed to fetch locker details");
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const isLockerProperlySaved = () => {
+        return !!(
+            lockerDetails.lockerId &&
+            lockerDetails.assignedLocker &&
+            lockerDetails.center &&
+            lockerDetails.selectedPlan &&
+            showSurrenderButton
+        );
+    };
+
+    // Function to update locker details locally
+    const updateLockerDetails = (updates) => {
+        setLockerDetails((prev) => ({
+            ...prev,
+            ...updates,
+        }));
+    };
 
     const handleInputChange = (field, value) => {
-        dispatch(updateLockerDetails({ [field]: value }));
+        updateLockerDetails({ [field]: value });
+    };
+
+    // Timer function for resend OTP cooldown
+    const startResendTimer = () => {
+        setResendTimer(30);
+        const timer = setInterval(() => {
+            setResendTimer((prev) => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
     };
 
     const fetchPlansForLocker = async (lockerId) => {
         console.log("Fetching plans for locker ID:", lockerId);
         try {
             setIsLoadingPlans(true);
-            const token = localStorage.getItem('authToken');
+            const token = localStorage.getItem("authToken");
             const response = await axios.post(
                 `${API_URL}/lockers/lockers/rent?lockerId=${lockerId}`,
                 {},
                 {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
                 }
             );
 
@@ -42,12 +178,29 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                 // toast.success('Plans fetched successfully');
             }
         } catch (error) {
-            console.error('Error fetching plans:', error);
-            toast.error('Failed to fetch plans');
+            console.error("Error fetching plans:", error);
+            toast.error("Failed to fetch plans");
         } finally {
             setIsLoadingPlans(false);
         }
-    };
+    }; // Fetch locker details and centers on component mount
+    useEffect(() => {
+        // Fetch centers
+        fetchCenters();
+
+        const customerId = primaryHolder?.customerInfo?.customerId;
+        if (customerId) {
+            // Fetch locker details from API
+            fetchLockerDetails(customerId);
+        }
+    }, [primaryHolder?.customerInfo?.customerId]);
+
+    // Notify parent of locker data changes
+    useEffect(() => {
+        if (onLockerDataChange) {
+            onLockerDataChange(lockerDetails);
+        }
+    }, [lockerDetails, onLockerDataChange]);
 
     useEffect(() => {
         if (lockerDetails?.lockerId) {
@@ -58,79 +211,184 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
     useEffect(() => {
         const fetchPlanAndUpdateRent = async () => {
             if (lockerDetails?.selectedPlan && lockerPlans.length > 0) {
-                const selectedPlan = lockerPlans.find(plan =>
-                    Number(plan.planId) === Number(lockerDetails.selectedPlan)
+                const selectedPlan = lockerPlans.find(
+                    (plan) => Number(plan.planId) === Number(lockerDetails.selectedPlan)
                 );
                 if (selectedPlan) {
-                    dispatch(updateLockerDetails({
+                    updateLockerDetails({
                         rentDetails: {
                             deposit: selectedPlan.deposit,
                             rent: selectedPlan.baseRent,
                             admissionFees: selectedPlan.admissionFees,
-                            total: selectedPlan.grandTotalAmount
-                        }
-                    }));
+                            total: selectedPlan.grandTotalAmount,
+                        },
+                    });
                 }
             }
         };
 
         fetchPlanAndUpdateRent();
-    }, [lockerDetails.selectedPlan, lockerPlans, dispatch]);
-
-    // Fetch nominees on component mount and when primary holder changes
-    useEffect(() => {
-        const fetchNomineesOnLoad = async () => {
-            const customerId = primaryHolder?.customerInfo?.customerId;
-            if (customerId) {
-                try {
-                    await dispatch(fetchNominees(customerId)).unwrap();
-                } catch (error) {
-                    console.error('Error fetching nominees:', error);
-                }
-            }
-        };
-
-        fetchNomineesOnLoad();
-    }, [dispatch, primaryHolder?.customerInfo?.customerId]);
-
+    }, [lockerDetails.selectedPlan, lockerPlans]);
     const handleLockerAssign = async (locker) => {
-        dispatch(updateLockerDetails({
+        updateLockerDetails({
             assignedLocker: locker?.locker_number || "",
             lockerId: locker?.locker_id || null,
             lockerSize: locker?.size || "",
             lockerKey: locker?.locker_key || "",
-            isModalOpen: false
-        }));
+            isModalOpen: false,
+        });
         console.log("Locker assigned:", locker);
-
-        // if (locker?.locker_id) {
-        //     try {
-        //         await dispatch(fetchLockerDetails(locker.locker_id)).unwrap();
-        //     } catch (error) {
-        //         console.error('Error fetching locker details:', error);
-        //     }
-        // }
     };
-
     const handlePlanSelect = (planId) => {
-        const selectedPlan = lockerPlans.find(plan => plan.planId === planId);
+        const selectedPlan = lockerPlans.find((plan) => plan.planId === planId);
         if (selectedPlan) {
             console.log("Selected plan:", selectedPlan);
             // Update lockerDetails with plan information
-            dispatch(updateLockerDetails({
+            updateLockerDetails({
                 selectedPlan: planId,
                 rentDetails: {
                     deposit: selectedPlan.deposit,
                     rent: selectedPlan.baseRent,
                     admissionFees: selectedPlan.admissionFees,
-                    total: selectedPlan.grandTotalAmount
-                }
-            }));
+                    total: selectedPlan.grandTotalAmount,
+                },
+            });
+        }
+    };
+
+    // Surrender locker functions
+    const handleSurrenderClick = () => {
+        setShowSurrenderModal(true);
+        setSurrenderStep("confirm");
+        setOtpError("");
+        setOtp("");
+    };
+    const handleSurrenderCancel = () => {
+        setShowSurrenderModal(false);
+        setSurrenderStep("confirm");
+        setOtpRequestId(null);
+        setOtp("");
+        setOtpError("");
+        setResendTimer(0);
+        setResponseMobile(null);
+    };
+    const handleSurrenderConfirm = async () => {
+        try {
+            setSurrenderStep("processing");
+
+            // Use the initiate surrender API to send OTP
+            const response = await dispatch(
+                initiateSurrenderLocker({
+                    customerId: primaryHolder?.customerInfo?.customerId,
+                    lockerId: lockerDetails.lockerId,
+                })
+            ).unwrap();
+
+            // Store the request_id from the response for OTP verification
+            if (response.data && response.data.request_id) {
+                setOtpRequestId(response.data.request_id);
+            } else if (response.request_id) {
+                setOtpRequestId(response.request_id);
+            }
+
+            // Store the mobile number from the response
+            if (response.data && response.data.mobile) {
+                setResponseMobile(response.data.mobile);
+            } else if (response.mobile) {
+                setResponseMobile(response.mobile);
+            }
+
+            setSurrenderStep("otp");
+            startResendTimer(); // Start the 30-second cooldown
+            toast.success("OTP sent to your registered mobile number");
+        } catch (error) {
+            console.error("Error initiating surrender:", error);
+            toast.error(error.message || "Failed to send OTP");
+            setSurrenderStep("confirm");
+        }
+    };
+    const handleOtpVerificationAndSurrender = async () => {
+        if (!otp || otp.length !== 6) {
+            setOtpError("Please enter a valid 6-digit OTP");
+            return;
+        }
+
+        if (!otpRequestId) {
+            setOtpError("OTP session expired. Please try again.");
+            setSurrenderStep("confirm");
+            return;
+        }
+
+        try {
+            setSurrenderStep("processing");
+            setOtpError("");
+
+            // First verify OTP using the existing otpService
+            const otpResponse = await otpService.verifyOtp(otpRequestId, otp);
+
+            if (!otpResponse || !otpResponse.success) {
+                throw new Error("OTP verification failed");
+            }
+
+            // After successful OTP verification, complete the surrender
+            await dispatch(
+                surrenderLocker({
+                    customerId: primaryHolder?.customerInfo?.customerId,
+                    lockerId: lockerDetails.lockerId,
+                })
+            ).unwrap();
+            toast.success("Locker surrendered successfully!");
+            setShowSurrenderModal(false);
+            setSurrenderStep("confirm");
+            setOtpRequestId(null);
+            setOtp("");
+            setOtpError("");
+            setResendTimer(0);
+            setResponseMobile(null);
+        } catch (error) {
+            console.error("Error in surrender process:", error);
+            setOtpError(error.message || "Failed to surrender locker");
+            setSurrenderStep("otp");
+        }
+    };
+    const resendOtp = async () => {
+        if (resendTimer > 0) {
+            return; // Don't allow resend if timer is still running
+        }
+
+        try {
+            // Re-initiate surrender to resend OTP
+            const response = await dispatch(
+                initiateSurrenderLocker({
+                    customerId: primaryHolder?.customerInfo?.customerId,
+                    lockerId: lockerDetails.lockerId,
+                })
+            ).unwrap();
+
+            // Update the request_id for the new OTP
+            if (response.data && response.data.request_id) {
+                setOtpRequestId(response.data.request_id);
+            } else if (response.request_id) {
+                setOtpRequestId(response.request_id);
+            }
+
+            // Update the mobile number from the response
+            if (response.data && response.data.mobile) {
+                setResponseMobile(response.data.mobile);
+            } else if (response.mobile) {
+                setResponseMobile(response.mobile);
+            }
+
+            startResendTimer(); // Start the 30-second cooldown again
+            toast.success("OTP resent successfully");
+            setOtpError("");
+        } catch (error) {
+            toast.error("Failed to resend OTP");
         }
     };
 
     return (
-        <div className="max-w-7xl mx-auto p-4 space-y-4 bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto  space-y-4  ">
             {/* Header */}
             <div className="mb-6">
                 <div className="flex items-center text-blue-600 mb-2">
@@ -146,11 +404,21 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                 <div className="bg-white rounded-lg border border-gray-200 p-4">
                     <div className="flex items-center mb-4">
                         <div className="w-5 h-5 bg-blue-100 rounded flex items-center justify-center mr-2">
-                            <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                            <svg
+                                className="w-3 h-3 text-blue-600"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                            >
+                                <path
+                                    fillRule="evenodd"
+                                    d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                    clipRule="evenodd"
+                                />
                             </svg>
                         </div>
-                        <h2 className="text-base font-medium text-gray-900">Locker Assignment</h2>
+                        <h2 className="text-base font-medium text-gray-900">
+                            Locker Assignment
+                        </h2>
                     </div>
 
                     <div className="space-y-3">
@@ -161,18 +429,19 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                             </label>
                             <select
                                 value={lockerDetails.center}
-                                onChange={(e) => handleInputChange('center', e.target.value)}
+                                onChange={(e) => handleInputChange("center", e.target.value)}
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                 required
                                 disabled={isLoadingCenters}
                             >
                                 <option value="">Select Center</option>
                                 {centers.map((center) => (
-                                    <option key={center.id} value={center.id}>{center.name}</option>
+                                    <option key={center.id} value={center.id}>
+                                        {center.name}
+                                    </option>
                                 ))}
                             </select>
                         </div>
-
                         {/* Assign Locker */}
                         <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -181,21 +450,28 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                             <div className="flex">
                                 <input
                                     type="text"
-                                    value={`${lockerDetails.assignedLocker}${lockerDetails.lockerSize ? ` (${lockerDetails.lockerSize})` : ''}`}
+                                    value={`${lockerDetails.assignedLocker}${lockerDetails.lockerSize
+                                        ? ` (${lockerDetails.lockerSize})`
+                                        : ""
+                                        }`}
                                     placeholder="Select locker"
                                     className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-l focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     readOnly
                                 />
                                 <button
-                                    onClick={() => dispatch(updateLockerDetails({ isModalOpen: true }))}
+                                    onClick={() => updateLockerDetails({ isModalOpen: true })}
                                     disabled={!lockerDetails.center}
                                     className="px-3 py-2 bg-gradient-to-r from-green-400 to-green-600 text-white rounded-r hover:from-green-500 hover:to-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md"
+                                    title={
+                                        lockerDetails.assignedLocker
+                                            ? "Change Locker"
+                                            : "Assign Locker"
+                                    }
                                 >
                                     <FontAwesomeIcon icon={faPlus} className="text-xm" />
                                 </button>
                             </div>
                         </div>
-
                         {/* Locker Key No */}
                         <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -203,25 +479,46 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                             </label>
                             <input
                                 type="text"
+                                title="Select locker first."
                                 placeholder="Auto-filled on locker assignment"
-                                value={lockerDetails.lockerKey || ''}
-                                onChange={(e) => handleInputChange('lockerKey', e.target.value)}
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                value={lockerDetails.lockerKey || ""}
+                                onChange={(e) => handleInputChange("lockerKey", e.target.value)}
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none  cursor-not-allowed"
                                 readOnly
                             />
-                        </div>
+                        </div>{" "}
+                        {/* Surrender Locker Button - Only show when locker is properly assigned and saved */}
+                        {lockerDetails.assignedLocker && isLockerProperlySaved() && (
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Locker Actions
+                                </label>
+                                <button
+                                    onClick={handleSurrenderClick}
+                                    className="w-full px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-medium rounded-md hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-102 shadow-sm hover:shadow-md flex items-center justify-center"
+                                >
+                                    <FontAwesomeIcon icon={faEraser} className="mr-2" />
+                                    Surrender Locker
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
-
                 {/* Payment Details Section */}
                 <div className="bg-white rounded-lg border border-gray-200 p-4">
                     <div className="flex items-center mb-4">
                         <div className="w-5 h-5 bg-purple-100 rounded flex items-center justify-center mr-2">
-                            <svg className="w-3 h-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                            <svg
+                                className="w-3 h-3 text-purple-600"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                            >
                                 <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zM14 6a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h8zM6 8a2 2 0 00-2 2v4a2 2 0 002 2h8a2 2 0 002-2v-4a2 2 0 00-2-2H6z" />
                             </svg>
                         </div>
-                        <h2 className="text-base font-medium text-gray-900">Payment Details</h2>
+                        <h2 className="text-base font-medium text-gray-900">
+                            Payment Details
+                        </h2>
                     </div>
 
                     <div className="space-y-3">
@@ -231,13 +528,13 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                                 Select Plan <span className="text-red-500">*</span>
                             </label>
                             <select
-                                value={lockerDetails.selectedPlan || ''}
+                                value={lockerDetails.selectedPlan || ""}
                                 onChange={(e) => handlePlanSelect(e.target.value)}
                                 disabled={isLoadingPlans}
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                             >
                                 <option value="">Select a plan</option>
-                                {lockerPlans.map(plan => (
+                                {lockerPlans.map((plan) => (
                                     <option key={plan.planId} value={plan.planId}>
                                         {plan.name} - ₹{plan.grandTotalAmount}
                                     </option>
@@ -252,10 +549,12 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                                     Deposit <span className="text-red-500">*</span>
                                 </label>
                                 <div className="relative">
-                                    <span className="absolute left-2 top-2 text-gray-500 text-xm">₹</span>
+                                    <span className="absolute left-2 top-2 text-gray-500 text-xm">
+                                        ₹
+                                    </span>
                                     <input
                                         type="text"
-                                        value={lockerDetails.rentDetails?.deposit || ''}
+                                        value={lockerDetails.rentDetails?.deposit || ""}
                                         className="w-full pl-6 pr-2 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                         readOnly
                                     />
@@ -267,10 +566,12 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                                     Rent <span className="text-red-500">*</span>
                                 </label>
                                 <div className="relative">
-                                    <span className="absolute left-2 top-2 text-gray-500 text-xm">₹</span>
+                                    <span className="absolute left-2 top-2 text-gray-500 text-xm">
+                                        ₹
+                                    </span>
                                     <input
                                         type="text"
-                                        value={lockerDetails.rentDetails?.rent || ''}
+                                        value={lockerDetails.rentDetails?.rent || ""}
                                         className="w-full pl-6 pr-2 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                         readOnly
                                     />
@@ -284,10 +585,12 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                                 Admission Fees <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
-                                <span className="absolute left-2 top-2 text-gray-500 text-xm">₹</span>
+                                <span className="absolute left-2 top-2 text-gray-500 text-xm">
+                                    ₹
+                                </span>
                                 <input
                                     type="text"
-                                    value={lockerDetails.rentDetails?.admissionFees || ''}
+                                    value={lockerDetails.rentDetails?.admissionFees || ""}
                                     className="w-full pl-6 pr-2 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     readOnly
                                 />
@@ -300,10 +603,12 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                                 Total <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
-                                <span className="absolute left-2 top-2 text-blue-600 text-xm font-medium">₹</span>
+                                <span className="absolute left-2 top-2 text-blue-600 text-xm font-medium">
+                                    ₹
+                                </span>
                                 <input
                                     type="text"
-                                    value={lockerDetails.rentDetails?.total || ''}
+                                    value={lockerDetails.rentDetails?.total || ""}
                                     className="w-full pl-6 pr-2 py-2 text-sm border border-blue-300 rounded bg-blue-50 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 font-medium text-blue-900"
                                     readOnly
                                 />
@@ -317,10 +622,10 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                             </label>
                             <input
                                 type="text"
-                                value={lockerDetails.upiId || ''}
+                                value={lockerDetails.upiId || ""}
                                 onChange={(e) => {
-                                    const value = e.target.value.replace(/\s/g, '');
-                                    handleInputChange('upiId', value);
+                                    const value = e.target.value.replace(/\s/g, "");
+                                    handleInputChange("upiId", value);
                                 }}
                                 placeholder="Enter UPI ID"
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
@@ -328,201 +633,217 @@ const LockerRentDetails = ({ centers, isLoadingCenters, holderType }) => {
                             />
                         </div>
                     </div>
-                </div>
+                </div>{" "}
             </div>
-
-            {/* Nominees Section */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4 mt-4 shadow-md">
-                {/* Section Header */}
-                <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
-                    <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
-                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM5 8a2 2 0 11-4 0 2 2 0 014 0zM19 8a2 2 0 11-4 0 2 2 0 014 0zM13 14a4 4 0 00-8 0v3h8v-3zM9 13h2v4H9v-4zM13 16v1a1 1 0 001 1h3v-2h-4z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 className="text-base font-semibold text-gray-900">Nominee's</h3>
-                            <p className="text-xs text-gray-500">Manage beneficiaries for customer's locker</p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => dispatch(updateLockerDetails({ isNomineeModalOpen: true }))}
-                        className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-blue-400 to-blue-500 text-white text-xs font-medium rounded-md hover:from-blue-500 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transform transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md cursor-pointer"
-                    >
-                        <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                        </svg>
-                        {lockerDetails.nominees?.length > 0 ? 'Update Nominees' : 'Add Nominees'}
-                    </button>
-                </div>
-
-                {/* Nominees Display */}
-                {lockerDetails.nominees?.length > 0 ? (
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <p className="text-xs text-gray-600">
-                                <span className="font-medium">{lockerDetails.nominees.length}</span> nominee{lockerDetails.nominees.length !== 1 ? 's' : ''} added
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {lockerDetails.nominees.map((nominee, index) => (
-                                <div
-                                    key={index}
-                                    className="group relative bg-gradient-to-br from-white to-green-50 rounded-lg p-3 border border-gray-200 hover:border-green-300 transition-all duration-300 hover:shadow-md transform hover:-translate-y-0.5"
-                                >
-                                    {/* Header - Simplified */}
-                                    <div className="flex items-center space-x-2 mb-3">
-                                        <div className="relative">
-                                            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-md">
-                                                {nominee?.name?.charAt(0).toUpperCase()}
-                                            </div>
-                                            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border border-white"></div>
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <h4 className="font-semibold text-gray-900 truncate text-sm group-hover:text-green-700 transition-colors">
-                                                {nominee.name}
-                                            </h4>
-                                            <p className="text-xs text-gray-600 flex items-center">
-                                                <svg className="w-2.5 h-2.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clipRule="evenodd" />
-                                                </svg>
-                                                <span className="font-medium">{nominee.relation}</span>
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* Progress Bar - Compact */}
-                                    <div className="mb-3">
-                                        <div className="flex items-center justify-between mb-1">
-                                            <span className="text-xs font-medium text-gray-600">Ownership Share</span>
-                                            <span className="text-xs font-bold text-green-600">{nominee.ownership_percentage}%</span>
-                                        </div>
-                                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                            <div
-                                                className="h-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-1000 ease-out"
-                                                style={{ width: `${nominee.ownership_percentage}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-
-                                    {/* Personal Details - Compact */}
-                                    <div className="bg-white rounded-md p-2 shadow-sm border border-gray-100 mb-3">
-                                        <div className="space-y-1.5 text-xs">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-gray-600 font-medium flex items-center">
-                                                    <svg className="w-2.5 h-2.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                                                    </svg>
-                                                    DOB
-                                                </span>
-                                                <span className="text-gray-900 font-semibold">{nominee.dob}</span>
-                                            </div>
-                                            {(nominee.proofId || nominee.remark) && (
-                                                <div className="flex justify-between items-start pt-1 border-t border-gray-100">
-                                                    <span className="text-gray-600 font-medium flex items-center">
-                                                        <svg className="w-2.5 h-2.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zM14 6a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h8zM6 8a2 2 0 00-2 2v4a2 2 0 002 2h8a2 2 0 002-2v-4a2 2 0 00-2-2H6z" clipRule="evenodd" />
-                                                        </svg>
-                                                        Proof ID
-                                                        {nominee.remark && <span className="text-green-700 ml-1">({nominee.remark})</span>}
-                                                    </span>
-                                                    <div className="text-right max-w-[50%]">
-                                                        {nominee.proofId && (
-                                                            <div className="text-gray-900 font-semibold truncate">{nominee.proofId}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Action Button - Compact */}
-                                    <div className="flex items-center justify-center">
-                                        {nominee.proofFile ? (
-                                            <a
-                                                href={nominee.proofFile}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white  rounded-md transition-all duration-200 group shadow-sm hover:shadow-md transform hover:scale-105 cursor-pointer"
-                                                style={{
-                                                    backgroundColor: 'var(--primary-green-background)',
-                                                    transition: 'all 0.3s ease',
-                                                    ':hover': {
-                                                        backgroundColor: '#38a169'
-                                                    }
-                                                }}
-                                                onMouseOver={(e) => {
-                                                    if (!isSendingAgreement) {
-                                                        e.currentTarget.style.backgroundColor = '#38a169';
-                                                    }
-                                                }}
-                                                onMouseOut={(e) => {
-                                                    if (!isSendingAgreement) {
-                                                        e.currentTarget.style.backgroundColor = 'var(--primary-green-background)';
-                                                    }
-                                                }}
-                                            >
-                                                <svg className="w-3 h-3 mr-1.5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                                                </svg>
-                                                View Document
-                                            </a>
-                                        ) : (
-                                            <div className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-md border border-gray-200">
-                                                <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                                No Document
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                ) : (
-                    /* Empty State */
-                    <div className="text-center py-8">
-                        <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                        </div>
-                        <h3 className="text-base font-medium text-gray-900 mb-1">No Nominees Added</h3>
-                        <p className="text-gray-500 text-xs mb-4 max-w-xs mx-auto">
-                            Add nominees to protect your locker assets and ensure proper transfer.
-                        </p>
-                        <button
-                            onClick={() => dispatch(updateLockerDetails({ isNomineeModalOpen: true }))}
-                            className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-400 to-blue-500 text-white text-xs font-medium rounded-md hover:from-blue-500 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transform transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md cursor-pointer"
-                        >
-                            <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                            </svg>
-                            Add First Nominee
-                        </button>
-                    </div>
-                )}
-            </div>
-
             {/* Modals */}
             {lockerDetails.isModalOpen && (
                 <AssignLocker
                     isOpen={lockerDetails.isModalOpen}
                     onLockerAssign={handleLockerAssign}
-                    onClose={() => dispatch(updateLockerDetails({ isModalOpen: false }))}
+                    onClose={() => updateLockerDetails({ isModalOpen: false })}
                     centerId={lockerDetails.center}
                 />
             )}
-            {lockerDetails.isNomineeModalOpen && (
-                <AddNominee
-                    isOpen={lockerDetails.isNomineeModalOpen}
-                    onClose={() => dispatch(updateLockerDetails({ isNomineeModalOpen: false }))}
-                    onSave={() => dispatch(fetchNominees(primaryHolder?.customerInfo?.customerId)).unwrap()}
-                />
+
+            {/* Surrender Locker Modal */}
+            {showSurrenderModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg w-full max-w-md mx-auto shadow-2xl">
+                        <div className="p-6">
+                            {/* Modal Header */}
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                    {surrenderStep === "confirm" && "Surrender Locker"}
+                                    {surrenderStep === "otp" && "Verify OTP"}
+                                    {surrenderStep === "processing" && "Processing..."}
+                                </h3>
+                                <button
+                                    onClick={handleSurrenderCancel}
+                                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                                    disabled={surrenderStep === "processing"}
+                                >
+                                    <svg
+                                        className="w-6 h-6"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                            d="M6 18L18 6M6 6l12 12"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            {/* Modal Content */}
+                            {surrenderStep === "confirm" && (
+                                <div>
+                                    <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                        <div className="flex items-start">
+                                            <svg
+                                                className="w-5 h-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0"
+                                                fill="currentColor"
+                                                viewBox="0 0 20 20"
+                                            >
+                                                <path
+                                                    fillRule="evenodd"
+                                                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                                    clipRule="evenodd"
+                                                />
+                                            </svg>
+                                            <div>
+                                                <h4 className="text-sm font-medium text-yellow-800 mb-1">
+                                                    Warning: This action cannot be undone
+                                                </h4>
+                                                <p className="text-sm text-yellow-700">
+                                                    You are about to surrender locker{" "}
+                                                    <strong>{lockerDetails.assignedLocker}</strong>. This
+                                                    will permanently remove your access to this locker.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mb-6">
+                                        <p className="text-sm text-gray-600 mb-2">
+                                            Locker Details:
+                                        </p>
+                                        <div className="bg-gray-50 rounded-lg p-3 space-y-1">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-500">Locker Number:</span>
+                                                <span className="font-medium">
+                                                    {lockerDetails.assignedLocker}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-500">Size:</span>
+                                                <span className="font-medium">
+                                                    {lockerDetails.lockerSize}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-500">Key Number:</span>
+                                                <span className="font-medium">
+                                                    {lockerDetails.lockerKey}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex space-x-3">
+                                        <button
+                                            onClick={handleSurrenderCancel}
+                                            className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={handleSurrenderConfirm}
+                                            className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                                        >
+                                            Confirm Surrender
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {surrenderStep === "otp" && (
+                                <div>
+                                    {" "}
+                                    <div className="mb-4 text-center">
+                                        <p className="text-sm text-gray-600 mb-2">
+                                            We've sent a verification code to:
+                                        </p>
+                                        <p className="text-sm font-bold text-green-700">
+                                            {responseMobile || ""}
+                                        </p>
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Enter 6-digit OTP
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={otp}
+                                            onChange={(e) => {
+                                                const value = e.target.value
+                                                    .replace(/\D/g, "")
+                                                    .slice(0, 6);
+                                                setOtp(value);
+                                                if (otpError) setOtpError("");
+                                            }}
+                                            className="w-full px-3 py-2 text-center text-lg border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder="000000"
+                                            maxLength="6"
+                                        />
+                                        {otpError && (
+                                            <p className="mt-1 text-sm text-red-600">{otpError}</p>
+                                        )}
+                                    </div>{" "}
+                                    <div className="mb-6 text-center">
+                                        <button
+                                            onClick={resendOtp}
+                                            disabled={resendTimer > 0}
+                                            className={`text-sm transition-colors ${resendTimer > 0
+                                                ? "text-gray-400 cursor-not-allowed"
+                                                : "text-blue-600 hover:text-blue-500"
+                                                }`}
+                                        >
+                                            {resendTimer > 0
+                                                ? `Resend OTP (${resendTimer}s)`
+                                                : "Didn't receive OTP? Resend"}
+                                        </button>
+                                    </div>{" "}
+                                    <div className="flex justify-center">
+                                        <button
+                                            onClick={handleOtpVerificationAndSurrender}
+                                            disabled={otp.length !== 6}
+                                            className="px-6 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            Verify & Surrender
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {surrenderStep === "processing" && (
+                                <div className="text-center py-8">
+                                    <div className="inline-flex items-center">
+                                        <svg
+                                            className="animate-spin -ml-1 mr-3 h-8 w-8 text-blue-600"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            ></circle>
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            ></path>
+                                        </svg>
+                                        <span className="text-lg font-medium text-gray-900">
+                                            {surrenderStep === "processing" && otpRequestId
+                                                ? "Verifying OTP..."
+                                                : "Sending OTP..."}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 mt-2">Please wait</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

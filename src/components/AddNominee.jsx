@@ -8,9 +8,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import '../styles/AddNominee.css';
 import { API_URL } from '../assets/config';
 
-const AddNominee = ({ isOpen, onClose, onSave }) => {
+const AddNominee = ({ isOpen, onClose, onSave, existingNominees = [] }) => {
     const dispatch = useDispatch();
-    const existingNominees = useSelector(state => state.locker.lockerDetails.nominees || []);
     const customerId = useSelector(state => state.customer.form.primaryHolder.customerInfo.customerId);
     const [nominees, setNominees] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);

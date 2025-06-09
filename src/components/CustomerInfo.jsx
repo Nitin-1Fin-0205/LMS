@@ -1,23 +1,36 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { API_URL } from '../assets/config';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark, faUpload, faCheck, faMessage, faEnvelope, faSms } from '@fortawesome/free-solid-svg-icons';
-import { ValidationService } from '../services/ValidationService';
-import { otpService } from '../services/otpService';
-import { submitCustomerInfo, fetchCustomerById, updateHolderSection } from '../store/slices/customerSlice';
-import { HOLDER_TYPES, HOLDER_SECTIONS } from '../constants/holderConstants';
-import { ROUTES } from '../constants/routes';
+import React, { useState, useEffect, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { API_URL } from "../assets/config";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+    faXmark,
+    faUpload,
+    faCheck,
+    faMessage,
+    faEnvelope,
+    faSms,
+} from "@fortawesome/free-solid-svg-icons";
+import { ValidationService } from "../services/ValidationService";
+import { otpService } from "../services/otpService";
+import {
+    submitCustomerInfo,
+    fetchCustomerById,
+    updateHolderSection,
+} from "../store/slices/customerSlice";
+import { HOLDER_TYPES, HOLDER_SECTIONS } from "../constants/holderConstants";
+import { ROUTES } from "../constants/routes";
 
 const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const primaryHolder = useSelector(state => state.customer.form.primaryHolder);
+    const primaryHolder = useSelector(
+        (state) => state.customer.form.primaryHolder
+    );
 
     // Get customer data from Redux store based on holder type
-    const holderData = useSelector(state => {
+    const holderData = useSelector((state) => {
         switch (holderType) {
             case HOLDER_TYPES.PRIMARY:
                 return state.customer.form.primaryHolder.customerInfo;
@@ -33,28 +46,28 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
     // Customer Data State
     const [customerData, setCustomerData] = useState({
         customerId: null,
-        firstName: '',
-        middleName: '',
-        lastName: '',
-        fatherOrHusbandName: '',
-        permanentAddressLine1: '',
-        permanentAddressLine2: '',
-        permanentAddressLine3: '',
-        permanentCity: '',
-        permanentState: '',
-        permanentStatecode: '',
-        correspondenceAddressLine1: '',
-        correspondenceAddressLine2: '',
-        correspondenceAddressLine3: '',
-        correspondenceCity: '',
-        correspondenceState: '',
-        correspondenceStatecode: '',
-        dateOfBirth: '',
-        mobileNo: '',
-        panNo: '',
-        gender: '',
-        emailId: '',
-        aadharNo: ''
+        firstName: "",
+        middleName: "",
+        lastName: "",
+        fatherOrHusbandName: "",
+        permanentAddressLine1: "",
+        permanentAddressLine2: "",
+        permanentAddressLine3: "",
+        permanentCity: "",
+        permanentState: "",
+        permanentStatecode: "",
+        correspondenceAddressLine1: "",
+        correspondenceAddressLine2: "",
+        correspondenceAddressLine3: "",
+        correspondenceCity: "",
+        correspondenceState: "",
+        correspondenceStatecode: "",
+        dateOfBirth: "",
+        mobileNo: "",
+        panNo: "",
+        gender: "",
+        emailId: "",
+        aadharNo: "",
     });
     const [stateList, setStateList] = useState([]);
 
@@ -66,10 +79,10 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
     const [isSameAddress, setIsSameAddress] = useState(false);
 
     const [otpVerification, setOtpVerification] = useState({
-        emailOtp: '',
-        mobileOtp: '',
+        emailOtp: "",
+        mobileOtp: "",
         isEmailOtpSent: false,
-        isMobileOtpSent: false
+        isMobileOtpSent: false,
     });
     const [isPanFetching, setIsPanFetching] = useState(false);
     const [isPanImageFetching, setIsPanImageFetching] = useState(false);
@@ -82,21 +95,21 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
     const [isLoadingCustomer, setIsLoadingCustomer] = useState(false);
     // Update field errors state to include new address fields
     const [fieldErrors, setFieldErrors] = useState({
-        firstName: '',
-        lastName: '',
-        fatherOrHusbandName: '',
-        permanentAddressLine1: '',
-        permanentCity: '',
-        permanentState: '',
-        correspondenceAddressLine1: '',
-        correspondenceCity: '',
-        correspondenceState: '',
-        dateOfBirth: '',
-        mobileNo: '',
-        panNo: '',
-        gender: '',
-        emailId: '',
-        aadharNo: ''
+        firstName: "",
+        lastName: "",
+        fatherOrHusbandName: "",
+        permanentAddressLine1: "",
+        permanentCity: "",
+        permanentState: "",
+        correspondenceAddressLine1: "",
+        correspondenceCity: "",
+        correspondenceState: "",
+        dateOfBirth: "",
+        mobileNo: "",
+        panNo: "",
+        gender: "",
+        emailId: "",
+        aadharNo: "",
     });
 
     // Fetch existing customer data if customerId exists
@@ -105,13 +118,15 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
             try {
                 if (customerId) {
                     setIsLoadingCustomer(true);
-                    await dispatch(fetchCustomerById({
-                        customerId: customerId,
-                        holderType
-                    })).unwrap();
+                    await dispatch(
+                        fetchCustomerById({
+                            customerId: customerId,
+                            holderType,
+                        })
+                    ).unwrap();
                 }
             } catch (error) {
-                console.error('Error fetching customer details:', error);
+                console.error("Error fetching customer details:", error);
                 toast.error(`Failed to fetch ${holderType} details`);
             } finally {
                 setIsLoadingCustomer(false);
@@ -126,28 +141,28 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
         if (holderData && Object.keys(holderData).length > 0) {
             setCustomerData({
                 customerId: holderData.customerId || null,
-                firstName: holderData.firstName || '',
-                middleName: holderData.middleName || '',
-                lastName: holderData.lastName || '',
-                fatherOrHusbandName: holderData.fatherOrHusbandName || '',
-                permanentAddressLine1: holderData.permanentAddressLine1 || '',
-                permanentAddressLine2: holderData.permanentAddressLine2 || '',
-                permanentAddressLine3: holderData.permanentAddressLine3 || '',
-                permanentCity: holderData.permanentCity || '',
-                permanentState: holderData.permanentState || '',
-                permanentStatecode: holderData.permanentStatecode || '',
-                correspondenceAddressLine1: holderData.correspondenceAddressLine1 || '',
-                correspondenceAddressLine2: holderData.correspondenceAddressLine2 || '',
-                correspondenceAddressLine3: holderData.correspondenceAddressLine3 || '',
-                correspondenceCity: holderData.correspondenceCity || '',
-                correspondenceState: holderData.correspondenceState || '',
-                correspondenceStatecode: holderData.correspondenceStatecode || '',
-                dateOfBirth: holderData.dateOfBirth || '',
-                mobileNo: holderData.mobileNo || '',
-                panNo: holderData.panNo || '',
-                gender: holderData.gender || '',
-                emailId: holderData.emailId || '',
-                aadharNo: holderData.aadharNo || ''
+                firstName: holderData.firstName || "",
+                middleName: holderData.middleName || "",
+                lastName: holderData.lastName || "",
+                fatherOrHusbandName: holderData.fatherOrHusbandName || "",
+                permanentAddressLine1: holderData.permanentAddressLine1 || "",
+                permanentAddressLine2: holderData.permanentAddressLine2 || "",
+                permanentAddressLine3: holderData.permanentAddressLine3 || "",
+                permanentCity: holderData.permanentCity || "",
+                permanentState: holderData.permanentState || "",
+                permanentStatecode: holderData.permanentStatecode || "",
+                correspondenceAddressLine1: holderData.correspondenceAddressLine1 || "",
+                correspondenceAddressLine2: holderData.correspondenceAddressLine2 || "",
+                correspondenceAddressLine3: holderData.correspondenceAddressLine3 || "",
+                correspondenceCity: holderData.correspondenceCity || "",
+                correspondenceState: holderData.correspondenceState || "",
+                correspondenceStatecode: holderData.correspondenceStatecode || "",
+                dateOfBirth: holderData.dateOfBirth || "",
+                mobileNo: holderData.mobileNo || "",
+                panNo: holderData.panNo || "",
+                gender: holderData.gender || "",
+                emailId: holderData.emailId || "",
+                aadharNo: holderData.aadharNo || "",
             });
 
             // Set verification states if data exists
@@ -159,10 +174,14 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
             }
 
             // Check if addresses are the same and set checkbox accordingly
-            if (holderData.permanentAddressLine1 && holderData.correspondenceAddressLine1 &&
-                holderData.permanentAddressLine1 === holderData.correspondenceAddressLine1 &&
+            if (
+                holderData.permanentAddressLine1 &&
+                holderData.correspondenceAddressLine1 &&
+                holderData.permanentAddressLine1 ===
+                holderData.correspondenceAddressLine1 &&
                 holderData.permanentCity === holderData.correspondenceCity &&
-                holderData.permanentState === holderData.correspondenceState) {
+                holderData.permanentState === holderData.correspondenceState
+            ) {
                 setIsSameAddress(true);
             }
         }
@@ -172,22 +191,22 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
     const fetchStateList = async () => {
         setIsLoadingStates(true);
         try {
-            const token = localStorage.getItem('authToken');
+            const token = localStorage.getItem("authToken");
             const response = await fetch(`${API_URL}/customers/state-code-list`, {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'accept': '*/*'
-                }
+                    Authorization: `Bearer ${token}`,
+                    accept: "*/*",
+                },
             });
             const result = await response.json();
             if (result.status_code === 200) {
                 setStateList(result.data);
             } else {
-                throw new Error('Failed to fetch state list');
+                throw new Error("Failed to fetch state list");
             }
         } catch (error) {
-            console.error('Error fetching state list:', error);
-            toast.error('Failed to load state list');
+            console.error("Error fetching state list:", error);
+            toast.error("Failed to load state list");
         } finally {
             setIsLoadingStates(false);
         }
@@ -195,40 +214,42 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
 
     useEffect(() => {
         fetchStateList();
-    }, []);    // Validation handler for single field
+    }, []); // Validation handler for single field
     const validateField = (name, value) => {
-        let error = '';
+        let error = "";
 
-        if (!value || value.trim() === '') {
-            error = `${name.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`;
+        if (!value || value.trim() === "") {
+            error = `${name
+                .replace(/([A-Z])/g, " $1")
+                .replace(/^./, (str) => str.toUpperCase())} is required`;
         } else {
             switch (name) {
-                case 'panNo':
+                case "panNo":
                     if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(value)) {
-                        error = 'Invalid PAN format';
+                        error = "Invalid PAN format";
                     }
                     break;
-                case 'mobileNo':
-                    if (!/^[6-9]\d{9}$/.test(value)) {
-                        error = 'Invalid mobile number';
+                case "mobileNo":
+                    if (!/^[1-9]\d{9}$/.test(value)) {
+                        error = "Invalid mobile number";
                     }
                     break;
-                case 'emailId':
+                case "emailId":
                     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-                        error = 'Invalid email format';
+                        error = "Invalid email format";
                     }
                     break;
-                case 'aadharNo':
+                case "aadharNo":
                     if (!/^\d{12}$/.test(value)) {
-                        error = 'Aadhaar number must be 12 digits';
+                        error = "Aadhaar number must be 12 digits";
                     }
                     break;
             }
         }
 
-        setFieldErrors(prev => ({
+        setFieldErrors((prev) => ({
             ...prev,
-            [name]: error
+            [name]: error,
         }));
         return !error;
     };
@@ -236,45 +257,60 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
     // Validate all fields at once
     const validateAllFields = () => {
         const requiredFields = [
-            'firstName', 'lastName', 'fatherOrHusbandName', 'permanentAddressLine1',
-            'permanentCity', 'permanentState', 'dateOfBirth', 'mobileNo', 'panNo',
-            'gender', 'emailId', 'aadharNo'
+            "firstName",
+            "lastName",
+            "fatherOrHusbandName",
+            "permanentAddressLine1",
+            "permanentCity",
+            "permanentState",
+            "dateOfBirth",
+            "mobileNo",
+            "panNo",
+            "gender",
+            "emailId",
+            "aadharNo",
         ];
 
         // Add correspondence address to required fields if not same as permanent
         if (!isSameAddress) {
-            requiredFields.push('correspondenceAddressLine1', 'correspondenceCity', 'correspondenceState');
+            requiredFields.push(
+                "correspondenceAddressLine1",
+                "correspondenceCity",
+                "correspondenceState"
+            );
         }
 
         const newErrors = {};
         let hasErrors = false;
 
-        requiredFields.forEach(field => {
+        requiredFields.forEach((field) => {
             const value = customerData[field];
-            let error = '';
+            let error = "";
 
-            if (!value || value.trim() === '') {
-                error = `${field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`;
+            if (!value || value.trim() === "") {
+                error = `${field
+                    .replace(/([A-Z])/g, " $1")
+                    .replace(/^./, (str) => str.toUpperCase())} is required`;
             } else {
                 switch (field) {
-                    case 'panNo':
+                    case "panNo":
                         if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(value)) {
-                            error = 'Invalid PAN format';
+                            error = "Invalid PAN format";
                         }
                         break;
-                    case 'mobileNo':
+                    case "mobileNo":
                         if (!/^[6-9]\d{9}$/.test(value)) {
-                            error = 'Invalid mobile number';
+                            error = "Invalid mobile number";
                         }
                         break;
-                    case 'emailId':
+                    case "emailId":
                         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-                            error = 'Invalid email format';
+                            error = "Invalid email format";
                         }
                         break;
-                    case 'aadharNo':
+                    case "aadharNo":
                         if (!/^\d{12}$/.test(value)) {
-                            error = 'Aadhaar number must be 12 digits';
+                            error = "Aadhaar number must be 12 digits";
                         }
                         break;
                 }
@@ -290,22 +326,31 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
 
     // Add name validation helper
     const validateNameInput = (value) => {
-        return value.replace(/[^a-zA-Z\s.']/g, ''); // Only allow letters, spaces, dots and apostrophes
-    };    // Update handle input change
+        return value.replace(/[^a-zA-Z\s.']/g, ""); // Only allow letters, spaces, dots and apostrophes
+    }; // Update handle input change
     const handleInputChange = (field, value) => {
-        if (['firstName', 'middleName', 'lastName', 'fatherOrHusbandName', 'city', 'state'].includes(field)) {
+        if (
+            [
+                "firstName",
+                "middleName",
+                "lastName",
+                "fatherOrHusbandName",
+                "city",
+                "state",
+            ].includes(field)
+        ) {
             value = validateNameInput(value);
         }
 
         // Clear error when user starts typing
-        setFieldErrors(prev => ({
+        setFieldErrors((prev) => ({
             ...prev,
-            [field]: ''
+            [field]: "",
         }));
 
         const updatedData = {
             ...customerData,
-            [field]: value || ''
+            [field]: value || "",
         };
         setCustomerData(updatedData);
         // handleCustomerInfoUpdate(updatedData);
@@ -320,7 +365,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
         const value = e.target.value;
 
         if (value) {
-            const year = value.split('-')[0];
+            const year = value.split("-")[0];
 
             if (year.length > 4) {
                 return;
@@ -331,17 +376,17 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
             const today = new Date();
 
             if (selectedDate > today) {
-                toast.error('Date of birth cannot be in the future');
+                toast.error("Date of birth cannot be in the future");
                 return;
             }
         }
 
-        handleInputChange('dateOfBirth', value);
+        handleInputChange("dateOfBirth", value);
     };
 
     const handlePanInput = (e) => {
         const pan = e.target.value.toUpperCase();
-        handleInputChange('panNo', pan);
+        handleInputChange("panNo", pan);
         // Validate only if PAN has full length
         // if (pan.length === 10) {
         //     const validation = ValidationService.isValidPAN(pan);
@@ -353,25 +398,31 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
 
     const formatAadhar = (value) => {
         // Remove any non-digits
-        const cleaned = value?.replace(/\D/g, '');
+        const cleaned = value?.replace(/\D/g, "");
         // Add spaces after every 4 digits instead of dashes
-        const formatted = cleaned?.replace(/(\d{4})(?=\d)/g, '$1 ');
+        const formatted = cleaned?.replace(/(\d{4})(?=\d)/g, "$1 ");
         return formatted;
     };
 
     const handleAadharInput = (e) => {
         const input = e.target.value;
         // Remove any non-digits for validation and storage
-        const numbersOnly = input.replace(/\D/g, '');
+        const numbersOnly = input.replace(/\D/g, "");
 
-        if (numbersOnly === '' || (/^[0-9]+$/.test(numbersOnly) && numbersOnly.length <= 12)) {
-            handleInputChange('aadharNo', numbersOnly);
+        if (
+            numbersOnly === "" ||
+            (/^[0-9]+$/.test(numbersOnly) && numbersOnly.length <= 12)
+        ) {
+            handleInputChange("aadharNo", numbersOnly);
 
             // Format with spaces
             e.target.value = formatAadhar(numbersOnly);
 
             if (numbersOnly.length === 12) {
-                const validation = ValidationService.validateField('aadhar', numbersOnly);
+                const validation = ValidationService.validateField(
+                    "aadhar",
+                    numbersOnly
+                );
                 if (!validation.isValid) {
                     toast.error(validation.error);
                 }
@@ -382,46 +433,49 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
     const handleFetchPan = async () => {
         try {
             if (!customerData.panNo || !customerData.dateOfBirth) {
-                toast.error('Please enter PAN No and D.O.B to fetch details');
+                toast.error("Please enter PAN No and D.O.B to fetch details");
                 return;
             }
 
             setIsPanFetching(true);
 
-            const token = localStorage.getItem('authToken');
+            const token = localStorage.getItem("authToken");
             const response = await fetch(`${API_URL}/customers/pan-details`, {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                    Accept: "application/json",
                 },
-                body: JSON.stringify({ panNo: customerData.panNo, dob: customerData?.dateOfBirth?.toString() || '' })
+                body: JSON.stringify({
+                    panNo: customerData.panNo,
+                    dob: customerData?.dateOfBirth?.toString() || "",
+                }),
             });
 
             const data = await response.json();
             if (response?.status === 201) {
-                setCustomerData(prev => {
-                    const names = data?.name?.split(' ') || ['', '', ''];
+                setCustomerData((prev) => {
+                    const names = data?.name?.split(" ") || ["", "", ""];
                     const updatedData = {
                         ...prev,
                         customerId: Number(data?.customerId) || null,
-                        firstName: names[0] || '',
-                        middleName: names[1] || '',
-                        lastName: names[2] || '',
-                        permanentAddress: data?.address || '',
-                        mobileNo: data?.mobileNumber || ''
+                        firstName: names[0] || "",
+                        middleName: names[1] || "",
+                        lastName: names[2] || "",
+                        permanentAddress: data?.address || "",
+                        mobileNo: data?.mobileNumber || "",
                     };
                     handleCustomerInfoUpdate(updatedData);
                     return updatedData;
                 });
-                toast.success('PAN details fetched successfully');
+                toast.success("PAN details fetched successfully");
             } else {
                 toast.error(`PAN details not found`);
             }
         } catch (error) {
-            console.error('Error fetching PAN details:', error);
-            toast.error('Failed to fetch PAN details');
+            console.error("Error fetching PAN details:", error);
+            toast.error("Failed to fetch PAN details");
         } finally {
             setIsPanFetching(false); // Reset loading state
         }
@@ -434,38 +488,38 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
         try {
             setIsPanImageFetching(true);
             const formData = new FormData();
-            formData.append('panImage', file);
+            formData.append("panImage", file);
 
-            const token = localStorage.getItem('authToken');
+            const token = localStorage.getItem("authToken");
             const response = await fetch(`${API_URL}/customers/pan-ocr`, {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    Authorization: `Bearer ${token}`,
                 },
-                body: formData
+                body: formData,
             });
 
             const data = await response.json();
             if (response.ok) {
-                setCustomerData(prev => {
+                setCustomerData((prev) => {
                     const updatedData = {
                         ...prev,
-                        panNo: data?.panNo || '',
-                        firstName: data?.name?.split(' ')[0] || '',
-                        middleName: data?.name?.split(' ')[1] || '',
-                        lastName: data?.name?.split(' ')[2] || '',
-                        dateOfBirth: data?.dob || '',
+                        panNo: data?.panNo || "",
+                        firstName: data?.name?.split(" ")[0] || "",
+                        middleName: data?.name?.split(" ")[1] || "",
+                        lastName: data?.name?.split(" ")[2] || "",
+                        dateOfBirth: data?.dob || "",
                     };
                     handleCustomerInfoUpdate(updatedData);
                     return updatedData;
                 });
-                toast.success('PAN details extracted successfully');
+                toast.success("PAN details extracted successfully");
             } else {
-                toast.error('Failed to extract PAN details');
+                toast.error("Failed to extract PAN details");
             }
         } catch (error) {
-            console.error('Error uploading PAN image:', error);
-            toast.error('Failed to process PAN image');
+            console.error("Error uploading PAN image:", error);
+            toast.error("Failed to process PAN image");
         } finally {
             setIsPanImageFetching(false);
         }
@@ -473,18 +527,18 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
     const handleMobileInput = (e) => {
         const value = e.target.value;
         // Only allow numbers
-        if (value === '' || /^[0-9\b]+$/.test(value)) {
+        if (value === "" || /^[0-9\b]+$/.test(value)) {
             // Limit to 10 digits
             if (value.length <= 10) {
                 // If the number is changing and was previously verified, reset verification
                 if (isMobileVerified && value !== customerData.mobileNo) {
                     setIsMobileVerified(false);
-                    setOtpVerification(prev => ({
+                    setOtpVerification((prev) => ({
                         ...prev,
-                        mobileOtp: ''
+                        mobileOtp: "",
                     }));
                 }
-                handleInputChange('mobileNo', value);
+                handleInputChange("mobileNo", value);
             }
         }
     };
@@ -495,18 +549,18 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
         // If the email is changing and was previously verified, reset verification
         if (isEmailVerified && value !== customerData.emailId) {
             setIsEmailVerified(false);
-            setOtpVerification(prev => ({
+            setOtpVerification((prev) => ({
                 ...prev,
-                emailOtp: ''
+                emailOtp: "",
             }));
         }
-        handleInputChange('emailId', value);
+        handleInputChange("emailId", value);
     };
 
     const startResendTimer = (type) => {
-        setResendTimer(prev => ({ ...prev, [type]: 30 }));
+        setResendTimer((prev) => ({ ...prev, [type]: 30 }));
         const timer = setInterval(() => {
-            setResendTimer(prev => {
+            setResendTimer((prev) => {
                 const newTime = prev[type] - 1;
                 if (newTime <= 0) {
                     clearInterval(timer);
@@ -518,17 +572,18 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
 
     const handleVerifyOtp = async (type) => {
         try {
-            const otp = type === 'email' ? otpVerification.emailOtp : otpVerification.mobileOtp;
+            const otp =
+                type === "email" ? otpVerification.emailOtp : otpVerification.mobileOtp;
 
             if (!otp) {
-                toast.error('Please enter OTP');
+                toast.error("Please enter OTP");
                 return;
             }
 
             await otpService.verifyOtp(request_id, otp);
 
             // Update separate verification states
-            if (type === 'email') {
+            if (type === "email") {
                 setIsEmailVerified(true);
             } else {
                 setIsMobileVerified(true);
@@ -537,50 +592,50 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
             toast.success(`${type} verified successfully`);
             setShowOtpModal(false);
         } catch (error) {
-            toast.error('Invalid OTP');
+            toast.error("Invalid OTP");
         }
     };
 
     const handleOtpClick = async (type) => {
         try {
             setOtpType(type);
-            const value = type === 'email' ? customerData.emailId : customerData.mobileNo;
+            const value =
+                type === "email" ? customerData.emailId : customerData.mobileNo;
 
             // Validate mobile number
-            if (type === 'mobile') {
+            if (type === "mobile") {
                 if (!value || value.length !== 10) {
-                    toast.error('Please enter valid 10-digit mobile number');
+                    toast.error("Please enter valid 10-digit mobile number");
                     return;
                 }
             }
 
             // Validate email
-            if (type === 'email') {
+            if (type === "email") {
                 const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
                 if (!value || !emailRegex.test(value)) {
-                    toast.error('Please enter valid email address');
+                    toast.error("Please enter valid email address");
                     return;
                 }
             }
 
-            const response = await (type === 'email'
+            const response = await (type === "email"
                 ? otpService.sendEmailOtp(value)
-                : otpService.sendMobileOtp(value)
-            );
+                : otpService.sendMobileOtp(value));
 
-            console.log('OTP Response:', response);
+            console.log("OTP Response:", response);
             setRequestId(response?.request_id || null);
             if (!response?.request_id) {
-                throw new Error('Failed to send OTP');
+                throw new Error("Failed to send OTP");
             }
 
             startResendTimer(type);
-            setOtpVerification(prev => ({
+            setOtpVerification((prev) => ({
                 ...prev,
-                [`is${type === 'email' ? 'Email' : 'Mobile'}OtpSent`]: true
+                [`is${type === "email" ? "Email" : "Mobile"}OtpSent`]: true,
             }));
             setShowOtpModal(true);
-            toast.success(`OTP sent to ${type === 'email' ? 'email' : 'mobile'}`);
+            toast.success(`OTP sent to ${type === "email" ? "email" : "mobile"}`);
         } catch (error) {
             toast.error(error.message || `Failed to send ${type} OTP`);
             console.error(`${type} OTP Error:`, error);
@@ -595,20 +650,21 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
         }, []);
 
         const handleChange = (e) => {
-            const sanitizedValue = e.target.value.replace(/\D/g, '').slice(0, 6);
+            const sanitizedValue = e.target.value.replace(/\D/g, "").slice(0, 6);
             onChange(sanitizedValue);
         };
 
         const handleKeyPress = (e) => {
-            if (e.key === 'Enter') {
+            if (e.key === "Enter") {
                 onEnter();
             }
-        }; return (
+        };
+        return (
             <input
                 ref={inputRef}
                 type="text"
                 maxLength={6}
-                placeholder="Enter OTP"
+                placeholder="000000"
                 value={value}
                 onChange={handleChange}
                 onKeyPress={handleKeyPress}
@@ -616,7 +672,8 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                 autoComplete="off"
             />
         );
-    }); const OtpModal = () => (
+    });
+    const OtpModal = () => (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md relative">
                 <button
@@ -625,14 +682,21 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                 >
                     <FontAwesomeIcon icon={faXmark} />
                 </button>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">Verify {otpType === 'email' ? 'Email' : 'Mobile'}</h3>
-                <p className="text-gray-600 mb-4">Enter OTP sent to {otpType === 'email' ? customerData.emailId : customerData.mobileNo}</p>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    Verify {otpType === "email" ? "Email" : "Mobile"}
+                </h3>
+                <p className="text-gray-600 mb-4">
+                    Enter OTP sent to{" "}
+                    {otpType === "email" ? customerData.emailId : customerData.mobileNo}
+                </p>
                 <OtpInput
                     value={otpVerification[`${otpType}Otp`]}
-                    onChange={(value) => setOtpVerification(prev => ({
-                        ...prev,
-                        [`${otpType}Otp`]: value
-                    }))}
+                    onChange={(value) =>
+                        setOtpVerification((prev) => ({
+                            ...prev,
+                            [`${otpType}Otp`]: value,
+                        }))
+                    }
                     onEnter={() => handleVerifyOtp(otpType)}
                 />
                 <div className="flex gap-3 mt-4">
@@ -649,7 +713,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                     >
                         {resendTimer[otpType] > 0
                             ? `Resend OTP (${resendTimer[otpType]}s)`
-                            : 'Resend OTP'}
+                            : "Resend OTP"}
                     </button>
                 </div>
             </div>
@@ -657,21 +721,23 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
     );
 
     const handleStateSelect = (e) => {
-        const selectedState = stateList.find(state => state.state_code === parseInt(e.target.value));
+        const selectedState = stateList.find(
+            (state) => state.state_code === parseInt(e.target.value)
+        );
         if (selectedState) {
-            setCustomerData(prev => ({
+            setCustomerData((prev) => ({
                 ...prev,
                 state: selectedState.state_name,
-                statecode: selectedState.state_code.toString()
+                statecode: selectedState.state_code.toString(),
             }));
             // Update parent component
             handleCustomerInfoUpdate({
                 ...customerData,
                 state: selectedState.state_name,
-                statecode: selectedState.state_code.toString()
+                statecode: selectedState.state_code.toString(),
             });
         }
-    };    // Complete form submission handler
+    }; // Complete form submission handler
     const handleSubmit = async () => {
         try {
             toast.dismiss();
@@ -684,12 +750,12 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
             }
 
             if (!isMobileVerified) {
-                toast.error('Please verify your mobile number');
+                toast.error("Please verify your mobile number");
                 return;
             }
 
             if (!isEmailVerified) {
-                toast.error('Please verify your email address');
+                toast.error("Please verify your email address");
                 return;
             }
 
@@ -718,7 +784,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                 dob: customerData.dateOfBirth,
                 mobile_number: customerData.mobileNo,
                 email: customerData.emailId,
-                locker_center_id: 1
+                locker_center_id: 1,
             };
 
             // Add parent customer ID for secondary and third holders
@@ -727,10 +793,12 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
             }
 
             // Submit using Redux action
-            const result = await dispatch(submitCustomerInfo({
-                customerData: submitData,
-                holderType
-            })).unwrap();
+            const result = await dispatch(
+                submitCustomerInfo({
+                    customerData: submitData,
+                    holderType,
+                })
+            ).unwrap();
 
             if (!result.customerId) {
                 throw new Error(`Failed to create ${holderType}`);
@@ -742,19 +810,21 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
             if (onSuccess) {
                 onSuccess(result);
             }
-
         } catch (error) {
-            console.error('Form submission error:', error);
-            toast.error(error.message || 'Failed to save customer information');
+            console.error("Form submission error:", error);
+            toast.error(error.message || "Failed to save customer information");
         } finally {
             setIsSubmitting(false);
         }
-    }; const handleCustomerInfoUpdate = (data) => {
-        dispatch(updateHolderSection({
-            holder: holderType,
-            section: HOLDER_SECTIONS.CUSTOMER_INFO,
-            data
-        }));
+    };
+    const handleCustomerInfoUpdate = (data) => {
+        dispatch(
+            updateHolderSection({
+                holder: holderType,
+                section: HOLDER_SECTIONS.CUSTOMER_INFO,
+                data,
+            })
+        );
     };
 
     // Handle address checkbox change
@@ -771,7 +841,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                 correspondenceAddressLine3: customerData.permanentAddressLine3,
                 correspondenceCity: customerData.permanentCity,
                 correspondenceState: customerData.permanentState,
-                correspondenceStatecode: customerData.permanentStatecode
+                correspondenceStatecode: customerData.permanentStatecode,
             };
             setCustomerData(updatedData);
             handleCustomerInfoUpdate(updatedData);
@@ -779,12 +849,12 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
             // Clear correspondence address fields when unchecked
             const updatedData = {
                 ...customerData,
-                correspondenceAddressLine1: '',
-                correspondenceAddressLine2: '',
-                correspondenceAddressLine3: '',
-                correspondenceCity: '',
-                correspondenceState: '',
-                correspondenceStatecode: ''
+                correspondenceAddressLine1: "",
+                correspondenceAddressLine2: "",
+                correspondenceAddressLine3: "",
+                correspondenceCity: "",
+                correspondenceState: "",
+                correspondenceStatecode: "",
             };
             setCustomerData(updatedData);
             handleCustomerInfoUpdate(updatedData);
@@ -795,12 +865,12 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
     const handlePermanentAddressFieldChange = (field, value) => {
         let updatedData = {
             ...customerData,
-            [field]: value
+            [field]: value,
         };
 
         // If same address is checked, also update corresponding correspondence field
         if (isSameAddress) {
-            const correspondenceField = field.replace('permanent', 'correspondence');
+            const correspondenceField = field.replace("permanent", "correspondence");
             updatedData[correspondenceField] = value;
         }
 
@@ -810,18 +880,21 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
 
     // Handle permanent state selection
     const handlePermanentStateSelect = (e) => {
-        const selectedState = stateList.find(state => state.state_code === parseInt(e.target.value));
+        const selectedState = stateList.find(
+            (state) => state.state_code === parseInt(e.target.value)
+        );
         if (selectedState) {
             let updatedData = {
                 ...customerData,
                 permanentState: selectedState.state_name,
-                permanentStatecode: selectedState.state_code.toString()
+                permanentStatecode: selectedState.state_code.toString(),
             };
 
             // If same address is checked, also update correspondence state
             if (isSameAddress) {
                 updatedData.correspondenceState = selectedState.state_name;
-                updatedData.correspondenceStatecode = selectedState.state_code.toString();
+                updatedData.correspondenceStatecode =
+                    selectedState.state_code.toString();
             }
 
             setCustomerData(updatedData);
@@ -831,17 +904,20 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
 
     // Handle correspondence state selection
     const handleCorrespondenceStateSelect = (e) => {
-        const selectedState = stateList.find(state => state.state_code === parseInt(e.target.value));
+        const selectedState = stateList.find(
+            (state) => state.state_code === parseInt(e.target.value)
+        );
         if (selectedState) {
             const updatedData = {
                 ...customerData,
                 correspondenceState: selectedState.state_name,
-                correspondenceStatecode: selectedState.state_code.toString()
+                correspondenceStatecode: selectedState.state_code.toString(),
             };
             setCustomerData(updatedData);
             handleCustomerInfoUpdate(updatedData);
         }
-    }; return (
+    };
+    return (
         <div className="bg-white rounded-xl shadow-lg p-4">
             {isLoadingCustomer ? (
                 <div className="flex justify-center items-center min-h-48">
@@ -849,31 +925,45 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                 </div>
             ) : (
                 <>
-                    <h2 className="text-slate-700 text-xl font-semibold mb-4 pb-2 border-b border-gray-200">Customer Information</h2>
-                    <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-2 lg:gap-4 mt-4 p-4">                        <div className="flex flex-col min-w-0">
-                        <label className="text-sm text-gray-600 font-medium mb-1">PAN No<span className='text-red-500'>*</span></label>
-                        <input
-                            type="text"
-                            value={customerData.panNo}
-                            onChange={handlePanInput}
-                            onBlur={() => handleBlur('panNo')}
-                            className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.panNo ? 'border-red-400 border-[1px]' : ''}`}
-                            placeholder="Enter PAN no here"
-                            maxLength={10}
-                            required
-                        />                            {fieldErrors.panNo && (
-                            <div className="text-red-500 text-xs mt-1">{fieldErrors.panNo}</div>
-                        )}
-                    </div>                        <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">D.O.B<span className='text-red-500'>*</span></label>
+                    <h2 className="text-slate-700 text-xl font-semibold mb-4 pb-2 border-b border-gray-200">
+                        Customer Information
+                    </h2>
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-2 lg:gap-4 mt-4 p-4">
+                        {" "}
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                PAN No<span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={customerData.panNo}
+                                onChange={handlePanInput}
+                                onBlur={() => handleBlur("panNo")}
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.panNo ? "border-red-400 border-[1px]" : ""
+                                    }`}
+                                placeholder="Enter PAN no here"
+                                maxLength={10}
+                                required
+                            />{" "}
+                            {fieldErrors.panNo && (
+                                <div className="text-red-500 text-xs mt-1">
+                                    {fieldErrors.panNo}
+                                </div>
+                            )}
+                        </div>{" "}
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                D.O.B<span className="text-red-500">*</span>
+                            </label>
                             <div className="flex gap-2 items-center w-full min-w-0">
                                 <input
                                     type="date"
                                     value={customerData.dateOfBirth}
                                     onChange={(e) => handleDobChange(e)}
-                                    onBlur={() => handleBlur('dateOfBirth')}
-                                    className={`flex-1 h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.dateOfBirth ? 'border-red-400 border-[1px]' : ''}`}
-                                    max={new Date().toISOString().split('T')[0]}
+                                    onBlur={() => handleBlur("dateOfBirth")}
+                                    className={`flex-1 h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.dateOfBirth ? "border-red-400 border-[1px]" : ""
+                                        }`}
+                                    max={new Date().toISOString().split("T")[0]}
                                     required
                                 />
                                 {/* <div className="pan-actions">
@@ -895,64 +985,102 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                         />
                                     </label>
                                 </div> */}
-                            </div>                            {fieldErrors.dateOfBirth && (
-                                <div className="text-red-500 text-xs mt-1">{fieldErrors.dateOfBirth}</div>
+                            </div>{" "}
+                            {fieldErrors.dateOfBirth && (
+                                <div className="text-red-500 text-xs mt-1">
+                                    {fieldErrors.dateOfBirth}
+                                </div>
                             )}
-                        </div>                        <div className="flex flex-col min-w-0 col-start-1">
-                            <label className="text-sm text-gray-600 font-medium mb-1">First Name<span className='text-red-500'>*</span></label>
+                        </div>{" "}
+                        <div className="flex flex-col min-w-0 col-start-1">
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                First Name<span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
-                                id="firstName" className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.firstName ? 'border-red-400 border-[1px]' : ''}`}
-                                value={customerData.firstName || ''}
-                                onChange={(e) => handleInputChange('firstName', e.target.value)}
-                                onBlur={() => handleBlur('firstName')}
+                                id="firstName"
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.firstName ? "border-red-400 border-[1px]" : ""
+                                    }`}
+                                value={customerData.firstName || ""}
+                                onChange={(e) => handleInputChange("firstName", e.target.value)}
+                                onBlur={() => handleBlur("firstName")}
                                 placeholder="Enter first name"
                                 required
                             />
                             {fieldErrors.firstName && (
-                                <div className="text-red-500 text-xs mt-1">{fieldErrors.firstName}</div>
+                                <div className="text-red-500 text-xs mt-1">
+                                    {fieldErrors.firstName}
+                                </div>
                             )}
-                        </div>                        <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">Middle Name</label>
+                        </div>{" "}
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                Middle Name
+                            </label>
                             <input
                                 type="text"
                                 value={customerData.middleName}
-                                onChange={(e) => handleInputChange('middleName', e.target.value)}
+                                onChange={(e) =>
+                                    handleInputChange("middleName", e.target.value)
+                                }
                                 placeholder="Enter middle name"
                                 className="w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none"
                             />
-                        </div>                <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">Last Name<span className='text-red-500'>*</span></label>
+                        </div>{" "}
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                Last Name<span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
                                 value={customerData.lastName}
-                                onChange={(e) => handleInputChange('lastName', e.target.value)}
-                                onBlur={() => handleBlur('lastName')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.lastName ? 'border-red-400 border-[1px]' : ''}`}
+                                onChange={(e) => handleInputChange("lastName", e.target.value)}
+                                onBlur={() => handleBlur("lastName")}
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.lastName ? "border-red-400 border-[1px]" : ""
+                                    }`}
                                 placeholder="Enter last name"
                                 required
                             />
                             {fieldErrors.lastName && (
-                                <div className="text-red-500 text-xs mt-1">{fieldErrors.lastName}</div>
+                                <div className="text-red-500 text-xs mt-1">
+                                    {fieldErrors.lastName}
+                                </div>
                             )}
-                        </div>                <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">Father's / Husband's Name<span className='text-red-500'>*</span></label>
+                        </div>{" "}
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                Father's / Husband's Name<span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
                                 value={customerData.fatherOrHusbandName}
-                                onChange={(e) => handleInputChange('fatherOrHusbandName', e.target.value)}
-                                onBlur={() => handleBlur('fatherOrHusbandName')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.fatherOrHusbandName ? 'border-red-400 border-[1px]' : ''}`}
+                                onChange={(e) =>
+                                    handleInputChange("fatherOrHusbandName", e.target.value)
+                                }
+                                onBlur={() => handleBlur("fatherOrHusbandName")}
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.fatherOrHusbandName
+                                        ? "border-red-400 border-[1px]"
+                                        : ""
+                                    }`}
                                 placeholder="Enter father/husband name"
                                 required
                             />
                             {fieldErrors.fatherOrHusbandName && (
-                                <div className="text-red-500 text-xs mt-1">{fieldErrors.fatherOrHusbandName}</div>
+                                <div className="text-red-500 text-xs mt-1">
+                                    {fieldErrors.fatherOrHusbandName}
+                                </div>
                             )}
-                        </div>                <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">Gender<span className='text-red-500'>*</span></label>
+                        </div>{" "}
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                Gender<span className="text-red-500">*</span>
+                            </label>
                             <select
                                 value={customerData.gender}
-                                onChange={(e) => handleInputChange('gender', e.target.value)}
-                                onBlur={() => handleBlur('gender')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.gender ? 'border-red-400 border-[1px]' : ''}`}
+                                onChange={(e) => handleInputChange("gender", e.target.value)}
+                                onBlur={() => handleBlur("gender")}
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.gender ? "border-red-400 border-[1px]" : ""
+                                    }`}
                                 required
                             >
                                 <option value="">Select Gender</option>
@@ -961,171 +1089,245 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                 <option value="OTHER">OTHER</option>
                             </select>
                             {fieldErrors.gender && (
-                                <div className="text-red-500 text-xs mt-1">{fieldErrors.gender}</div>
+                                <div className="text-red-500 text-xs mt-1">
+                                    {fieldErrors.gender}
+                                </div>
                             )}
-                        </div>                <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">Aadhaar No<span className='text-red-500'>*</span></label>
+                        </div>{" "}
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                Aadhaar No<span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
                                 value={formatAadhar(customerData?.aadharNo)}
                                 onChange={handleAadharInput}
-                                onBlur={() => handleBlur('aadharNo')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.aadharNo ? 'border-red-400 border-[1px]' : ''}`}
+                                onBlur={() => handleBlur("aadharNo")}
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.aadharNo ? "border-red-400 border-[1px]" : ""
+                                    }`}
                                 placeholder="Enter Aadhaar (e.g., 1234 5678 9012)"
                                 maxLength={14}
                                 required
                             />
                             {fieldErrors.aadharNo && (
-                                <div className="text-red-500 text-xs mt-1">{fieldErrors.aadharNo}</div>
+                                <div className="text-red-500 text-xs mt-1">
+                                    {fieldErrors.aadharNo}
+                                </div>
                             )}
-                        </div>                <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">Mobile No<span className='text-red-500'>*</span></label>
+                        </div>{" "}
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                Mobile No<span className="text-red-500">*</span>
+                            </label>
                             <div className="flex gap-2 w-full min-w-0">
                                 <input
                                     type="tel"
                                     value={customerData.mobileNo}
                                     onChange={handleMobileInput}
-                                    onBlur={() => handleBlur('mobileNo')} className={`flex-1 h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.mobileNo ? 'border-red-400 border-[1px]' : ''}`}
+                                    onBlur={() => handleBlur("mobileNo")}
+                                    className={`flex-1 h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.mobileNo ? "border-red-400 border-[1px]" : ""
+                                        }`}
                                     placeholder="Enter mobile number"
                                     required
                                 />
                                 {isMobileVerified ? (
                                     <span className="text-green-500 text-xs font-bold flex items-center gap-1 h-7 px-2">
-                                        <FontAwesomeIcon className='pt-1' icon={faCheck} bounce={true} /> Verified
+                                        <FontAwesomeIcon
+                                            className="pt-1"
+                                            icon={faCheck}
+                                            bounce={true}
+                                        />{" "}
+                                        Verified
                                     </span>
                                 ) : (
                                     <button
                                         type="button"
                                         className="px-2 bg-green-600 text-white border-none rounded cursor-pointer flex items-center gap-1.5 text-sm transition-all duration-300 h-7 hover:bg-green-700"
-                                        onClick={() => handleOtpClick('mobile')}
+                                        onClick={() => handleOtpClick("mobile")}
                                     >
                                         <FontAwesomeIcon icon={faSms} /> Verify
                                     </button>
                                 )}
                             </div>
                             {fieldErrors.mobileNo && (
-                                <div className="text-red-500 text-xs mt-1">{fieldErrors.mobileNo}</div>
+                                <div className="text-red-500 text-xs mt-1">
+                                    {fieldErrors.mobileNo}
+                                </div>
                             )}
-                        </div>                <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">Email ID<span className='text-red-500'>*</span></label>
+                        </div>{" "}
+                        <div className="flex flex-col min-w-0">
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                Email ID<span className="text-red-500">*</span>
+                            </label>
                             <div className="flex gap-2 w-full min-w-0">
                                 <input
                                     type="email"
                                     value={customerData.emailId}
                                     onChange={handleEmailInput}
-                                    onBlur={() => handleBlur('emailId')} className={`flex-1 h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.emailId ? 'border-red-400 border-[1px]' : ''}`}
+                                    onBlur={() => handleBlur("emailId")}
+                                    className={`flex-1 h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.emailId ? "border-red-400 border-[1px]" : ""
+                                        }`}
                                     placeholder="Enter email"
                                     required
                                 />
                                 {isEmailVerified ? (
                                     <span className="text-green-500 text-xs font-bold flex items-center gap-1 h-7 px-2">
-                                        <FontAwesomeIcon className='pt-1' icon={faCheck} bounce={true} /> Verified
+                                        <FontAwesomeIcon
+                                            className="pt-1"
+                                            icon={faCheck}
+                                            bounce={true}
+                                        />{" "}
+                                        Verified
                                     </span>
                                 ) : (
                                     <button
                                         type="button"
                                         className="px-2 bg-green-600 text-white border-none rounded cursor-pointer flex items-center gap-1.5 text-sm transition-all duration-300 h-7 hover:bg-green-700"
-                                        onClick={() => handleOtpClick('email')}
+                                        onClick={() => handleOtpClick("email")}
                                     >
                                         <FontAwesomeIcon icon={faEnvelope} /> Verify
                                     </button>
                                 )}
                             </div>
                             {fieldErrors.emailId && (
-                                <div className="text-red-500 text-xs mt-1">{fieldErrors.emailId}</div>
+                                <div className="text-red-500 text-xs mt-1">
+                                    {fieldErrors.emailId}
+                                </div>
                             )}
                         </div>
-                        {/* Permanent Address Section */}                        <div className="col-span-full mt-5 mb-2.5">
-                            <h3 className="text-base font-semibold text-gray-700 m-0 pb-2 border-b-2 border-gray-200">Permanent Address</h3>
-                        </div>                        {/* Permanent Address Line 1 */}
+                        {/* Permanent Address Section */}{" "}
+                        <div className="col-span-full mt-5 mb-2.5">
+                            <h3 className="text-base font-semibold text-gray-700 m-0 pb-2 border-b-2 border-gray-200">
+                                Permanent Address
+                            </h3>
+                        </div>{" "}
+                        {/* Permanent Address Line 1 */}
                         <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">Address Line 1<span className='text-red-500'>*</span></label>
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                Address Line 1<span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
-                                value={customerData.permanentAddressLine1 || ''}
+                                value={customerData.permanentAddressLine1 || ""}
                                 onChange={(e) => {
-                                    handleInputChange('permanentAddressLine1', e.target.value);
-                                    handlePermanentAddressFieldChange('permanentAddressLine1', e.target.value);
+                                    handleInputChange("permanentAddressLine1", e.target.value);
+                                    handlePermanentAddressFieldChange(
+                                        "permanentAddressLine1",
+                                        e.target.value
+                                    );
                                 }}
-                                onBlur={() => handleBlur('permanentAddressLine1')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.permanentAddressLine1 ? 'border-red-400 border-[1px]' : ''}`}
+                                onBlur={() => handleBlur("permanentAddressLine1")}
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.permanentAddressLine1
+                                        ? "border-red-400 border-[1px]"
+                                        : ""
+                                    }`}
                                 placeholder="Enter address line 1"
                                 required
                             />
                             {fieldErrors.permanentAddressLine1 && (
-                                <div className="text-red-500 text-xs mt-1">{fieldErrors.permanentAddressLine1}</div>
+                                <div className="text-red-500 text-xs mt-1">
+                                    {fieldErrors.permanentAddressLine1}
+                                </div>
                             )}
                         </div>
-
                         {/* Permanent Address Line 2 */}
                         <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">Address Line 2</label>
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                Address Line 2
+                            </label>
                             <input
                                 type="text"
-                                value={customerData.permanentAddressLine2 || ''}
+                                value={customerData.permanentAddressLine2 || ""}
                                 onChange={(e) => {
-                                    handleInputChange('permanentAddressLine2', e.target.value);
-                                    handlePermanentAddressFieldChange('permanentAddressLine2', e.target.value);
+                                    handleInputChange("permanentAddressLine2", e.target.value);
+                                    handlePermanentAddressFieldChange(
+                                        "permanentAddressLine2",
+                                        e.target.value
+                                    );
                                 }}
                                 className="w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none"
                                 placeholder="Enter address line 2"
                             />
                         </div>
-
                         {/* Permanent Address Line 3 */}
                         <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">Address Line 3</label>
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                Address Line 3
+                            </label>
                             <input
                                 type="text"
-                                value={customerData.permanentAddressLine3 || ''}
+                                value={customerData.permanentAddressLine3 || ""}
                                 onChange={(e) => {
-                                    handleInputChange('permanentAddressLine3', e.target.value);
-                                    handlePermanentAddressFieldChange('permanentAddressLine3', e.target.value);
+                                    handleInputChange("permanentAddressLine3", e.target.value);
+                                    handlePermanentAddressFieldChange(
+                                        "permanentAddressLine3",
+                                        e.target.value
+                                    );
                                 }}
                                 className="w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none"
                                 placeholder="Enter address line 3"
                             />
                         </div>
-
                         {/* Permanent City */}
                         <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">City<span className='text-red-500'>*</span></label>
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                City<span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
-                                value={customerData.permanentCity || ''}
+                                value={customerData.permanentCity || ""}
                                 onChange={(e) => {
-                                    handleInputChange('permanentCity', e.target.value);
-                                    handlePermanentAddressFieldChange('permanentCity', e.target.value);
+                                    handleInputChange("permanentCity", e.target.value);
+                                    handlePermanentAddressFieldChange(
+                                        "permanentCity",
+                                        e.target.value
+                                    );
                                 }}
-                                onBlur={() => handleBlur('permanentCity')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.permanentCity ? 'border-red-400 border-[1px]' : ''}`}
+                                onBlur={() => handleBlur("permanentCity")}
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.permanentCity ? "border-red-400 border-[1px]" : ""
+                                    }`}
                                 placeholder="Enter city"
                                 required
                             />
                             {fieldErrors.permanentCity && (
-                                <div className="text-red-500 text-xs mt-1">{fieldErrors.permanentCity}</div>
+                                <div className="text-red-500 text-xs mt-1">
+                                    {fieldErrors.permanentCity}
+                                </div>
                             )}
                         </div>
-
                         {/* Permanent State */}
                         <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">State<span className='text-red-500'>*</span></label>
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                State<span className="text-red-500">*</span>
+                            </label>
                             <select
-                                value={customerData.permanentStatecode || ''}
+                                value={customerData.permanentStatecode || ""}
                                 onChange={handlePermanentStateSelect}
-                                onBlur={() => handleBlur('permanentState')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.permanentState ? 'border-red-400 border-[1px]' : ''}`}
+                                onBlur={() => handleBlur("permanentState")}
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.permanentState
+                                        ? "border-red-400 border-[1px]"
+                                        : ""
+                                    }`}
                                 disabled={isLoadingStates}
                                 required
                             >
                                 <option value="">Select State</option>
-                                {stateList.map(state => (
+                                {stateList.map((state) => (
                                     <option key={state.state_code} value={state.state_code}>
                                         {state.state_name}
                                     </option>
                                 ))}
                             </select>
-                            {isLoadingStates && <span className="text-gray-500 text-sm">Loading states...</span>}
-                            {fieldErrors.permanentState && (
-                                <div className="text-red-500 text-xs mt-1">{fieldErrors.permanentState}</div>
+                            {isLoadingStates && (
+                                <span className="text-gray-500 text-sm">Loading states...</span>
                             )}
-                        </div>                        {/* Same Address Checkbox */}
+                            {fieldErrors.permanentState && (
+                                <div className="text-red-500 text-xs mt-1">
+                                    {fieldErrors.permanentState}
+                                </div>
+                            )}
+                        </div>{" "}
+                        {/* Same Address Checkbox */}
                         <div className="col-span-full flex items-center space-x-2 mt-4">
                             <div className="relative">
                                 <input
@@ -1138,93 +1340,145 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                             <label className="text-sm text-gray-700 cursor-pointer">
                                 Correspondence address is same as permanent address
                             </label>
-                        </div>                        {/* Correspondence Address Section */}
+                        </div>{" "}
+                        {/* Correspondence Address Section */}
                         <div className="col-span-full mt-5 mb-2.5">
-                            <h3 className="text-base font-semibold text-gray-700 m-0 pb-2 border-b-2 border-gray-200">Correspondence Address</h3>
-                        </div>                        {/* Correspondence Address Line 1 */}
+                            <h3 className="text-base font-semibold text-gray-700 m-0 pb-2 border-b-2 border-gray-200">
+                                Correspondence Address
+                            </h3>
+                        </div>{" "}
+                        {/* Correspondence Address Line 1 */}
                         <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">Address Line 1<span className='text-red-500'>*</span></label>
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                Address Line 1<span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
-                                value={customerData.correspondenceAddressLine1 || ''}
-                                onChange={(e) => handleInputChange('correspondenceAddressLine1', e.target.value)}
-                                onBlur={() => handleBlur('correspondenceAddressLine1')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.correspondenceAddressLine1 ? 'border-red-400 border-[1px]' : ''} ${isSameAddress ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
+                                value={customerData.correspondenceAddressLine1 || ""}
+                                onChange={(e) =>
+                                    handleInputChange(
+                                        "correspondenceAddressLine1",
+                                        e.target.value
+                                    )
+                                }
+                                onBlur={() => handleBlur("correspondenceAddressLine1")}
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.correspondenceAddressLine1
+                                        ? "border-red-400 border-[1px]"
+                                        : ""
+                                    } ${isSameAddress ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+                                    }`}
                                 placeholder="Enter address line 1"
                                 required={!isSameAddress}
                                 disabled={isSameAddress}
                             />
                             {fieldErrors.correspondenceAddressLine1 && (
-                                <div className="text-red-500 text-xs mt-1">{fieldErrors.correspondenceAddressLine1}</div>
+                                <div className="text-red-500 text-xs mt-1">
+                                    {fieldErrors.correspondenceAddressLine1}
+                                </div>
                             )}
                         </div>
-
                         {/* Correspondence Address Line 2 */}
                         <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">Address Line 2</label>
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                Address Line 2
+                            </label>
                             <input
                                 type="text"
-                                value={customerData.correspondenceAddressLine2 || ''}
-                                onChange={(e) => handleInputChange('correspondenceAddressLine2', e.target.value)}
-                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${isSameAddress ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
+                                value={customerData.correspondenceAddressLine2 || ""}
+                                onChange={(e) =>
+                                    handleInputChange(
+                                        "correspondenceAddressLine2",
+                                        e.target.value
+                                    )
+                                }
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${isSameAddress ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+                                    }`}
                                 placeholder="Enter address line 2"
                                 disabled={isSameAddress}
                             />
                         </div>
-
                         {/* Correspondence Address Line 3 */}
                         <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">Address Line 3</label>
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                Address Line 3
+                            </label>
                             <input
                                 type="text"
-                                value={customerData.correspondenceAddressLine3 || ''}
-                                onChange={(e) => handleInputChange('correspondenceAddressLine3', e.target.value)}
-                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${isSameAddress ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
+                                value={customerData.correspondenceAddressLine3 || ""}
+                                onChange={(e) =>
+                                    handleInputChange(
+                                        "correspondenceAddressLine3",
+                                        e.target.value
+                                    )
+                                }
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${isSameAddress ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+                                    }`}
                                 placeholder="Enter address line 3"
                                 disabled={isSameAddress}
                             />
                         </div>
-
                         {/* Correspondence City */}
                         <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">City<span className='text-red-500'>*</span></label>
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                City<span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
-                                value={customerData.correspondenceCity || ''}
-                                onChange={(e) => handleInputChange('correspondenceCity', e.target.value)}
-                                onBlur={() => handleBlur('correspondenceCity')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.correspondenceCity ? 'border-red-400 border-[1px]' : ''} ${isSameAddress ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
+                                value={customerData.correspondenceCity || ""}
+                                onChange={(e) =>
+                                    handleInputChange("correspondenceCity", e.target.value)
+                                }
+                                onBlur={() => handleBlur("correspondenceCity")}
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.correspondenceCity
+                                        ? "border-red-400 border-[1px]"
+                                        : ""
+                                    } ${isSameAddress ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+                                    }`}
                                 placeholder="Enter city"
                                 required={!isSameAddress}
                                 disabled={isSameAddress}
                             />
                             {fieldErrors.correspondenceCity && (
-                                <div className="text-red-500 text-xs mt-1">{fieldErrors.correspondenceCity}</div>
+                                <div className="text-red-500 text-xs mt-1">
+                                    {fieldErrors.correspondenceCity}
+                                </div>
                             )}
                         </div>
-
                         {/* Correspondence State */}
                         <div className="flex flex-col min-w-0">
-                            <label className="text-sm text-gray-600 font-medium mb-1">State<span className='text-red-500'>*</span></label>
+                            <label className="text-sm text-gray-600 font-medium mb-1">
+                                State<span className="text-red-500">*</span>
+                            </label>
                             <select
-                                value={customerData.correspondenceStatecode || ''}
+                                value={customerData.correspondenceStatecode || ""}
                                 onChange={handleCorrespondenceStateSelect}
-                                onBlur={() => handleBlur('correspondenceState')} className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.correspondenceState ? 'border-red-400 border-[1px]' : ''} ${isSameAddress ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}`}
+                                onBlur={() => handleBlur("correspondenceState")}
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.correspondenceState
+                                        ? "border-red-400 border-[1px]"
+                                        : ""
+                                    } ${isSameAddress ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+                                    }`}
                                 disabled={isLoadingStates || isSameAddress}
                                 required={!isSameAddress}
                             >
                                 <option value="">Select State</option>
-                                {stateList.map(state => (
+                                {stateList.map((state) => (
                                     <option key={state.state_code} value={state.state_code}>
                                         {state.state_name}
                                     </option>
                                 ))}
                             </select>
-                            {isLoadingStates && <span className="text-gray-500 text-sm">Loading states...</span>}
+                            {isLoadingStates && (
+                                <span className="text-gray-500 text-sm">Loading states...</span>
+                            )}
                             {fieldErrors.correspondenceState && (
-                                <div className="text-red-500 text-xs mt-1">{fieldErrors.correspondenceState}</div>
+                                <div className="text-red-500 text-xs mt-1">
+                                    {fieldErrors.correspondenceState}
+                                </div>
                             )}
                         </div>
-
-                    </div>                    {/* Form Actions */}
+                    </div>{" "}
+                    {/* Form Actions */}
                     <div className="flex justify-between items-center gap-4 mt-6 pt-4 border-t border-gray-200">
                         {onBack && (
                             <button
@@ -1243,7 +1497,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                 onClick={handleSubmit}
                                 disabled={isSubmitting || isLoadingCustomer}
                             >
-                                {isSubmitting ? 'Saving...' : 'Save'}
+                                {isSubmitting ? "Saving..." : "Save"}
                             </button>
                             {onSuccess && (
                                 <button
@@ -1257,11 +1511,10 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                             )}
                         </div>
                     </div>
-
                     {showOtpModal && <OtpModal />}
                 </>
             )}
-        </div >
+        </div>
     );
 };
 

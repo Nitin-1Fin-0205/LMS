@@ -23,7 +23,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES, TAB_NAMES } from '../constants/routes';
 import { APP_LOGOUT_REDIRECT } from '../assets/config';
 
-const SideNav = () => {
+const SideNav = ({ onToggle }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isCollapsed, setIsCollapsed] = useState(true);
@@ -41,11 +41,14 @@ const SideNav = () => {
     const handleTabChange = (tab, path) => {
         setActiveTab(tab);
         setIsCollapsed(true);
+        onToggle?.(true); // Notify parent of collapse
         navigate(path);
     };
 
     const toggleNav = () => {
-        setIsCollapsed(!isCollapsed);
+        const newCollapsedState = !isCollapsed;
+        setIsCollapsed(newCollapsedState);
+        onToggle?.(newCollapsedState); // Notify parent of state change
     };
 
     const handleLogout = () => {
