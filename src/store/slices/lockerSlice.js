@@ -148,34 +148,19 @@ export const initiateSurrenderLocker = createAsyncThunk(
     async ({ customerId, lockerId }, { rejectWithValue }) => {
         try {
             const token = localStorage.getItem('authToken');
-            // const response = await axios.post(
-            //     `${API_URL}/lockers/surrender/initiate`,
-            //     {
-            //         customer_id: customerId,
-            //         locker_id: lockerId
-            //     },
-            //     {
-            //         headers: {
-            //             'Authorization': `Bearer ${token}`,
-            //             'Content-Type': 'application/json'
-            //         }
-            //     }
-            // );
-
-
-            // Mocked response for OTP initiation
-            const response = {
-                "status": 200,
-                "success": true,
-                "message": "OTP sent successfully",
-                "data": {
-                    "mobile": "+1234567890",
-                    "request_id": "req_123456789abcdef",
-                    "customer_id": 12345,
-                    "locker_id": 67890,
-                    "expires_at": "2025-06-09T10:30:00Z"
+            const response = await axios.post(
+                `${API_URL}/lockers/surrender/initiate`,
+                {
+                    customer_id: customerId,
+                    locker_id: lockerId
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
                 }
-            }
+            );
 
             if (response.status === 200 || response.status === 201) {
                 return response.data;

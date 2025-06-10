@@ -24,7 +24,7 @@ const LockerRentDetails = ({ holderType, onLockerDataChange, showSurrenderButton
     // Centers state management
     const [centers, setCenters] = useState([]);
     const [isLoadingCenters, setIsLoadingCenters] = useState(false);
-    const [lockerDetails, setLockerDetails] = useState({
+    let initialLockerDetails = {
         lockerId: "",
         center: "",
         assignedLocker: "",
@@ -40,7 +40,8 @@ const LockerRentDetails = ({ holderType, onLockerDataChange, showSurrenderButton
             total: "",
         },
         isModalOpen: false,
-    });
+    }
+    const [lockerDetails, setLockerDetails] = useState(initialLockerDetails);
 
     const [loading, setLoading] = useState(false);
     const [lockerPlans, setLockerPlans] = useState([]);
@@ -325,8 +326,9 @@ const LockerRentDetails = ({ holderType, onLockerDataChange, showSurrenderButton
 
             // First verify OTP using the existing otpService
             const otpResponse = await otpService.verifyOtp(otpRequestId, otp);
+            console.log("OTP Verification Response:", otpResponse);
 
-            if (!otpResponse || !otpResponse.success) {
+            if (!otpResponse) {
                 throw new Error("OTP verification failed");
             }
 
@@ -345,6 +347,8 @@ const LockerRentDetails = ({ holderType, onLockerDataChange, showSurrenderButton
             setOtpError("");
             setResendTimer(0);
             setResponseMobile(null);
+            //reset locker details
+            setLockerDetails(initialLockerDetails);
         } catch (error) {
             console.error("Error in surrender process:", error);
             setOtpError(error.message || "Failed to surrender locker");
@@ -353,9 +357,8 @@ const LockerRentDetails = ({ holderType, onLockerDataChange, showSurrenderButton
     };
     const resendOtp = async () => {
         if (resendTimer > 0) {
-            return; // Don't allow resend if timer is still running
+            return;
         }
-
         try {
             // Re-initiate surrender to resend OTP
             const response = await dispatch(
