@@ -103,8 +103,8 @@ const CustomerVisit = () => {
             if (response.data?.status_code === 200 && response.data?.data?.visits) {
                 const formattedHistory = response.data.data.visits.map(visit => ({
                     visit_id: visit.visit_id,
-                    accessedBy: customerData?.name || `${customerData?.firstName} ${customerData?.lastName}` || 'Customer',
-                    customerType: customerData?.customerType,
+                    accessedBy: visit.accessed_by,
+                    customerType: visit.customer_type?.toUpperCase(),
                     time: new Date(visit.entry_time).toLocaleTimeString('en-US',
                         {
                             hour: '2-digit',
@@ -137,7 +137,7 @@ const CustomerVisit = () => {
             // Simulate biometric authentication
             await new Promise(resolve => setTimeout(resolve, 2000));
 
-            // For demo purposes, using customer ID 1
+            // TODO For demo purposes, using customer ID 1
             // In real implementation, this would come from biometric authentication
             const mockCustomerId = 1;
 
@@ -208,13 +208,57 @@ const CustomerVisit = () => {
     const handleSaveVisit = async () => {
         try {
             setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            toast.success("Visit recorded successfully. You may now access the vault.");
+
+            const token = localStorage.getItem('authToken');
+
+            // Prepare visit data
+            const visitData = {
+                customer_id: customerData.customerId,
+                locker_id: customerData.lockerId,
+                locker_number: customerData.lockerNo,
+                entry_time: new Date().toISOString(),
+                visit_photo: visitPhoto,
+                authenticated_by: 'biometric', // or 'otp' based on authentication method
+                customer_type: customerData.customerType,
+                member_id: customerData.memberCode,
+                purpose: 'locker_access',
+                locker_center_id: customerData.lockerCenterId
+            };
+
+            // Send visit data to server
+            const response = await axios.post(
+                `${API_URL}/customers/visits/record`,
+                visitData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                }
+            );
+
+            if (response.data?.status_code === 200 || response.data?.status_code === 201) {
+                toast.success("Visit recorded successfully. You may now access the vault.");
+                await fetchCustomerVisitHistory(customerData.customerId);
+                setVisitPhoto(null);
+            } else {
+                throw new Error(response.data?.message || 'Failed to record visit');
+            }
+
             setLoading(false);
             setShowPhotoModal(false);
         } catch (error) {
             console.error('Error recording visit:', error);
-            toast.error(`Failed to record visit: ${error.message || 'Unknown error'}`);
+
+            let errorMessage = 'Failed to record visit';
+            if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            toast.error(errorMessage);
             setLoading(false);
         }
     };
@@ -712,7 +756,7 @@ const CustomerVisit = () => {
             />
 
             {/* Add CSS animations */}
-            <style jsx>{`
+            <style>{`
                 @keyframes fade-in {
                     from { opacity: 0; }
                     to { opacity: 1; }

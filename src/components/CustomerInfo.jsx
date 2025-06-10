@@ -118,12 +118,19 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
             try {
                 if (customerId) {
                     setIsLoadingCustomer(true);
-                    await dispatch(
+                    const userExists = await dispatch(
                         fetchCustomerById({
                             customerId: customerId,
                             holderType,
                         })
                     ).unwrap();
+
+                    if (userExists?.mobile_number) {
+                        setIsMobileVerified(true);
+                    }
+                    if (userExists?.email) {
+                        setIsEmailVerified(true);
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching customer details:", error);
@@ -165,13 +172,13 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                 aadharNo: holderData.aadharNo || "",
             });
 
-            // Set verification states if data exists
-            if (holderData.mobileNo) {
-                setIsMobileVerified(true);
-            }
-            if (holderData.emailId) {
-                setIsEmailVerified(true);
-            }
+            // // Set verification states if data exists
+            // if (holderData.mobileNo) {
+            //     setIsMobileVerified(true);
+            // }
+            // if (holderData.emailId) {
+            //     setIsEmailVerified(true);
+            // }
 
             // Check if addresses are the same and set checkbox accordingly
             if (
@@ -1059,8 +1066,8 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                 }
                                 onBlur={() => handleBlur("fatherOrHusbandName")}
                                 className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.fatherOrHusbandName
-                                        ? "border-red-400 border-[1px]"
-                                        : ""
+                                    ? "border-red-400 border-[1px]"
+                                    : ""
                                     }`}
                                 placeholder="Enter father/husband name"
                                 required
@@ -1218,8 +1225,8 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                 }}
                                 onBlur={() => handleBlur("permanentAddressLine1")}
                                 className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.permanentAddressLine1
-                                        ? "border-red-400 border-[1px]"
-                                        : ""
+                                    ? "border-red-400 border-[1px]"
+                                    : ""
                                     }`}
                                 placeholder="Enter address line 1"
                                 required
@@ -1305,8 +1312,8 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                 onChange={handlePermanentStateSelect}
                                 onBlur={() => handleBlur("permanentState")}
                                 className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.permanentState
-                                        ? "border-red-400 border-[1px]"
-                                        : ""
+                                    ? "border-red-400 border-[1px]"
+                                    : ""
                                     }`}
                                 disabled={isLoadingStates}
                                 required
@@ -1363,8 +1370,8 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                 }
                                 onBlur={() => handleBlur("correspondenceAddressLine1")}
                                 className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.correspondenceAddressLine1
-                                        ? "border-red-400 border-[1px]"
-                                        : ""
+                                    ? "border-red-400 border-[1px]"
+                                    : ""
                                     } ${isSameAddress ? "bg-gray-100 cursor-not-allowed" : "bg-white"
                                     }`}
                                 placeholder="Enter address line 1"
@@ -1430,8 +1437,8 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                 }
                                 onBlur={() => handleBlur("correspondenceCity")}
                                 className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.correspondenceCity
-                                        ? "border-red-400 border-[1px]"
-                                        : ""
+                                    ? "border-red-400 border-[1px]"
+                                    : ""
                                     } ${isSameAddress ? "bg-gray-100 cursor-not-allowed" : "bg-white"
                                     }`}
                                 placeholder="Enter city"
@@ -1454,8 +1461,8 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                 onChange={handleCorrespondenceStateSelect}
                                 onBlur={() => handleBlur("correspondenceState")}
                                 className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.correspondenceState
-                                        ? "border-red-400 border-[1px]"
-                                        : ""
+                                    ? "border-red-400 border-[1px]"
+                                    : ""
                                     } ${isSameAddress ? "bg-gray-100 cursor-not-allowed" : "bg-white"
                                     }`}
                                 disabled={isLoadingStates || isSameAddress}
