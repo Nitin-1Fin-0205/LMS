@@ -33,6 +33,7 @@ const Customer = () => {
     const [isEditMode, setIsEditMode] = useState(false);
     const [showDetailOverlay, setShowDetailOverlay] = useState(false);
     const [isSendingAgreement, setIsSendingAgreement] = useState(false);
+    const [currentFetchedPan, setCurrentFetchedPan] = useState(null);
 
     const handlePrimaryHolder = () => {
         navigate(ROUTES.PRIMARY_HOLDER);
@@ -68,19 +69,21 @@ const Customer = () => {
     };
 
     useEffect(() => {
-        if (urlPan) {
+        if (urlPan && urlPan !== currentFetchedPan) {
             setFormData({ pan: urlPan });
             handleSubmitWithPan(urlPan);
         }
     }, [urlPan]);
 
-    // Redirect to customer page if PAN is available in primaryHolder
+    // Only redirect if the fetched customer's PAN doesn't match the URL PAN
+    // This prevents flickering when navigating between different customers
     useEffect(() => {
-        if (primaryHolder?.customerInfo?.panNo) {
+        if (primaryHolder?.customerInfo?.panNo &&
+            primaryHolder.customerInfo.panNo.toUpperCase() !== urlPan?.toUpperCase() &&
+            currentFetchedPan === primaryHolder.customerInfo.panNo.toUpperCase()) {
             navigate(`/customer/${primaryHolder?.customerInfo?.panNo?.toUpperCase()}`, { replace: true });
-
         }
-    }, [primaryHolder?.customerInfo?.panNo]);
+    }, [primaryHolder?.customerInfo?.panNo, urlPan, currentFetchedPan]);
 
     const handleSubmitWithPan = async (panValue) => {
         if (!panValue) return;
@@ -94,18 +97,24 @@ const Customer = () => {
         // Clear error if validation passes
         setPanError('');
 
+        // Clear state before fetching new customer
         dispatch(resetForm());
         dispatch(clearAllLockerData());
         setActiveCard(null);
+        setCurrentFetchedPan(null); // Reset tracking
 
         try {
             const result = await dispatch(fetchCustomerByPan({
                 pan: panValue.trim().toUpperCase()
             })).unwrap();
+
+            // Set the fetched PAN after successful fetch
+            setCurrentFetchedPan(panValue.trim().toUpperCase());
         } catch (error) {
             toast.dismiss();
             console.error('Error fetching customer details:', error);
             toast.error(error || 'Failed to fetch customer details');
+            setCurrentFetchedPan(null); // Reset on error
         }
     };
 
@@ -134,7 +143,7 @@ const Customer = () => {
         dispatch(resetForm());
         dispatch(clearAllLockerData());
         setActiveCard(null);
-        // Navigate back to customer page without PAN
+        setCurrentFetchedPan(null); // Reset tracking
         navigate('/customer');
     };
 

@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import { API_URL } from '../assets/config';
 import OtpVerification from './OtpVerification';
+import BiometricService from '../services/BiometricService';
 
 const CustomerVisit = () => {
     const [isScanning, setIsScanning] = useState(false);
@@ -18,6 +19,129 @@ const CustomerVisit = () => {
     const [otpType, setOtpType] = useState('mobile');
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
+    const [deviceManager, setDeviceManager] = useState(null);
+    const [isDeviceInitialized, setIsDeviceInitialized] = useState(false);
+
+    // Initialize Suprema device
+    useEffect(() => {
+        initializeSupremaDevice();
+        return () => {
+            // Cleanup device connection on unmount
+            if (deviceManager) {
+                deviceManager.disconnect();
+            }
+        };
+    }, []);
+
+    const initializeSupremaDevice = async () => {
+        try {
+            // Use your existing BiometricService instead
+            const serviceRunning = await BiometricService.checkServiceRunning();
+            if (serviceRunning) {
+                const result = await BiometricService.initializeDevice();
+                setDeviceManager(BiometricService);
+                setIsDeviceInitialized(true);
+                console.log('Biometric device initialized successfully');
+                // toast.success('Biometric device connected');
+            } else {
+                throw new Error('BioMini WebAgent service not running');
+            }
+        } catch (error) {
+            console.error('Failed to initialize biometric device:', error);
+            toast.error('Failed to initialize biometric device');
+            setIsDeviceInitialized(false);
+        }
+    };
+
+    // Add retry function for device reconnection
+    const retryDeviceConnection = async () => {
+        setLoading(true);
+        // toast.info('Attempting to reconnect biometric device...', { autoClose: 3000 });
+
+        try {
+            // Disconnect existing connection if any
+            if (deviceManager) {
+                await deviceManager.disconnect();
+            }
+
+            // Reinitialize device
+            await initializeSupremaDevice();
+        } catch (error) {
+            console.error('Retry connection failed:', error);
+            toast.error('Failed to reconnect biometric device');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Capture fingerprint and get template data
+    const captureFingerprint = async () => {
+        if (!isDeviceInitialized) {
+            toast.error('Biometric device not initialized');
+            return null;
+        }
+
+        try {
+            console.log('Starting fingerprint capture...');
+
+            // Use your existing BiometricService
+            const result = await BiometricService.captureFingerprint();
+
+            if (result.success) {
+                console.log('Fingerprint captured successfully');
+                return {
+                    templateData: result.template,
+                    quality: result.quality,
+                    image: result.image
+                };
+            } else {
+                throw new Error('Failed to capture fingerprint');
+            }
+        } catch (error) {
+            console.error('Fingerprint capture error:', error);
+            throw error;
+        }
+    };
+
+    // Match fingerprint against stored templates
+    const matchFingerprint = async (templateData) => {
+        try {
+            const token = localStorage.getItem('authToken');
+
+            const response = await axios.post(
+                `${API_URL}/biometrics/identify`,
+                {
+                    template_data: templateData.templateData,
+                    quality: templateData.quality,
+                    match_threshold: 0.8
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                }
+            );
+
+            if (response.data?.status_code === 200 && response.data?.data) {
+                return {
+                    success: true,
+                    customerId: response.data.data.customer_id,
+                    matchScore: response.data.data.match_score,
+                    matchedTemplate: response.data.data.matched_template_id
+                };
+            } else {
+                return {
+                    success: false,
+                    message: response.data?.message || 'No matching fingerprint found'
+                };
+            }
+        } catch (error) {
+            console.error('Fingerprint matching error:', error);
+            throw error;
+        }
+    };
 
     // Fetch customer details by ID
     const fetchCustomerDetails = async (customerId) => {
@@ -134,26 +258,55 @@ const CustomerVisit = () => {
     const handleScanFingerprint = async () => {
         try {
             setIsScanning(true);
-            // Simulate biometric authentication
-            await new Promise(resolve => setTimeout(resolve, 2000));
 
-            // TODO For demo purposes, using customer ID 1
-            // In real implementation, this would come from biometric authentication
-            const mockCustomerId = 1;
-
-            const customerDetails = await fetchCustomerDetails(mockCustomerId);
-            if (customerDetails) {
-                setCustomerData(customerDetails);
-                toast.success("Customer identified successfully");
-
-                // Fetch visit history after successful authentication
-                await fetchCustomerVisitHistory(mockCustomerId);
-            } else {
-                toast.error("Customer not found");
+            if (!isDeviceInitialized) {
+                toast.error('Biometric device not ready. Please wait for initialization.');
+                return;
             }
+
+            toast.info('Please place your finger on the scanner...', { autoClose: 5000 });
+
+            // Capture fingerprint template
+            const fingerprintData = await captureFingerprint();
+
+            if (!fingerprintData) {
+                toast.error('Failed to capture fingerprint');
+                return;
+            }
+
+            toast.info('Fingerprint captured. Matching against Users...', { autoClose: 3000 });
+
+            // Match against stored templates
+            const matchResult = await matchFingerprint(fingerprintData);
+
+            if (matchResult.success) {
+                // toast.success(`Customer identified! Match score: ${(matchResult.matchScore * 100).toFixed(1)}%`);
+
+                // Fetch customer details using matched customer ID
+                const customerDetails = await fetchCustomerDetails(matchResult.customerId);
+                if (customerDetails) {
+                    setCustomerData(customerDetails);
+                    await fetchCustomerVisitHistory(matchResult.customerId);
+                } else {
+                    toast.error("Customer details not found");
+                }
+            } else {
+                toast.error(matchResult.message || 'No matching fingerprint found in database');
+            }
+
         } catch (error) {
             console.error('Error during fingerprint identification:', error);
-            toast.error(`Identification failed: ${error.message || 'Unknown error'}`);
+            let errorMessage = 'Fingerprint identification failed';
+
+            if (error.message?.includes('timeout')) {
+                errorMessage = 'Fingerprint capture timed out. Please try again.';
+            } else if (error.message?.includes('quality')) {
+                errorMessage = 'Fingerprint quality too low. Please clean finger and try again.';
+            } else if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
+
+            toast.error(errorMessage);
         } finally {
             setIsScanning(false);
         }
@@ -331,14 +484,16 @@ const CustomerVisit = () => {
                                     <p className="text-xs text-gray-600 mb-3 leading-relaxed">
                                         {isScanning
                                             ? 'Keep your finger steady on the scanner'
-                                            : 'Place your finger on the biometric scanner'
+                                            : isDeviceInitialized
+                                                ? 'Place your finger on the biometric scanner'
+                                                : 'Initializing biometric device...'
                                         }
                                     </p>
                                     <div className="space-y-2">
                                         <button
                                             onClick={handleScanFingerprint}
-                                            disabled={isScanning}
-                                            className={`w-full py-2 px-3 rounded text-sm font-medium transition-all duration-200 ${isScanning
+                                            disabled={isScanning || !isDeviceInitialized}
+                                            className={`w-full py-2 px-3 rounded text-sm font-medium transition-all duration-200 ${isScanning || !isDeviceInitialized
                                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                                 : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transform hover:scale-105'
                                                 }`}
@@ -346,12 +501,39 @@ const CustomerVisit = () => {
                                             {isScanning ? (
                                                 <div className="flex items-center justify-center">
                                                     <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-400 mr-2"></div>
-                                                    Authenticating...
+                                                    Scanning...
                                                 </div>
+                                            ) : !isDeviceInitialized ? (
+                                                'Device Not Ready'
                                             ) : (
-                                                'Start Authentication'
+                                                'Start Fingerprint Scan'
                                             )}
                                         </button>
+
+                                        {/* Add retry button when device is not initialized */}
+                                        {!isDeviceInitialized && (
+                                            <button
+                                                onClick={retryDeviceConnection}
+                                                disabled={loading}
+                                                className={`w-full py-2 px-3 rounded text-sm font-medium transition-all duration-200 ${loading
+                                                    ? 'bg-orange-100 text-orange-400 cursor-not-allowed'
+                                                    : 'bg-orange-600 text-white hover:bg-orange-700 cursor-pointer transform hover:scale-105'
+                                                    }`}
+                                            >
+                                                {loading ? (
+                                                    <div className="flex items-center justify-center">
+                                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-orange-400 mr-2"></div>
+                                                        Reconnecting...
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <FontAwesomeIcon icon={faArrowsRotate} className="mr-2 w-3 h-3" />
+                                                        Retry Connection
+                                                    </>
+                                                )}
+                                            </button>
+                                        )}
+
                                         <button
                                             onClick={handleReset}
                                             className="w-full py-2 px-3 rounded text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-200 transform hover:scale-105"
@@ -489,10 +671,10 @@ const CustomerVisit = () => {
                                 )}
                             </div>
                         </div>
-                    </div>
+                    </div >
 
                     {/* Right Column - Customer Details */}
-                    <div className="xl:col-span-2">
+                    < div className="xl:col-span-2" >
                         <div className="bg-white rounded-lg border border-blue-100 shadow-lg shadow-blue-100/30 h-full transition-all duration-300 hover:shadow-xl hover:shadow-blue-100/40 hover:-translate-y-1">
 
                             {customerData ? (
@@ -647,103 +829,105 @@ const CustomerVisit = () => {
                                 </div>
                             )}
                         </div>
-                    </div>
-                </div>
-            </div>
+                    </div >
+                </div >
+            </div >
 
             {/* Photo Capture Modal */}
-            {showPhotoModal && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-                    <div className=" bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 max-w-2xl w-full mx-4 shadow-2xl shadow-blue-500/20 transform transition-all duration-300 animate-scale-in">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                                <FontAwesomeIcon icon={faCamera} className="mr-3 w-5 h-5 text-blue-600" />
-                                Capture Visit Photo
-                            </h3>
-                            <button
-                                onClick={() => {
-                                    setShowPhotoModal(false);
-                                    const stream = videoRef.current?.srcObject;
-                                    if (stream) {
-                                        stream.getTracks().forEach(track => track.stop());
-                                    }
-                                }}
-                                className="w-8 h-8 cursor-pointer rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center transition-all duration-300 transform hover:scale-110 border border-red-200"
-                            >
-                                <FontAwesomeIcon
-                                    icon={faTimes}
-                                    className="text-red-500 w-6 h-6"
-                                />
-                            </button>
-                        </div>
+            {
+                showPhotoModal && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+                        <div className=" bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 max-w-2xl w-full mx-4 shadow-2xl shadow-blue-500/20 transform transition-all duration-300 animate-scale-in">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                                    <FontAwesomeIcon icon={faCamera} className="mr-3 w-5 h-5 text-blue-600" />
+                                    Capture Visit Photo
+                                </h3>
+                                <button
+                                    onClick={() => {
+                                        setShowPhotoModal(false);
+                                        const stream = videoRef.current?.srcObject;
+                                        if (stream) {
+                                            stream.getTracks().forEach(track => track.stop());
+                                        }
+                                    }}
+                                    className="w-8 h-8 cursor-pointer rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center transition-all duration-300 transform hover:scale-110 border border-red-200"
+                                >
+                                    <FontAwesomeIcon
+                                        icon={faTimes}
+                                        className="text-red-500 w-6 h-6"
+                                    />
+                                </button>
+                            </div>
 
-                        <div className="photo-capture-container flex flex-col items-center space-y-6">
-                            {!visitPhoto ? (
-                                <div className="camera-container text-center space-y-4 animate-fade-in">
-                                    <div className=" relative rounded-xl overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 p-4 shadow-lg shadow-blue-100/50 inline-block border border-blue-200 transform transition-all duration-300 hover:shadow-xl hover:shadow-blue-200/60">
-                                        <video
-                                            ref={videoRef}
-                                            autoPlay
-                                            playsInline
-                                            muted
-                                            className="max-h-80 max-w-full object-contain rounded-lg"
-                                            style={{
-                                                aspectRatio: 'auto',
-                                                width: 'auto',
-                                                height: 'auto'
-                                            }}
-                                        />
+                            <div className="photo-capture-container flex flex-col items-center space-y-6">
+                                {!visitPhoto ? (
+                                    <div className="camera-container text-center space-y-4 animate-fade-in">
+                                        <div className=" relative rounded-xl overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 p-4 shadow-lg shadow-blue-100/50 inline-block border border-blue-200 transform transition-all duration-300 hover:shadow-xl hover:shadow-blue-200/60">
+                                            <video
+                                                ref={videoRef}
+                                                autoPlay
+                                                playsInline
+                                                muted
+                                                className="max-h-80 max-w-full object-contain rounded-lg"
+                                                style={{
+                                                    aspectRatio: 'auto',
+                                                    width: 'auto',
+                                                    height: 'auto'
+                                                }}
+                                            />
+                                        </div>
+                                        <canvas ref={canvasRef} style={{ display: 'none' }} />
+                                        <div className="text-center">
+                                            <button
+                                                onClick={handleCapturePhoto}
+                                                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 cursor-pointer text-sm shadow-lg shadow-blue-500/30 transform hover:scale-105 hover:shadow-xl hover:shadow-blue-500/40"
+                                            >
+                                                <FontAwesomeIcon icon={faCamera} className="mr-2 w-4 h-4" beatFade />
+                                                Capture Photo
+                                            </button>
+                                        </div>
                                     </div>
-                                    <canvas ref={canvasRef} style={{ display: 'none' }} />
-                                    <div className="text-center">
-                                        <button
-                                            onClick={handleCapturePhoto}
-                                            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 cursor-pointer text-sm shadow-lg shadow-blue-500/30 transform hover:scale-105 hover:shadow-xl hover:shadow-blue-500/40"
-                                        >
-                                            <FontAwesomeIcon icon={faCamera} className="mr-2 w-4 h-4" beatFade />
-                                            Capture Photo
-                                        </button>
+                                ) : (
+                                    <div className="captured-photo-container text-center space-y-4 animate-fade-in">
+                                        <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 p-4 shadow-lg shadow-blue-100/50 inline-block border border-blue-200 transform transition-all duration-300 hover:shadow-xl hover:shadow-blue-200/60">
+                                            <img
+                                                src={visitPhoto}
+                                                alt="Captured Visit"
+                                                className="max-h-80 max-w-full object-contain rounded-lg"
+                                                style={{
+                                                    aspectRatio: 'auto',
+                                                    width: 'auto',
+                                                    height: 'auto'
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="flex justify-center space-x-4">
+                                            <button
+                                                onClick={() => {
+                                                    setVisitPhoto(null);
+                                                    startCamera();
+                                                }}
+                                                className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-all duration-300 text-sm transform hover:scale-105 shadow-md hover:shadow-lg"
+                                            >
+                                                <FontAwesomeIcon icon={faArrowsRotate} className="mr-2 w-3 h-3" />
+                                                Retake Photo
+                                            </button>
+                                            <button
+                                                onClick={handleSaveVisit}
+                                                className="px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all duration-300 cursor-pointer text-sm transform hover:scale-105"
+                                            >
+                                                <FontAwesomeIcon icon={faCheck} className="mr-2 w-4 h-4" bounce />
+                                                Save & Continue
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="captured-photo-container text-center space-y-4 animate-fade-in">
-                                    <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 p-4 shadow-lg shadow-blue-100/50 inline-block border border-blue-200 transform transition-all duration-300 hover:shadow-xl hover:shadow-blue-200/60">
-                                        <img
-                                            src={visitPhoto}
-                                            alt="Captured Visit"
-                                            className="max-h-80 max-w-full object-contain rounded-lg"
-                                            style={{
-                                                aspectRatio: 'auto',
-                                                width: 'auto',
-                                                height: 'auto'
-                                            }}
-                                        />
-                                    </div>
-                                    <div className="flex justify-center space-x-4">
-                                        <button
-                                            onClick={() => {
-                                                setVisitPhoto(null);
-                                                startCamera();
-                                            }}
-                                            className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-all duration-300 text-sm transform hover:scale-105 shadow-md hover:shadow-lg"
-                                        >
-                                            <FontAwesomeIcon icon={faArrowsRotate} className="mr-2 w-3 h-3" />
-                                            Retake Photo
-                                        </button>
-                                        <button
-                                            onClick={handleSaveVisit}
-                                            className="px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all duration-300 cursor-pointer text-sm transform hover:scale-105"
-                                        >
-                                            <FontAwesomeIcon icon={faCheck} className="mr-2 w-4 h-4" bounce />
-                                            Save & Continue
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* OTP Verification Modal */}
             <OtpVerification
