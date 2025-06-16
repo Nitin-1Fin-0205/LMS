@@ -1,3 +1,5 @@
+import ElectronBiometricService from './ElectronBiometricService';
+
 const SDK_ENDPOINTS = {
     STATUS: '/api/isServiceRunning',
     INIT: '/api/initDevice',
@@ -7,19 +9,25 @@ const SDK_ENDPOINTS = {
 
 class BiometricService {
     constructor() {
-        // Use direct connection to WebAgent in development
-        this.baseUrl = '';
-
-        // Remove the /api from URLs since it's already in the API endpoint
-        this.apiPrefix = '';
-
-        this.isInitialized = false;
-        this.deviceHandle = null;
-        this.pageId = Math.random().toString();
-        this.sessionCreated = false;
-        this.debugMode = true;
-        this.scannerInfos = null;
-        this.selectedDeviceIndex = 0;
+        // Check if running in Electron
+        this.isElectron = window.electronAPI?.isElectron || false;
+        
+        if (this.isElectron) {
+            // Delegate to Electron service
+            this.electronService = ElectronBiometricService;
+            this.logDebug('Running in Electron environment');
+        } else {
+            // Original web-based configuration
+            this.baseUrl = '';
+            this.apiPrefix = '';
+            this.isInitialized = false;
+            this.deviceHandle = null;
+            this.pageId = Math.random().toString();
+            this.sessionCreated = false;
+            this.debugMode = true;
+            this.scannerInfos = null;
+            this.selectedDeviceIndex = 0;
+        }
     }
 
     // Helper function for logging API calls in debug mode
@@ -100,6 +108,10 @@ class BiometricService {
 
     // Check if the service is running
     async checkServiceRunning() {
+        if (this.isElectron) {
+            return await this.electronService.checkServiceRunning();
+        }
+        
         try {
             // Try to create a session as that's the first API call to check
             return await this.createSession();
@@ -111,6 +123,10 @@ class BiometricService {
 
     // Initialize the device (similar to Init function)
     async initializeDevice() {
+        if (this.isElectron) {
+            return await this.electronService.initializeDevice();
+        }
+        
         try {
             // // Explicitly create session first - this is critical
             // const sessionCreated = await this.createSession();
@@ -560,6 +576,10 @@ class BiometricService {
 
     // Get full fingerprint image data with template and WSQ
     async captureFingerprint() {
+        if (this.isElectron) {
+            return await this.electronService.captureFingerprint();
+        }
+        
         try {
             if (!this.isInitialized || !this.deviceHandle) {
                 await this.initializeDevice();
