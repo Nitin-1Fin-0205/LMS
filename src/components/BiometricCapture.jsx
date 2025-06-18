@@ -255,7 +255,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                 );
 
                 console.log('Fingerprint stored in database:', response.data);
-                toast.success(`${FINGER_OPTIONS[selectedFinger]} stored in database`);
+                toast.success(`${FINGER_OPTIONS[selectedFinger]} captured successfully`);
             } catch (apiError) {
                 console.error('Failed to store fingerprint in database:', apiError);
                 toast.error(`Warning: Fingerprint captured but not stored in database: ${apiError.message}`);
@@ -268,7 +268,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                 onUpdate(updatedFingerprints);
             }
 
-            toast.success(`${FINGER_OPTIONS[selectedFinger]} captured successfully`);
+            // toast.success(`${FINGER_OPTIONS[selectedFinger]} captured successfully`);
 
             // If this was a required finger, select the next required finger automatically
             if (required.length > 0) {

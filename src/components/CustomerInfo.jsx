@@ -21,6 +21,7 @@ import {
 } from "../store/slices/customerSlice";
 import { HOLDER_TYPES, HOLDER_SECTIONS } from "../constants/holderConstants";
 import { ROUTES } from "../constants/routes";
+import DigilockerModal from "./DigilockerModal";
 
 const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
     const dispatch = useDispatch();
@@ -111,6 +112,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
         emailId: "",
         aadharNo: "",
     });
+    const [isDigilockerModalOpen, setIsDigilockerModalOpen] = useState(false);
 
     // Fetch existing customer data if customerId exists
     useEffect(() => {
@@ -439,52 +441,72 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
 
     const handleFetchPan = async () => {
         try {
-            if (!customerData.panNo || !customerData.dateOfBirth) {
-                toast.error("Please enter PAN No and D.O.B to fetch details");
+            if (!customerData.panNo) {
+                toast.error("Please enter PAN No to fetch details");
                 return;
             }
 
             setIsPanFetching(true);
 
             const token = localStorage.getItem("authToken");
-            const response = await fetch(`${API_URL}/customers/pan-details`, {
-                method: "POST",
+            const response = await fetch(`${API_URL}/customers/fetch-existing-customer?pan=${customerData.panNo}`, {
+                method: "GET",
                 headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                    Accept: "application/json",
+                    "Authorization": `Bearer ${token}`,
+                    "accept": "*/*",
                 },
-                body: JSON.stringify({
-                    panNo: customerData.panNo,
-                    dob: customerData?.dateOfBirth?.toString() || "",
-                }),
             });
 
             const data = await response.json();
-            if (response?.status === 201) {
+            if (response?.status === 200 && data?.data) {
+                const customerInfo = data.data;
                 setCustomerData((prev) => {
-                    const names = data?.name?.split(" ") || ["", "", ""];
                     const updatedData = {
                         ...prev,
-                        customerId: Number(data?.customerId) || null,
-                        firstName: names[0] || "",
-                        middleName: names[1] || "",
-                        lastName: names[2] || "",
-                        permanentAddress: data?.address || "",
-                        mobileNo: data?.mobileNumber || "",
+                        customerId: customerInfo?.customer_id || null,
+                        firstName: customerInfo?.first_name || "",
+                        middleName: customerInfo?.middle_name || "",
+                        lastName: customerInfo?.last_name || "",
+                        fatherOrHusbandName: customerInfo?.guardian || "",
+                        dateOfBirth: customerInfo?.dob || "",
+                        mobileNo: customerInfo?.mobile_number || "",
+                        emailId: customerInfo?.email || "",
+                        gender: customerInfo?.gender || "",
+                        aadharNo: customerInfo?.aadhar || "",
+                        permanentAddressLine1: customerInfo?.permanent_address_line1 || "",
+                        permanentAddressLine2: customerInfo?.permanent_address_line2 || "",
+                        permanentAddressLine3: customerInfo?.permanent_address_line3 || "",
+                        permanentCity: customerInfo?.permanent_city || "",
+                        permanentState: customerInfo?.permanent_state || "",
+                        permanentStatecode: customerInfo?.permanent_state_code || "",
+                        correspondenceAddressLine1: customerInfo?.correspondence_address_line1 || "",
+                        correspondenceAddressLine2: customerInfo?.correspondence_address_line2 || "",
+                        correspondenceAddressLine3: customerInfo?.correspondence_address_line3 || "",
+                        correspondenceCity: customerInfo?.correspondence_city || "",
+                        correspondenceState: customerInfo?.correspondence_state || "",
+                        correspondenceStatecode: customerInfo?.correspondence_state_code || "",
                     };
                     handleCustomerInfoUpdate(updatedData);
                     return updatedData;
                 });
-                toast.success("PAN details fetched successfully");
+
+                // Set verification states if data exists
+                if (customerInfo?.mobile_number) {
+                    setIsMobileVerified(true);
+                }
+                if (customerInfo?.email) {
+                    setIsEmailVerified(true);
+                }
+
+                toast.success("Customer details fetched successfully");
             } else {
-                toast.error(`PAN details not found`);
+                toast.error("Customer not found with this PAN");
             }
         } catch (error) {
-            console.error("Error fetching PAN details:", error);
-            toast.error("Failed to fetch PAN details");
+            console.error("Error fetching customer details:", error);
+            toast.error("Failed to fetch customer details");
         } finally {
-            setIsPanFetching(false); // Reset loading state
+            setIsPanFetching(false);
         }
     };
 
@@ -792,6 +814,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                 mobile_number: customerData.mobileNo,
                 email: customerData.emailId,
                 locker_center_id: 1,
+                holder_type: holderType === HOLDER_TYPES.PRIMARY ? 1 : holderType === HOLDER_TYPES.SECONDARY ? 2 : 3,
             };
 
             // Add parent customer ID for secondary and third holders
@@ -811,7 +834,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                 throw new Error(`Failed to create ${holderType}`);
             }
 
-            toast.success(`${holderType} info saved successfully!`);
+            toast.success(`Holder info saved successfully!`);
 
             // Call success callback if provided
             if (onSuccess) {
@@ -932,67 +955,65 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                 </div>
             ) : (
                 <>
-                    <h2 className="text-slate-700 text-xl font-semibold mb-4 pb-2 border-b border-gray-200">
-                        Customer Information
-                    </h2>
+                    <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+                        <h2 className="text-slate-700 text-xl font-semibold">
+                            Customer Information
+                        </h2>
+                        <button
+                            type="button"
+                            className="px-4 py-2 bg-green-600 text-white border-none rounded-md hover:bg-green-700 transition-colors duration-200 text-sm font-medium"
+                            onClick={() => setIsDigilockerModalOpen(true)}
+                        >
+                            Send Digilocker
+                        </button>
+                    </div>
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-2 lg:gap-4 mt-4 p-4">
                         {" "}
                         <div className="flex flex-col min-w-0">
                             <label className="text-sm text-gray-600 font-medium mb-1">
                                 PAN No<span className="text-red-500">*</span>
                             </label>
-                            <input
-                                type="text"
-                                value={customerData.panNo}
-                                onChange={handlePanInput}
-                                onBlur={() => handleBlur("panNo")}
-                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.panNo ? "border-red-400 border-[1px]" : ""
-                                    }`}
-                                placeholder="Enter PAN no here"
-                                maxLength={10}
-                                required
-                            />{" "}
+                            <div className="flex gap-2 items-center w-full min-w-0">
+                                <input
+                                    type="text"
+                                    value={customerData.panNo}
+                                    onChange={handlePanInput}
+                                    onBlur={() => handleBlur("panNo")}
+                                    className={`flex-1 h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.panNo ? "border-red-400 border-[1px]" : ""
+                                        }`}
+                                    placeholder="Enter PAN no here"
+                                    maxLength={10}
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    className="px-3 py-2 bg-blue-600 text-white border-none rounded text-sm  cursor-pointer hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    onClick={handleFetchPan}
+                                    disabled={isPanFetching || !customerData.panNo || !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(customerData.panNo)}
+                                >
+                                    {isPanFetching ? 'Fetching...' : 'Fetch Details'}
+                                </button>
+                            </div>
                             {fieldErrors.panNo && (
                                 <div className="text-red-500 text-xs mt-1">
                                     {fieldErrors.panNo}
                                 </div>
                             )}
-                        </div>{" "}
+                        </div>
                         <div className="flex flex-col min-w-0">
                             <label className="text-sm text-gray-600 font-medium mb-1">
                                 D.O.B<span className="text-red-500">*</span>
                             </label>
-                            <div className="flex gap-2 items-center w-full min-w-0">
-                                <input
-                                    type="date"
-                                    value={customerData.dateOfBirth}
-                                    onChange={(e) => handleDobChange(e)}
-                                    onBlur={() => handleBlur("dateOfBirth")}
-                                    className={`flex-1 h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.dateOfBirth ? "border-red-400 border-[1px]" : ""
-                                        }`}
-                                    max={new Date().toISOString().split("T")[0]}
-                                    required
-                                />
-                                {/* <div className="pan-actions">
-                                    <button
-                                        className="fetch-pan-button"
-                                        onClick={handleFetchPan}
-                                        disabled={isPanFetching}
-                                    >
-                                        {isPanFetching ? 'Fetching...' : 'Fetch Details'}
-                                    </button>
-                                    <label className="pan-upload-button">
-                                        <FontAwesomeIcon icon={faUpload} />
-                                        {isPanImageFetching ? 'Processing...' : 'PAN OCR'}
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handlePanImageUpload}
-                                            disabled={isPanImageFetching}
-                                        />
-                                    </label>
-                                </div> */}
-                            </div>{" "}
+                            <input
+                                type="date"
+                                value={customerData.dateOfBirth}
+                                onChange={(e) => handleDobChange(e)}
+                                onBlur={() => handleBlur("dateOfBirth")}
+                                className={`w-full h-9 px-3 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none ${fieldErrors.dateOfBirth ? "border-red-400 border-[1px]" : ""
+                                    }`}
+                                max={new Date().toISOString().split("T")[0]}
+                                required
+                            />
                             {fieldErrors.dateOfBirth && (
                                 <div className="text-red-500 text-xs mt-1">
                                     {fieldErrors.dateOfBirth}
@@ -1519,6 +1540,10 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                         </div>
                     </div>
                     {showOtpModal && <OtpModal />}
+                    <DigilockerModal
+                        isOpen={isDigilockerModalOpen}
+                        onClose={() => setIsDigilockerModalOpen(false)}
+                    />
                 </>
             )}
         </div>
