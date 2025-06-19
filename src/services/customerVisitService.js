@@ -161,6 +161,90 @@ class CustomerVisitService {
             throw error;
         }
     }
+
+    static async identifyByContact(identifier, identifierType) {
+        try {
+            const token = localStorage.getItem('authToken');
+
+            const response = await axios.post(
+                `${API_URL}/customers/identify-by-contact`,
+                {
+                    identifier: identifier,
+                    identifier_type: identifierType // 1 for mobile, 2 for email
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                }
+            );
+
+            if (response.data?.status_code === 200 && response.data?.data) {
+                return {
+                    success: true,
+                    requestId: response.data.data.request_id,
+                    customerId: response.data.data.customer_id,
+                    identifierType: response.data.data.identifier_type,
+                    maskedIdentifier: response.data.data.masked_identifier,
+                    expiresIn: response.data.data.expires_in,
+                    message: response.data.message
+                };
+            } else {
+                return {
+                    success: false,
+                    message: response.data?.message || 'Customer not found with this contact information'
+                };
+            }
+        } catch (error) {
+            console.error('Customer identification error:', error);
+            throw error;
+        }
+    }
+
+    static async verifyIdentificationOtp(requestId, customerId, otp) {
+        try {
+            const token = localStorage.getItem('authToken');
+
+            const response = await axios.post(
+                `${API_URL}/customers/verify-identification-otp`,
+                {
+                    request_id: requestId,
+                    customer_id: customerId,
+                    otp: Number(otp)
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                }
+            );
+
+            if (response.data?.status_code === 200 && response.data?.data) {
+                const { customer_id, locker_access } = response.data.data;
+
+                return {
+                    success: true,
+                    customerId: customer_id,
+                    lockerAccess: locker_access || [],
+                    hasMultipleLockers: locker_access && locker_access.length > 1,
+                    hasNoLockers: !locker_access || locker_access.length === 0,
+                    message: response.data.message
+                };
+            } else {
+                return {
+                    success: false,
+                    message: response.data?.message || 'Invalid OTP'
+                };
+            }
+        } catch (error) {
+            console.error('OTP verification error:', error);
+            throw error;
+        }
+    }
 }
 
 export default CustomerVisitService;

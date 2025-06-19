@@ -429,7 +429,7 @@ const AddNominee = ({ isOpen, onClose, onSave, existingNominees = [] }) => {
                                                 type="text"
                                                 value={nominee.proofId || ''}
                                                 onChange={(e) => handleInputChange(index, 'proofId', e.target.value)}
-                                                placeholder="Enter proof ID (e.g. Aadhar number, PAN number)"
+                                                placeholder="Enter proof ID (e.g. Aadhaar number, PAN number)"
                                                 className={formErrors[`proofId-${index}`] ? 'input-error' : ''}
                                             />
                                             {formErrors[`proofId-${index}`] && (

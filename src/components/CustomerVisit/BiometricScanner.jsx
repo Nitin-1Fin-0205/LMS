@@ -22,7 +22,7 @@ const BiometricScanner = ({ onScanSuccess, onScanError }) => {
             <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 border-b border-blue-200">
                 <h2 className="text-sm font-semibold text-gray-900 flex items-center">
                     <FontAwesomeIcon icon={faFingerprint} className="mr-2 w-4 h-4 text-blue-600" />
-                    Biometric Scanner
+                    Biometric Verification
                 </h2>
             </div>
             <div className="p-4">
@@ -55,8 +55,8 @@ const BiometricScanner = ({ onScanSuccess, onScanError }) => {
                             onClick={handleScan}
                             disabled={isScanning || !isDeviceInitialized}
                             className={`w-full py-2 px-3 rounded text-sm font-medium transition-all duration-200 ${isScanning || !isDeviceInitialized
-                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                    : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transform hover:scale-105'
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transform hover:scale-105'
                                 }`}
                         >
                             {isScanning ? (

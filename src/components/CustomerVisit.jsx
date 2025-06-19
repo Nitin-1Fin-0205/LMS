@@ -95,13 +95,45 @@ const CustomerVisit = () => {
 
     const handleOtpSuccess = async (otpData) => {
         try {
-            const customerDetails = await CustomerVisitService.fetchCustomerDetails(otpData.customerId);
-            if (customerDetails) {
-                setCustomerData(customerDetails);
-                toast.success("Customer verified via OTP successfully");
-                await fetchCustomerVisitHistory(otpData.customerId);
+            // Check locker access scenarios similar to biometric flow
+            if (otpData.hasNoLockers) {
+                toast.error("No locker access found for this customer");
+                return;
+            }
+
+            if (otpData.hasMultipleLockers) {
+                // Show locker selection modal
+                setLockerAccessData(otpData.lockerAccess);
+                setShowLockerSelectionModal(true);
+
+                // Get customer details for display in modal
+                const customerDetails = await CustomerVisitService.fetchCustomerDetails(otpData.customerId);
+                if (customerDetails) {
+                    setCustomerData(customerDetails);
+                }
             } else {
-                toast.error("Customer details not found");
+                // Single locker - proceed directly
+                const selectedLockerInfo = otpData.lockerAccess[0];
+                const customerDetails = await CustomerVisitService.fetchCustomerDetails(otpData.customerId);
+
+                if (customerDetails) {
+                    // Update customer data with selected locker info
+                    const updatedCustomerData = {
+                        ...customerDetails,
+                        lockerNo: selectedLockerInfo.locker_number,
+                        lockerId: selectedLockerInfo.locker_id,
+                        lockerKey: selectedLockerInfo.locker_key,
+                        memberCode: selectedLockerInfo.member_id,
+                        customerType: selectedLockerInfo.access_type,
+                        lockerSize: selectedLockerInfo.size
+                    };
+
+                    setCustomerData(updatedCustomerData);
+                    setSelectedLocker(selectedLockerInfo);
+                    await fetchCustomerVisitHistory(otpData.customerId);
+                } else {
+                    toast.error("Customer details not found");
+                }
             }
         } catch (error) {
             console.error('Error after OTP verification:', error);
@@ -203,7 +235,7 @@ const CustomerVisit = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 py-4">
-            <div className="max-w-6xl mx-auto px-4">
+            <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
                     {/* Left Column - Authentication & History */}
                     <div className="xl:col-span-1 space-y-4">
@@ -216,23 +248,23 @@ const CustomerVisit = () => {
                             onOtpSuccess={handleOtpSuccess}
                             disabled={loading}
                         />
-
+                        {/* Reset Button */}
+                        <div className="text-center">
+                            <button
+                                onClick={handleReset}
+                                className="w-full py-2 px-3 rounded text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all duration-200 transform hover:scale-105"
+                            >
+                                <FontAwesomeIcon icon={faArrowsRotate} className="mr-2 w-3 h-3" />
+                                Reset Session
+                            </button>
+                        </div>
                         <VisitHistory
                             visitHistory={visitHistory}
                             customerData={customerData}
                             historyLoading={historyLoading}
                         />
 
-                        {/* Reset Button */}
-                        <div className="text-center">
-                            <button
-                                onClick={handleReset}
-                                className="w-full py-2 px-3 rounded text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-200 transform hover:scale-105"
-                            >
-                                <FontAwesomeIcon icon={faArrowsRotate} className="mr-2 w-3 h-3" />
-                                Reset Session
-                            </button>
-                        </div>
+
                     </div>
 
                     {/* Right Column - Customer Details */}
