@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchNominees } from '../store/slices/lockerSlice';
+import { fetchNominees } from '../../store/slices/lockerSlice';
 import AddNominee from './AddNominee';
 
 const NomineeSection = ({

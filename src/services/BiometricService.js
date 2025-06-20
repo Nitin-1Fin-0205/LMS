@@ -1,14 +1,13 @@
-const SDK_ENDPOINTS = {
-    STATUS: '/api/isServiceRunning',
-    INIT: '/api/initDevice',
-    SCAN: '/api/scanFingerprint',
-    MATCH: '/api/matchFingerprints'
-};
+import { VITE_WEBAGENT_PROXY_URL, VITE_WEBAGENT_URL } from "../assets/config";
 
 class BiometricService {
     constructor() {
-        // Use direct connection to WebAgent in development
-        this.baseUrl = '';
+        this.baseUrl = VITE_WEBAGENT_URL || 'http://localhost:8084';
+        this.baseProxyUrl = VITE_WEBAGENT_PROXY_URL || 'http://localhost:4000';
+
+        // Debug the config values
+        console.log('this.baseUrl:', this.baseUrl);
+        console.log('this.baseProxyUrl:', this.baseProxyUrl);
 
         // Remove the /api from URLs since it's already in the API endpoint
         this.apiPrefix = '';
@@ -31,7 +30,7 @@ class BiometricService {
 
     async makeRequest(endpoint, options = {}) {
         try {
-            const url = `${this.baseUrl}${endpoint}`;
+            const url = `${endpoint}`;
 
             // Convert params to URLSearchParams
             const queryParams = new URLSearchParams();
@@ -121,7 +120,7 @@ class BiometricService {
             this.logDebug('Current cookies before init:', document.cookie);
 
             // Initialize device
-            const response = await this.makeRequest('/api/initDevice');
+            const response = await this.makeRequest(`${this.baseUrl}/api/initDevice`);
             this.logDebug('Init device response:', response);
 
             // if (response.retValue !== 0) {
@@ -153,7 +152,7 @@ class BiometricService {
         if (!this.isInitialized) return;
 
         try {
-            await this.makeRequest('/api/uninitDevice');
+            await this.makeRequest(`${this.baseUrl}/api/uninitDevice`);
             this.isInitialized = false;
             this.deviceHandle = null;
             this.scannerInfos = null;
@@ -168,7 +167,7 @@ class BiometricService {
             throw new Error('Device not initialized');
         }
 
-        const response = await this.makeRequest('/api/getScannerStatus', {
+        const response = await this.makeRequest(`${this.baseUrl}/api/getScannerStatus`, {
             params: {
                 sHandle: this.deviceHandle
             }
@@ -192,7 +191,7 @@ class BiometricService {
             await this.initializeDevice();
         }
 
-        const response = await this.makeRequest('/api/startCapturing', {
+        const response = await this.makeRequest(`${this.baseUrl}/api/startCapturing`, {
             params: {
                 sHandle: this.deviceHandle,
                 id: this.pageId,
@@ -215,7 +214,7 @@ class BiometricService {
 
         try {
             // Very important: build URL exactly in the format that works
-            const captureUrl = `${this.baseUrl}/api/captureSingle?dummy=${Math.random()}&sHandle=${this.deviceHandle}&id=${this.pageId}&resetTimer=30000`;
+            const captureUrl = `${this.baseProxyUrl}/api/captureSingle?dummy=${Math.random()}&sHandle=${this.deviceHandle}&id=${this.pageId}&resetTimer=30000`;
 
             const captureResponse = await fetch(captureUrl, {
                 credentials: 'include',
@@ -240,7 +239,7 @@ class BiometricService {
             await this.initializeDevice();
         }
 
-        const response = await this.makeRequest('/api/autoCapture', {
+        const response = await this.makeRequest(`${this.baseProxyUrl}/api/autoCapture`, {
             params: {
                 sHandle: this.deviceHandle,
                 id: this.pageId
@@ -259,7 +258,7 @@ class BiometricService {
         if (!this.deviceHandle) return;
 
         try {
-            await this.makeRequest('/api/abortCapture', {
+            await this.makeRequest(`${this.baseUrl}/api/abortCapture`, {
                 params: {
                     sHandle: this.deviceHandle,
                     resetTimer: 30000
@@ -287,7 +286,7 @@ class BiometricService {
             encryptKey: options.encryptKey || ''
         };
 
-        const response = await this.makeRequest('/api/getTemplateData', { params });
+        const response = await this.makeRequest(`${this.baseProxyUrl}/api/getTemplateData`, { params });
 
         if (response.retValue !== 0) {
             throw new Error(response.retString || 'Failed to get template data');
@@ -314,12 +313,11 @@ class BiometricService {
             height: 300,
         };
 
-        const response = await this.makeRequest(`/api/getImageData`, { params });
+        const response = await this.makeRequest(`${this.baseProxyUrl}/api/getImageData`, { params });
 
         if (response.retValue != 0) {
             throw new Error(response.retString || 'Failed to get image data');
         }
-        console.log('Image data response:', response);
 
         return {
             imageBase64: response.imageBase64,
@@ -340,7 +338,7 @@ class BiometricService {
             compressionRatio: compressionRatio
         };
 
-        const response = await this.makeRequest('/api/saveImageBuffer', { params });
+        const response = await this.makeRequest(`${this.baseProxyUrl}/api/saveImageBuffer`, { params });
 
         if (response.retValue !== 0) {
             throw new Error(response.retString || 'Failed to save image buffer');
@@ -355,7 +353,7 @@ class BiometricService {
             throw new Error('Device not initialized');
         }
 
-        const response = await this.makeRequest('/api/getParameters', {
+        const response = await this.makeRequest(`${this.baseUrl}/api/getParameters`, {
             params: { sHandle: this.deviceHandle }
         });
 
@@ -386,7 +384,7 @@ class BiometricService {
             ...params
         };
 
-        const response = await this.makeRequest('/api/setParameters', { params: requestParams });
+        const response = await this.makeRequest(`${this.baseUrl}/api/setParameters`, { params: requestParams });
 
         if (response.retValue !== 0) {
             throw new Error(response.retString || 'Failed to set parameters');
@@ -566,7 +564,7 @@ class BiometricService {
             }
 
             // Step 1: Direct connection to WebAgent for capture
-            const captureUrl = `${this.baseUrl}/api/captureSingle?dummy=${Math.random()}&sHandle=${this.deviceHandle}&id=${this.pageId}&resetTimer=30000`;
+            const captureUrl = `${this.baseProxyUrl}/api/captureSingle?dummy=${Math.random()}&sHandle=${this.deviceHandle}&id=${this.pageId}&resetTimer=30000`;
 
             const captureResponse = await fetch(captureUrl, {
                 credentials: 'include',
@@ -584,7 +582,7 @@ class BiometricService {
             const thresholdQuality = 80;
 
             // Step 2: Get the template data - use direct connection for this too
-            const templateResponse = await this.makeRequest(`/api/getTemplateData?dummy=${Math.random()}`, {
+            const templateResponse = await this.makeRequest(`${this.baseProxyUrl}/api/getTemplateData?dummy=${Math.random()}`, {
                 params: {
                     sHandle: this.deviceHandle,
                     id: this.pageId,
@@ -607,14 +605,12 @@ class BiometricService {
                 throw new Error(wsqResponse.retString || 'WSQ extraction failed');
             }
 
-            console.log('WSQ response:', wsqResponse);
 
             const imgResponse = await this.getImageData(1, 0.75); // BMP format
             if (imgResponse.retValue != 0) {
                 throw new Error(imgResponse.retString || 'Image extraction failed');
             }
 
-            console.log('Image response:', imgResponse);
 
             return {
                 success: true,
@@ -635,7 +631,7 @@ class BiometricService {
         if (!this.sessionCreated) return;
 
         try {
-            await this.makeRequest('/api/sessionClear', {
+            await this.makeRequest(`${this.baseUrl}/api/sessionClear`, {
                 params: {
                     id: this.pageId
                 }

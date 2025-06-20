@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFingerprint, faSync, faCheck, faTimes, faExclamationTriangle, faRedo } from '@fortawesome/free-solid-svg-icons';
-import '../styles/BiometricCapture.css';
-import BiometricService from '../services/BiometricService';
+import '../../styles/BiometricCapture.css';
+import BiometricService from '../../services/BiometricService';
 import { toast } from 'react-toastify';
 import axios from 'axios';
-import { API_URL } from '../assets/config';
+import { API_URL } from '../../assets/config';
 
 const FINGER_OPTIONS = {
     'right-thumb': 'Right Thumb',
@@ -323,7 +323,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
         if (scannerState.error) {
             return (
                 <div className="status-indicator error">
-                    <FontAwesomeIcon icon={faExclamationTriangle} /> {scannerState.error}
+                    <FontAwesomeIcon icon={faExclamationTriangle} beatFade /> {scannerState.error}
                     <button className="error-retry-button" onClick={initializeDevice}>
                         <FontAwesomeIcon icon={faSync} /> Retry
                     </button>
@@ -334,7 +334,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
         if (scannerState.isConnected) {
             return (
                 <div className="status-indicator success">
-                    <FontAwesomeIcon icon={faCheck} /> Device ready: {scannerState.deviceInfo?.ScannerName || "Fingerprint Scanner"}
+                    <FontAwesomeIcon icon={faCheck} bounce /> Device ready: {scannerState.deviceInfo?.ScannerName || "Fingerprint Scanner"}
                 </div>
             );
         }

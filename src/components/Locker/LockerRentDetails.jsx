@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { API_URL } from "../assets/config";
+import { API_URL } from "../../assets/config";
 import {
     surrenderLocker,
     initiateSurrenderLocker,
-} from "../store/slices/lockerSlice";
+} from "../../store/slices/lockerSlice";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faPlus,
@@ -15,7 +15,7 @@ import {
     faEraser,
 } from "@fortawesome/free-solid-svg-icons";
 import AssignLocker from "./AssignLocker";
-import { otpService } from "../services/otpService";
+import { otpService } from "../../services/otpService";
 import axios from "axios";
 
 const LockerRentDetails = ({ holderType, onLockerDataChange, showSurrenderButton, setShowSurrenderButton }) => {

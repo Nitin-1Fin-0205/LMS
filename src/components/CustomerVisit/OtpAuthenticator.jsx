@@ -273,7 +273,7 @@ const OtpAuthenticator = ({ onOtpSuccess, disabled }) => {
                                         type="text"
                                         value={otpValue}
                                         onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none text-center text-lg tracking-widest"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(66,153,225,0.15)] focus:outline-none text-center text-lg tracking-widest"
                                         placeholder="000000"
                                         maxLength={6}
                                     />

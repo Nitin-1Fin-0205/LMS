@@ -3,8 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
-import LockerRentDetails from "./LockerRentDetails";
-import NomineeSection from "./NomineeSection";
+import LockerRentDetails from "./Locker/LockerRentDetails";
+import NomineeSection from "./Locker/NomineeSection";
 import {
     fetchLockerDetails,
     fetchNominees,

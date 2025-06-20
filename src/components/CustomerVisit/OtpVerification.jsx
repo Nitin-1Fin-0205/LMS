@@ -75,7 +75,7 @@ const OtpVerification = ({
                 : otpService.sendMobileOtp(contactValue)
             );
 
-            console.log('OTP Response:', response);
+            // console.log('OTP Response:', response);
             setRequestId(response?.request_id || null);
 
             if (!response?.request_id) {

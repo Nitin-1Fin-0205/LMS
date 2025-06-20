@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { API_URL } from "../assets/config";
+import { API_URL } from "../../assets/config";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faXmark,
@@ -12,15 +12,14 @@ import {
     faEnvelope,
     faSms,
 } from "@fortawesome/free-solid-svg-icons";
-import { ValidationService } from "../services/ValidationService";
-import { otpService } from "../services/otpService";
+import { ValidationService } from "../../services/ValidationService";
+import { otpService } from "../../services/otpService";
 import {
     submitCustomerInfo,
     fetchCustomerById,
     updateHolderSection,
-} from "../store/slices/customerSlice";
-import { HOLDER_TYPES, HOLDER_SECTIONS } from "../constants/holderConstants";
-import { ROUTES } from "../constants/routes";
+} from "../../store/slices/customerSlice";
+import { HOLDER_TYPES, HOLDER_SECTIONS } from "../../constants/holderConstants";
 import DigilockerModal from "./DigilockerModal";
 
 const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
@@ -964,7 +963,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                             className="px-4 py-2 bg-green-600 text-white border-none rounded-md hover:bg-green-700 transition-colors duration-200 text-sm font-medium"
                             onClick={() => setIsDigilockerModalOpen(true)}
                         >
-                            Send Digilocker
+                            Fetch Through Digilocker
                         </button>
                     </div>
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-2 lg:gap-4 mt-4 p-4">

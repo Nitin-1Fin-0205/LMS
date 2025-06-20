@@ -3,7 +3,7 @@ import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFileUpload, faEye, faTrash, faTimes, faFilePdf, faPlus, faFileImage, faFile, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
-import { API_URL } from '../assets/config';
+import { API_URL } from '../../assets/config';
 
 const Attachments = ({ customerId, holderType, onSuccess, onBack }) => {
     const [selectedCategory, setSelectedCategory] = useState('identityProof');

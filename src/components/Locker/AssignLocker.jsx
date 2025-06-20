@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchLockerMaster, clearLockerData } from '../store/slices/lockerSlice';
+import { fetchLockerMaster, clearLockerData } from '../../store/slices/lockerSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faMapMarkerAlt,
@@ -14,9 +14,9 @@ import {
     faLock,
     faWrench
 } from '@fortawesome/free-solid-svg-icons';
-import { API_URL } from '../assets/config';
-import { LOCKER_STATUS, LOCKER_TYPES, LOCKER_SIZES } from '../constants/locker';
-import { LockerSvgs } from '../assets/lockerSvg';
+import { API_URL } from '../../assets/config';
+import { LOCKER_STATUS, LOCKER_TYPES, LOCKER_SIZES } from '../../constants/locker';
+import { LockerSvgs } from '../../assets/lockerSvg';
 
 const AssignLocker = ({ isOpen, onClose, onLockerAssign, centerId }) => {
     const [selectedLocker, setSelectedLocker] = useState(null);

@@ -3,15 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import PhotoCapture from './PhotoCapture';
 import BiometricCapture from './BiometricCapture';
 import { toast } from 'react-toastify';
-import { ROUTES } from '../constants/routes';
+import { ROUTES } from '../../constants/routes';
+import { useDispatch, useSelector } from 'react-redux';
+import { HOLDER_TYPES } from '../../constants/holderConstants';
 
-const CustomerKYCSection = ({ customerId, holderType, onSuccess, onBack }) => {
+
+const CustomerKYCSection = ({ customerId, onBack, customerPAN }) => {
     const [fingerprints, setFingerprints] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { form } = useSelector(state => state.customer);
     const navigate = useNavigate();
     const handleHome = async () => {
         try {
-            navigate(ROUTES.CUSTOMER);
+
+            console.log('Submitting biometric data:', customerPAN)
+            customerPAN ? navigate(`${ROUTES.CUSTOMER}/${customerPAN}`) : navigate(ROUTES.CUSTOMER);
 
         } catch (error) {
             console.error('Biometric submission error:', error);

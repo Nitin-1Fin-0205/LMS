@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import CustomerInfo from './CustomerInfo';
-import Attachments from './Attachments';
-import CustomerKYCSection from './CustomerKYCSection';
+import CustomerInfo from './Holders/CustomerInfo';
+import Attachments from './Holders/Attachments';
+import CustomerKYCSection from './Holders/CustomerKYCSection';
 import StagesProgress from './StagesProgress';
 import { API_URL } from '../assets/config';
 import '../styles/HolderDetails.css';
@@ -88,8 +88,9 @@ const HolderDetails = ({ holderType }) => {
                 return (
                     <CustomerKYCSection
                         customerId={holderData.customerInfo.customerId}
-                        holderType={holderType}
-                        onSuccess={handleBiometricSuccess}
+                        customerPAN={holderData.customerInfo.panNo}
+                        // holderType={holderType}
+                        // onSuccess={handleBiometricSuccess}
                         onBack={() => setCurrentStage(HOLDER_STAGES.ATTACHMENTS)}
                     />
                 );

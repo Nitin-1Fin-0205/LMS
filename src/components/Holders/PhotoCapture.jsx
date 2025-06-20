@@ -3,8 +3,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faXmark, faUpload, faCamera, faFileAlt } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import axios from 'axios';
-import { API_URL } from '../assets/config';
-import '../styles/PhotoCapture.css';
+import { API_URL } from '../../assets/config';
+import '../../styles/PhotoCapture.css';
 
 const PhotoCapture = ({ customerId }) => {
     const [cameraActive, setCameraActive] = useState(false);

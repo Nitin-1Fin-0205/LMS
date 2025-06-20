@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark, faEnvelope, faSms } from "@fortawesome/free-solid-svg-icons";
-import { API_URL } from "../assets/config";
+import { API_URL } from "../../assets/config";
 
 const DigilockerModal = ({ isOpen, onClose }) => {
     const [contactMethod, setContactMethod] = useState("mobile");

@@ -2,11 +2,11 @@ import { faTrashAlt, faTimes } from '@fortawesome/free-solid-svg-icons';
 import React, { useState, useEffect } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateNominees, fetchNominees, deleteNominee } from '../store/slices/lockerSlice';
+import { updateNominees, fetchNominees, deleteNominee } from '../../store/slices/lockerSlice';
 import 'react-toastify/dist/ReactToastify.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import '../styles/AddNominee.css';
-import { API_URL } from '../assets/config';
+import '../../styles/AddNominee.css';
+import { API_URL } from '../../assets/config';
 
 const AddNominee = ({ isOpen, onClose, onSave, existingNominees = [] }) => {
     const dispatch = useDispatch();

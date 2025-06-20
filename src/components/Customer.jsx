@@ -18,7 +18,6 @@ const Customer = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { pan: urlPan } = useParams();
-    console.log('URL PAN:', useParams());
     const { form, isSubmitting } = useSelector(state => state.customer);
     const primaryHolder = form.primaryHolder;
     const secondaryHolder = form.secondaryHolder;
