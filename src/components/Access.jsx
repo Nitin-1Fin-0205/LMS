@@ -19,6 +19,9 @@ import {
     Tooltip,
     Card,
     CardContent,
+    Pagination,
+    Alert,
+    Snackbar,
 } from '@mui/material';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -26,151 +29,190 @@ import {
     faSync,
     faUser,
     faUserShield,
-    faUserCog,
     faUserTie
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
-import { ROLES, ROLES_TITLES } from '../constants/roles';
-import { API_URL } from '../assets/config';
-
-// Add mock data
-const MOCK_USERS = [
-    {
-        id: 1,
-        name: 'John Doe',
-        center: 'Thane',
-        email: 'john@example.com',
-        role: ROLES.ADMIN
-    },
-    {
-        id: 2,
-        name: 'Jane Smith',
-        center: 'Mumbai',
-        email: 'jane@example.com',
-        role: ROLES.CUSTOMER_EXECUTIVE
-    },
-    {
-        id: 3,
-        name: 'Bob Wilson',
-        center: 'Pune',
-        email: 'bob@example.com',
-        role: ROLES.CUSTOMER_EXECUTIVE
-    }
-];
+import { ROLE_IDS, ROLES, ROLES_TITLES, getRoleTitleFromId } from '../constants/roles';
+import { fetchUsers as fetchUsersAPI, updateUserRole, getUserStats } from '../services/userService';
 
 const Access = () => {
     const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true); // Start with loading true
     const [updating, setUpdating] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [stats, setStats] = useState({
+    const [page, setPage] = useState(1);
+    const [totalUsers, setTotalUsers] = useState(0);
+    const [limit] = useState(10);
+    const [searching, setSearching] = useState(false);
+    const [error, setError] = useState(null);
+    const [showError, setShowError] = useState(false); const [stats, setStats] = useState({
         total: 0,
         admin: 0,
-        executive: 0,
-        manager: 0
-    });    // Professional function to get role color that complements existing design
-    const getRoleColor = (role) => {
-        switch (role) {
-            case ROLES.ADMIN:
-                return { bg: '#dc2626', color: 'white' }; // Professional red
-            case ROLES.CUSTOMER_EXECUTIVE:
-                return { bg: '#10b981', color: 'white' }; // Professional green
-            case ROLES.MANAGER:
-                return { bg: '#3b82f6', color: 'white' }; // Professional blue
+        customer_executive: 0
+    });
+
+    // Helper functions to convert between role strings and IDs
+    const getRoleIdFromString = (roleString) => {
+        switch (roleString) {
+            case 'admin':
+                return ROLE_IDS.ADMIN;
+            case 'customer_executive':
+            case 'center_executive':
+                return ROLE_IDS.CUSTOMER_EXECUTIVE;
             default:
-                return { bg: '#64748b', color: 'white' }; // Professional gray
+                return null;
         }
     };
 
-    // Update getRoleIcon to use Font Awesome icons
-    const getRoleIcon = (role) => {
-        switch (role) {
-            case ROLES.ADMIN:
+    const getRoleStringFromId = (roleId) => {
+        switch (roleId) {
+            case ROLE_IDS.ADMIN:
+                return ROLES.ADMIN;
+            case ROLE_IDS.CUSTOMER_EXECUTIVE:
+                return ROLES.CUSTOMER_EXECUTIVE;
+            default:
+                return null;
+        }
+    }; const getRoleColor = (roleId) => {
+        switch (roleId) {
+            case ROLE_IDS.ADMIN:
+                return { bg: 'tomato', color: 'white' };
+            case ROLE_IDS.CUSTOMER_EXECUTIVE:
+                return { bg: '#10b981', color: 'white' };
+            default:
+                return { bg: '#64748b', color: 'white' };
+        }
+    };
+
+    const getRoleIcon = (roleId) => {
+        switch (roleId) {
+            case ROLE_IDS.ADMIN:
                 return <FontAwesomeIcon icon={faUserShield} />;
-            case ROLES.CUSTOMER_EXECUTIVE:
+            case ROLE_IDS.CUSTOMER_EXECUTIVE:
                 return <FontAwesomeIcon icon={faUserTie} />;
             default:
                 return <FontAwesomeIcon icon={faUser} />;
         }
     };
 
-    const calculateStats = (userList) => {
-        const newStats = {
-            total: userList.length,
-            admin: userList.filter(u => u.role === ROLES.ADMIN).length,
-            executive: userList.filter(u => u.role === ROLES.CUSTOMER_EXECUTIVE).length,
-        };
-        setStats(newStats);
-    };
-
-    const fetchUsers = async () => {
-        setLoading(true);
+    const fetchStats = async () => {
         try {
-            // Comment out actual API call
-            // const token = localStorage.getItem('authToken');
-            // const response = await axios.get(`${API_URL}/api/users`, {
-            //     headers: {
-            //         'Authorization': `Bearer ${token}`
-            //     }
-            // });
-
-            // Mock API response
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
-            const mockResponse = {
-                data: MOCK_USERS
-            };
-            setUsers(mockResponse.data);
+            const response = await getUserStats();
+            if (response && response.success && response.data) {
+                setStats(response.data);
+            }
         } catch (error) {
-            toast.error('Failed to fetch users');
+            console.error('Error fetching stats:', error);
+        }
+    }; const fetchUsers = async (pageNum = 1, search = '') => {
+        try {
+            // Only show loading for initial load or when explicitly requested
+            if (users.length === 0 || !search) {
+                setLoading(true);
+            }
+            setError(null);
+
+            const response = await fetchUsersAPI(pageNum, limit, search);
+
+            if (response) {
+                let userData = [];
+                let total = 0; if (response.success && response.data) {
+                    userData = response.data.map(user => ({
+                        ...user,
+                        role: getRoleIdFromString(user.role) || user.role
+                    }));
+                    total = response.totalUsers || response.pagination?.total || userData.length;
+                } else if (response.data) {
+                    userData = response.data.map(user => ({
+                        ...user,
+                        role: getRoleIdFromString(user.role) || user.role
+                    }));
+                    total = response.totalUsers || userData.length;
+                } else if (Array.isArray(response)) {
+                    userData = response.map(user => ({
+                        ...user,
+                        role: getRoleIdFromString(user.role) || user.role
+                    }));
+                    total = userData.length;
+                } else {
+                    userData = [];
+                    total = 0;
+                } setUsers(userData);
+                setTotalUsers(total);
+                setPage(pageNum);
+            } else {
+                setUsers([]);
+                setTotalUsers(0);
+            }
+        } catch (error) {
             console.error('Error fetching users:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch users';
+            setError(errorMessage);
+            setShowError(true);
+            setUsers([]);
+            setTotalUsers(0);
         } finally {
             setLoading(false);
+            setSearching(false);
         }
-    };
-
-    const handleRoleChange = async (userId, newRole) => {
-        setUpdating(true);
+    }; const handleRoleChange = async (userId, newRoleId) => {
         try {
-            // Comment out actual API call
-            // const token = localStorage.getItem('authToken');
-            // await axios.patch(`${API_URL}/api/users/${userId}/role`,
-            //     { role: newRole },
-            //     {
-            //         headers: {
-            //             'Authorization': `Bearer ${token}`
-            //         }
-            //     }
-            // );
+            setUpdating(true);
 
-            // Mock API response
-            await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+            // Convert role ID to string for API call
+            const roleString = getRoleStringFromId(newRoleId);
+            await updateUserRole(userId, roleString);
 
-            // Update local state
-            setUsers(users.map(user =>
-                user.id === userId ? { ...user, role: newRole } : user
-            ));
-
+            setUsers(prevUsers =>
+                prevUsers.map(user =>
+                    user.id === userId ? { ...user, role: newRoleId } : user
+                )
+            );
             toast.success('Role updated successfully');
         } catch (error) {
-            toast.error('Failed to update role');
             console.error('Error updating role:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to update role';
+            toast.error(errorMessage);
+
+            fetchUsers(page, searchTerm);
         } finally {
             setUpdating(false);
         }
     };
 
-    useEffect(() => {
-        fetchUsers();
+    const handlePageChange = (event, newPage) => {
+        setPage(newPage);
+        fetchUsers(newPage, searchTerm);
+    }; useEffect(() => {
+        fetchStats(); // Fetch overall stats on initial load only once
     }, []);
 
     useEffect(() => {
-        calculateStats(users);
-    }, [users]);
+        const timeoutId = setTimeout(() => {
+            if (searchTerm) {
+                setSearching(true);
+                fetchUsers(1, searchTerm);
+            } else {
+                fetchUsers(1);
+            }
+        }, searchTerm ? 500 : 0); // No delay for initial load
 
-    const filteredUsers = users.filter(user =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    ); if (loading) {
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm]);
+
+    const handleRefresh = () => {
+        setPage(1);
+        setSearchTerm('');
+        fetchUsers(1);
+        fetchStats(); // Refresh stats too
+    };
+
+    const handleSearchChange = (event) => {
+        setSearchTerm(event.target.value);
+        setPage(1);
+    };
+
+    const filteredUsers = users; if (loading) {
         return (
             <Box sx={{
                 display: 'flex',
@@ -197,7 +239,6 @@ const Access = () => {
             bgcolor: '#f8fafc',
             minHeight: '100vh'
         }}>
-            {/* Header Section */}
             <Box sx={{ mb: 4 }}>
                 <Typography
                     variant="h4"
@@ -208,7 +249,7 @@ const Access = () => {
                         fontSize: { xs: '1.75rem', md: '2.125rem' }
                     }}
                 >
-                    User Role Management
+                    Manage User Role
                 </Typography>
                 <Typography
                     variant="subtitle1"
@@ -218,18 +259,16 @@ const Access = () => {
                     }}
                 >
                     Manage user roles and permissions across your organization
-                </Typography>
-            </Box>            {/* Professional Stats Cards with Light Gradients */}
-            <Box sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                    xs: '1fr',
-                    sm: 'repeat(2, 1fr)',
-                    md: 'repeat(4, 1fr)'
-                },
-                gap: 2,
-                mb: 3
-            }}>
+                </Typography>            </Box>            <Box sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: 'repeat(2, 1fr)',
+                        md: 'repeat(3, 1fr)'
+                    },
+                    gap: 2,
+                    mb: 3
+                }}>
                 <Card sx={{
                     background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
                     border: '1px solid #e2e8f0',
@@ -308,7 +347,7 @@ const Access = () => {
                     <CardContent sx={{ p: 2 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#1e293b', fontSize: '0.9rem' }}>
-                                Executives
+                                Customer Executives
                             </Typography>
                             <Box sx={{
                                 bgcolor: 'rgba(16, 185, 129, 0.1)',
@@ -321,12 +360,10 @@ const Access = () => {
                             </Box>
                         </Box>
                         <Typography variant="h4" sx={{ fontWeight: 700, color: '#10b981' }}>
-                            {stats.executive}
+                            {stats.customer_executive}
                         </Typography>
                     </CardContent>
                 </Card>
-
-
             </Box>
             <Paper sx={{
                 p: 2,
@@ -341,11 +378,10 @@ const Access = () => {
                 justifyContent: 'space-between',
                 alignItems: { xs: 'stretch', sm: 'center' },
                 gap: 1.5
-            }}>
-                    <TextField
+            }}>                    <TextField
                         placeholder="Search by name or email..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={handleSearchChange}
                         variant="outlined"
                         size="small"
                         sx={{
@@ -371,11 +407,10 @@ const Access = () => {
                                     <FontAwesomeIcon icon={faSearch} style={{ color: '#64748b' }} />
                                 </InputAdornment>
                             ),
-                        }}
-                    />
+                        }} />
                     <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
                         <Chip
-                            label={`${filteredUsers.length} users found`}
+                            label={searching ? 'Searching...' : `${filteredUsers.length} users found`}
                             variant="outlined"
                             sx={{
                                 fontWeight: 600,
@@ -386,7 +421,7 @@ const Access = () => {
                         />
                         <Tooltip title="Refresh Data">
                             <IconButton
-                                onClick={fetchUsers}
+                                onClick={handleRefresh}
                                 disabled={loading}
                                 sx={{
                                     fontSize: '0.875rem',
@@ -409,50 +444,53 @@ const Access = () => {
                             </IconButton>
                         </Tooltip>
                     </Box>
-                </Box>
-            </Paper>            {/* Professional Users Table */}
+                </Box>            </Paper>
             <Paper sx={{
                 borderRadius: 2,
                 overflow: 'hidden',
                 boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
                 border: '1px solid #e2e8f0',
                 bgcolor: 'white'
-            }} elevation={0}>
-                <TableContainer>
+            }} elevation={0}>                <TableContainer>
                     <Table>
-                        <TableHead>                            <TableRow sx={{
-                            bgcolor: '#f8fafc',
-                            '& .MuiTableCell-head': {
-                                color: '#374151',
-                                fontWeight: 600,
-                                fontSize: '0.875rem',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                borderBottom: '1px solid #e5e7eb',
-                                py: 2
-                            }
-                        }}>
-                            <TableCell>User ID</TableCell>
-                            <TableCell>User Details</TableCell>
-                            <TableCell>Center</TableCell>
-                            <TableCell>Current Role</TableCell>
-                            <TableCell>Actions</TableCell>
-                        </TableRow>
+                        <TableHead>
+                            <TableRow sx={{
+                                bgcolor: '#f8fafc',
+                                '& .MuiTableCell-head': {
+                                    color: '#374151',
+                                    fontWeight: 600,
+                                    fontSize: '0.875rem',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    borderBottom: '1px solid #e5e7eb',
+                                    py: 2
+                                }
+                            }}>
+                                <TableCell>User ID</TableCell>
+                                <TableCell>User Details</TableCell>
+                                <TableCell>Center</TableCell>
+                                <TableCell>Current Role</TableCell>
+                                <TableCell>Actions</TableCell>
+                            </TableRow>
                         </TableHead>
                         <TableBody>
-                            {filteredUsers.length === 0 ? (<TableRow>
-                                <TableCell colSpan={5} sx={{ textAlign: 'center', py: 6 }}>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
-                                        <FontAwesomeIcon icon={faUser} size="3x" style={{ color: '#cbd5e1' }} />
-                                        <Typography variant="h6" sx={{ color: '#64748b', fontWeight: 500 }}>
-                                            No users found
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ color: '#9ca3af' }}>
-                                            Try adjusting your search criteria
-                                        </Typography>
-                                    </Box>
-                                </TableCell>
-                            </TableRow>
+                            {filteredUsers.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} sx={{ textAlign: 'center', py: 6 }}>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
+                                            <FontAwesomeIcon icon={faUser} size="3x" style={{ color: '#cbd5e1' }} />
+                                            <Typography variant="h6" sx={{ color: '#64748b', fontWeight: 500 }}>
+                                                {searchTerm ? 'No users found' : 'No users available'}
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ color: '#9ca3af' }}>
+                                                {searchTerm
+                                                    ? `No users match "${searchTerm}". Try a different search term.`
+                                                    : 'No users have been added to the system yet.'
+                                                }
+                                            </Typography>
+                                        </Box>
+                                    </TableCell>
+                                </TableRow>
                             ) : (
                                 filteredUsers.map((user, index) => (
                                     <TableRow
@@ -491,50 +529,52 @@ const Access = () => {
                                                 }}
                                             />
                                         </TableCell>
-                                        <TableCell>
-                                            <Chip
-                                                icon={getRoleIcon(user.role)}
-                                                label={ROLES_TITLES[user.role]}
-                                                sx={{
-                                                    bgcolor: getRoleColor(user.role).bg,
-                                                    color: getRoleColor(user.role).color,
-                                                    fontWeight: 600,
-                                                    fontSize: '0.75rem',
-                                                    borderRadius: '6px',
-                                                    '& .MuiChip-icon': {
-                                                        color: 'inherit'
-                                                    }
-                                                }}
-                                                size="small"
-                                            />
+                                        <TableCell>                                            <Chip
+                                            icon={getRoleIcon(user.role)}
+                                            label={getRoleTitleFromId(user.role)}
+                                            sx={{
+                                                bgcolor: getRoleColor(user.role).bg,
+                                                color: getRoleColor(user.role).color,
+                                                fontWeight: 600,
+                                                fontSize: '0.75rem',
+                                                px: 1.5,
+                                                borderRadius: '20px',
+                                                '& .MuiChip-icon': {
+                                                    color: 'inherit'
+                                                }
+                                            }}
+                                            size="xsmall"
+                                        />
                                         </TableCell>
                                         <TableCell>
-                                            <Select
-                                                value={user.role}
-                                                onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                                                size="small"
-                                                disabled={updating}
-                                                sx={{
-                                                    minWidth: 180,
-                                                    borderRadius: 2, '& .MuiSelect-select': {
-                                                        py: 1,
-                                                        px: 1.5
-                                                    },
-                                                    '& .MuiOutlinedInput-notchedOutline': {
-                                                        borderColor: '#e5e7eb'
-                                                    },
-                                                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                                                        borderColor: '#3b82f6'
-                                                    },
-                                                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                                        borderColor: '#3b82f6'
-                                                    }
-                                                }}
-                                            >
-                                                {Object.entries(ROLES).map(([key, value]) => (
+                                            <Box sx={{ position: 'relative' }}>
+                                                <Select
+                                                    value={user.role}
+                                                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                                                    size="small"
+                                                    disabled={updating}
+                                                    sx={{
+                                                        minWidth: 180,
+                                                        borderRadius: 2,
+                                                        opacity: updating ? 0.6 : 1,
+                                                        '& .MuiSelect-select': {
+                                                            py: 1,
+                                                            px: 1.5
+                                                        },
+                                                        '& .MuiOutlinedInput-notchedOutline': {
+                                                            borderColor: '#e5e7eb'
+                                                        },
+                                                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                            borderColor: '#3b82f6'
+                                                        },
+                                                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                                            borderColor: '#3b82f6'
+                                                        }
+                                                    }}
+                                                >                                                    {Object.entries(ROLE_IDS).map(([key, roleId]) => (
                                                     <MenuItem
-                                                        key={value}
-                                                        value={value}
+                                                        key={roleId}
+                                                        value={roleId}
                                                         sx={{
                                                             '&:hover': {
                                                                 bgcolor: '#f8fafc'
@@ -542,22 +582,85 @@ const Access = () => {
                                                         }}
                                                     >
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                            {getRoleIcon(value)}
+                                                            {getRoleIcon(roleId)}
                                                             <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                                {ROLES_TITLES[value]}
+                                                                {getRoleTitleFromId(roleId)}
                                                             </Typography>
                                                         </Box>
                                                     </MenuItem>
                                                 ))}
-                                            </Select>
+                                                </Select>
+                                                {updating && (
+                                                    <CircularProgress
+                                                        size={20}
+                                                        sx={{
+                                                            position: 'absolute',
+                                                            top: '50%',
+                                                            left: '50%',
+                                                            marginTop: '-10px',
+                                                            marginLeft: '-10px',
+                                                            color: '#3b82f6'
+                                                        }}
+                                                    />
+                                                )}
+                                            </Box>
                                         </TableCell>
                                     </TableRow>
                                 ))
                             )}
                         </TableBody>
-                    </Table>
-                </TableContainer>
+                    </Table>                </TableContainer>
             </Paper>
+
+            {/* Pagination Controls */}
+            {!searchTerm && totalUsers > limit && (
+                <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    mt: 3,
+                    p: 2
+                }}>
+                    <Pagination
+                        count={Math.ceil(totalUsers / limit)}
+                        page={page}
+                        onChange={handlePageChange}
+                        color="primary"
+                        size="large"
+                        showFirstButton
+                        showLastButton
+                        disabled={loading}
+                        sx={{
+                            '& .MuiPaginationItem-root': {
+                                borderRadius: 2,
+                                fontWeight: 500,
+                                '&.Mui-selected': {
+                                    bgcolor: '#3b82f6',
+                                    color: 'white',
+                                    '&:hover': {
+                                        bgcolor: '#2563eb'
+                                    }
+                                }
+                            }
+                        }}
+                    />
+                </Box>
+            )}
+
+            {/* Error Snackbar */}
+            <Snackbar
+                open={showError}
+                autoHideDuration={6000}
+                onClose={() => setShowError(false)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={() => setShowError(false)}
+                    severity="error"
+                    sx={{ width: '100%' }}
+                >
+                    {error}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };

@@ -28,7 +28,7 @@ class BiometricService {
         }
     }
 
-    async makeRequest(endpoint, options = {}) {
+    async makeRequest(endpoint, options = {}, iscredentials = false) {
         try {
             const url = `${endpoint}`;
 
@@ -55,6 +55,7 @@ class BiometricService {
                 headers: {
                     'Accept': 'application/json'
                 },
+                credentials: iscredentials ? 'include' : 'omit'
             });
 
             if (!response.ok) {
@@ -283,19 +284,12 @@ class BiometricService {
             extractEx: options.extractEx || 1,
             qualityLevel: options.qualityLevel || 60,
             encrypt: options.encrypt || 0,
-            encryptKey: options.encryptKey || ''
+            encryptKey: options.encryptKey || 1,
         };
 
-        const response = await this.makeRequest(`${this.baseProxyUrl}/api/getTemplateData`, { params });
+        const response = await this.makeRequest(`${this.baseProxyUrl}/api/getTemplateData`, { params }, true);
 
-        if (response.retValue !== 0) {
-            throw new Error(response.retString || 'Failed to get template data');
-        }
-
-        return {
-            templateBase64: response.templateBase64,
-            quality: response.quality || 0
-        };
+        return response;
     }
 
     // Get image data (in different formats)
@@ -313,7 +307,7 @@ class BiometricService {
             height: 300,
         };
 
-        const response = await this.makeRequest(`${this.baseProxyUrl}/api/getImageData`, { params });
+        const response = await this.makeRequest(`${this.baseProxyUrl}/api/getImageData`, { params }, true);
 
         if (response.retValue != 0) {
             throw new Error(response.retString || 'Failed to get image data');
@@ -578,19 +572,16 @@ class BiometricService {
                 this.logDebug('Capture failed:', captureData);
                 throw new Error(captureData.retString || 'Capture failed');
             }
-
             const thresholdQuality = 80;
 
             // Step 2: Get the template data - use direct connection for this too
-            const templateResponse = await this.makeRequest(`${this.baseProxyUrl}/api/getTemplateData?dummy=${Math.random()}`, {
-                params: {
-                    sHandle: this.deviceHandle,
-                    id: this.pageId,
-                    encrypt: 0,
-                    extractEx: 1,
-                    qualityLevel: thresholdQuality
-                }
-            });
+            const templateResponse = await this.getTemplateData({
+                extractEx: 1,
+                qualityLevel: thresholdQuality,
+                encrypt: 0,
+                encryptKey: 1
+            }
+            )
 
             console.log('Template response:', templateResponse);
 
