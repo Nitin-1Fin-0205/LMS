@@ -19,6 +19,18 @@ class BiometricService {
         this.debugMode = true;
         this.scannerInfos = null;
         this.selectedDeviceIndex = 0;
+
+        // Session management
+        this.sessionId = null;
+
+        // Restore session from storage if available
+        this.sessionId = sessionStorage.getItem('biometric_session_id');
+        this.sessionCreated = !!this.sessionId;
+
+        this.logDebug('BiometricService initialized', {
+            baseUrl: this.baseUrl,
+            hasStoredSession: !!this.sessionId
+        });
     }
 
     // Helper function for logging API calls in debug mode
@@ -26,16 +38,28 @@ class BiometricService {
         if (this.debugMode) {
             console.log(`BioMini WebAgent: ${message}`, data || '');
         }
-    }
-
-    async makeRequest(endpoint, options = {}, iscredentials = false) {
+    } async makeRequest(endpoint, options = {}, iscredentials = false) {
         try {
+            // Ensure we have a session for non-ping requests
+            if (!endpoint.includes('ping') && !endpoint.includes('createSessionID')) {
+                await this.ensureSession();
+
+                if (!this.sessionId) {
+                    throw new Error('Failed to create biometric session');
+                }
+            }
+
             const url = `${endpoint}`;
 
             // Convert params to URLSearchParams
             const queryParams = new URLSearchParams();
 
-            // // Add dummy parameter to prevent caching - exactly as in working URL
+            // Add session ID to URL if we have one
+            if (this.sessionId) {
+                queryParams.append('sessionId', this.sessionId);
+            }
+
+            // Add dummy parameter to prevent caching - exactly as in working URL
             queryParams.append('dummy', Math.random().toString());
 
             // Add each parameter individually to match exact format of working URL
@@ -74,17 +98,17 @@ class BiometricService {
     // Initialize a session ID
     async createSession() {
         try {
+
             this.logDebug('Creating session ID');
-            const response = await fetch(`${this.baseUrl}/api/createSessionID?dummy=${Math.random()}`);
+            const response = await fetch(`${this.baseUrl}/api/createSessionID`);
             const data = await response.json();
 
             if (data && data.sessionId) {
-                // Format expiration exactly as in the working example
-                const date = new Date();
-                date.setTime(date.getTime() + 60 * 60 * 1000);
+                this.sessionId = data.sessionId;
+                sessionStorage.setItem('biometric_session_id', data.sessionId);
 
-                // Set cookie exactly as in the working example - note the path=/
-                document.cookie = `username=${data.sessionId}; expires=${date.toUTCString()};`;
+                document.cookie = `username=${data.sessionId}; path=/`;
+
                 this.sessionCreated = true;
                 this.logDebug('Session created successfully with ID:', data.sessionId);
                 return true;
@@ -98,11 +122,33 @@ class BiometricService {
         }
     }
 
-    // Check if the service is running
+    async ensureSession() {
+        if (!this.sessionId || !this.sessionCreated) {
+            return await this.createSession();
+        }
+        return true;
+    }
+
+    // Clear session when needed
+    clearSession() {
+        this.sessionId = null;
+        this.sessionCreated = false;
+        sessionStorage.removeItem('biometric_session_id');
+        document.cookie = 'username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    }
+
+    // Get current session status
+    getSessionStatus() {
+        return {
+            hasSession: !!this.sessionId,
+            sessionId: this.sessionId,
+            created: this.sessionCreated
+        };
+    }    // Check if the service is running
     async checkServiceRunning() {
         try {
-            // Try to create a session as that's the first API call to check
-            return await this.createSession();
+            const response = await fetch(`${this.baseUrl}/api/ping?dummy=${Math.random()}`);
+            return response.ok;
         } catch (error) {
             this.logDebug('WebAgent service is not running or not accessible', error);
             return false;
@@ -112,11 +158,11 @@ class BiometricService {
     // Initialize the device (similar to Init function)
     async initializeDevice() {
         try {
-            // // Explicitly create session first - this is critical
-            // const sessionCreated = await this.createSession();
-            // if (!sessionCreated) {
-            //     throw new Error('Failed to create session for device initialization');
-            // }
+            // Explicitly create session first - this is critical
+            const sessionCreated = await this.createSession();
+            if (!sessionCreated) {
+                throw new Error('Failed to create session for device initialization');
+            }
 
             this.logDebug('Current cookies before init:', document.cookie);
 
@@ -615,9 +661,7 @@ class BiometricService {
             await this.abortCapture();
             throw error;
         }
-    }
-
-    // Clear session data
+    }    // Clear session data
     async cleanupSession() {
         if (!this.sessionCreated) return;
 
@@ -628,9 +672,8 @@ class BiometricService {
                 }
             });
 
-            // Clear cookie
-            document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            this.sessionCreated = false;
+            // Use the new clearSession method
+            this.clearSession();
         } catch (error) {
             console.error('Failed to clear session:', error);
         }
