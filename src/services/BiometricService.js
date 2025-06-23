@@ -107,7 +107,7 @@ class BiometricService {
                 this.sessionId = data.sessionId;
                 sessionStorage.setItem('biometric_session_id', data.sessionId);
 
-                document.cookie = `username=${data.sessionId}; path=/`;
+                document.cookie = `username=${data.sessionId}; path=/; SameSite=None; Secure`;
 
                 this.sessionCreated = true;
                 this.logDebug('Session created successfully with ID:', data.sessionId);
