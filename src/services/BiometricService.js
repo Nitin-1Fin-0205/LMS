@@ -54,9 +54,9 @@ class BiometricService {
             // Convert params to URLSearchParams
             const queryParams = new URLSearchParams();
 
-            // Add session ID to URL if we have one
+            // Add session ID as username parameter (what the biometric service expects)
             if (this.sessionId) {
-                queryParams.append('sessionId', this.sessionId);
+                queryParams.append('username', this.sessionId);
             }
 
             // Add dummy parameter to prevent caching - exactly as in working URL
@@ -72,6 +72,7 @@ class BiometricService {
             // Build the full URL in the same format as the working one
             const fullUrl = `${url}?${queryParams.toString()}`;
             this.logDebug(`Request to ${fullUrl}`);
+            console.log('🔗 makeRequest URL:', fullUrl); // Debug log
 
             // Use fetch with no extra parameters except method
             const response = await fetch(fullUrl, {
@@ -93,19 +94,21 @@ class BiometricService {
             this.logDebug(`Error in ${endpoint}:`, error);
             throw new Error(`Biometric service error: ${error.message}`);
         }
-    }
-
-    // Initialize a session ID
+    }    // Initialize a session ID
     async createSession() {
         try {
-
+            this.clearSession();
             this.logDebug('Creating session ID');
-            const response = await fetch(`${this.baseUrl}/api/createSessionID`);
+            const response = await fetch(`${this.baseUrl}/api/createSessionID?dummy=${Math.random()}`);
             const data = await response.json();
 
             if (data && data.sessionId) {
                 this.sessionId = data.sessionId;
                 sessionStorage.setItem('biometric_session_id', data.sessionId);
+
+                // Debug logs
+                console.log('✅ Session created:', data.sessionId);
+                console.log('✅ Stored in sessionStorage:', sessionStorage.getItem('biometric_session_id'));
 
                 document.cookie = `username=${data.sessionId}; path=/; SameSite=None; Secure`;
 
@@ -114,18 +117,24 @@ class BiometricService {
                 return true;
             }
 
+            console.error('❌ Failed to create session:', data);
             this.logDebug('Failed to create session', data);
             return false;
         } catch (error) {
+            console.error('❌ Session creation error:', error);
             this.logDebug('Session creation error', error);
             return false;
         }
-    }
-
-    async ensureSession() {
+    } async ensureSession() {
         if (!this.sessionId || !this.sessionCreated) {
-            return await this.createSession();
+            console.log('🔄 Creating new session...');
+            const success = await this.createSession();
+            if (!success) {
+                console.error('❌ Failed to ensure session');
+                return false;
+            }
         }
+        console.log('✅ Session ensured:', this.sessionId);
         return true;
     }
 
@@ -251,20 +260,40 @@ class BiometricService {
         }
 
         return true;
-    }
-
-    // Capture a single fingerprint
+    }    // Capture a single fingerprint
     async captureSingle() {
         if (!this.isInitialized || !this.deviceHandle) {
             await this.initializeDevice();
         }
 
         try {
-            // Very important: build URL exactly in the format that works
-            const captureUrl = `${this.baseProxyUrl}/api/captureSingle?dummy=${Math.random()}&sHandle=${this.deviceHandle}&id=${this.pageId}&resetTimer=30000`;
+            // Force session creation if not available
+            if (!this.sessionId) {
+                console.log('No session ID, creating...');
+                await this.createSession();
+            }
 
-            const captureResponse = await fetch(captureUrl, {
+            // Get session ID from storage as backup
+            const sessionId = this.sessionId || sessionStorage.getItem('biometric_session_id');
+
+            if (!sessionId) {
+                throw new Error('Unable to get session ID');
+            }
+
+            // Build URL with session ID parameter
+            const url = new URL(`${this.baseProxyUrl}/api/captureSingle`);
+            url.searchParams.append('dummy', Math.random());
+            url.searchParams.append('sHandle', this.deviceHandle);
+            url.searchParams.append('id', this.pageId);
+            url.searchParams.append('resetTimer', '30000');
+            url.searchParams.append('username', sessionId); // Add session ID as username parameter
+
+            console.log('🔗 Request URL:', url.toString());
+
+            const captureResponse = await fetch(url.toString(), {
+                method: 'GET',
                 credentials: 'include',
+                mode: 'cors'
             });
             const captureData = await captureResponse.json();
 
@@ -594,20 +623,40 @@ class BiometricService {
         }
 
         return true;
-    }
-
-    // Get full fingerprint image data with template and WSQ
+    }    // Get full fingerprint image data with template and WSQ
     async captureFingerprint() {
         try {
             if (!this.isInitialized || !this.deviceHandle) {
                 await this.initializeDevice();
             }
 
-            // Step 1: Direct connection to WebAgent for capture
-            const captureUrl = `${this.baseProxyUrl}/api/captureSingle?dummy=${Math.random()}&sHandle=${this.deviceHandle}&id=${this.pageId}&resetTimer=30000`;
+            // Force session creation if not available
+            if (!this.sessionId) {
+                console.log('No session ID, creating...');
+                await this.createSession();
+            }
 
-            const captureResponse = await fetch(captureUrl, {
+            // Get session ID from storage as backup
+            const sessionId = this.sessionId || sessionStorage.getItem('biometric_session_id');
+
+            if (!sessionId) {
+                throw new Error('Unable to get session ID');
+            }
+
+            // Step 1: Build URL with session ID parameter
+            const url = new URL(`${this.baseProxyUrl}/api/captureSingle`);
+            url.searchParams.append('dummy', Math.random());
+            url.searchParams.append('sHandle', this.deviceHandle);
+            url.searchParams.append('id', this.pageId);
+            url.searchParams.append('resetTimer', '30000');
+            url.searchParams.append('username', sessionId); // Add session ID as username parameter
+
+            console.log('🔗 CaptureFingerprint URL:', url.toString());
+
+            const captureResponse = await fetch(url.toString(), {
+                method: 'GET',
                 credentials: 'include',
+                mode: 'cors'
             });
 
             const captureData = await captureResponse.json();
