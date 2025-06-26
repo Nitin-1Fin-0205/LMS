@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { API_URL } from '../assets/config';
+import { API_URL, VITE_WEBAGENT_PROXY_URL } from '../assets/config';
 
 class CustomerVisitService {
     static async matchFingerprint(templateData) {
@@ -7,9 +7,9 @@ class CustomerVisitService {
             const token = localStorage.getItem('authToken');
 
             const response = await axios.post(
-                `http://localhost:3000/biometrics/identify`,
+                `${VITE_WEBAGENT_PROXY_URL}/bio/identify-fingerprint`,
                 {
-                    template_data: templateData.templateData,
+                    liveTemplate: templateData.templateData,
                     // quality: templateData.quality,
                     // match_threshold: 0.8
                 },
