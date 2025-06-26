@@ -127,10 +127,10 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                         })
                     ).unwrap();
 
-                    if (userExists?.mobile_number) {
+                    if (userExists?.mobile_number && userExists?.mobile_number.length === 10) {
                         setIsMobileVerified(true);
                     }
-                    if (userExists?.email) {
+                    if (userExists?.email && userExists?.email.length > 0) {
                         setIsEmailVerified(true);
                     }
                 }

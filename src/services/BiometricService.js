@@ -14,7 +14,7 @@ class BiometricService {
 
         this.isInitialized = false;
         this.deviceHandle = null;
-        this.pageId = Math.random().toString();
+        // this.pageId = Math.random().toString();
         this.sessionCreated = false;
         this.debugMode = true;
         this.scannerInfos = null;
@@ -38,7 +38,8 @@ class BiometricService {
         if (this.debugMode) {
             console.log(`BioMini WebAgent: ${message}`, data || '');
         }
-    } async makeRequest(endpoint, options = {}, iscredentials = false) {
+    }
+    async makeRequest(endpoint, options = {}, iscredentials = false) {
         try {
             // Ensure we have a session for non-ping requests
             if (!endpoint.includes('ping') && !endpoint.includes('createSessionID')) {
@@ -55,7 +56,7 @@ class BiometricService {
             const queryParams = new URLSearchParams();
 
             // Add session ID as username parameter (what the biometric service expects)
-            if (this.sessionId) {
+            if (this.sessionId && iscredentials) {
                 queryParams.append('username', this.sessionId);
             }
 
@@ -97,7 +98,7 @@ class BiometricService {
     }    // Initialize a session ID
     async createSession() {
         try {
-            this.clearSession();
+            this.cleanupSession();
             this.logDebug('Creating session ID');
             const response = await fetch(`${this.baseUrl}/api/createSessionID?dummy=${Math.random()}`);
             const data = await response.json();
@@ -168,10 +169,10 @@ class BiometricService {
     async initializeDevice() {
         try {
             // Explicitly create session first - this is critical
-            const sessionCreated = await this.createSession();
-            if (!sessionCreated) {
-                throw new Error('Failed to create session for device initialization');
-            }
+            // const sessionCreated = await this.createSession();
+            // if (!sessionCreated) {
+            //     throw new Error('Failed to create session for device initialization');
+            // }
 
             this.logDebug('Current cookies before init:', document.cookie);
 
@@ -250,7 +251,7 @@ class BiometricService {
         const response = await this.makeRequest(`${this.baseUrl}/api/startCapturing`, {
             params: {
                 sHandle: this.deviceHandle,
-                id: this.pageId,
+                // id: this.pageId,
                 resetTimer: 30000
             }
         });
@@ -284,7 +285,7 @@ class BiometricService {
             const url = new URL(`${this.baseProxyUrl}/api/captureSingle`);
             url.searchParams.append('dummy', Math.random());
             url.searchParams.append('sHandle', this.deviceHandle);
-            url.searchParams.append('id', this.pageId);
+            // url.searchParams.append('id', this.pageId);
             url.searchParams.append('resetTimer', '30000');
             url.searchParams.append('username', sessionId); // Add session ID as username parameter
 
@@ -318,7 +319,7 @@ class BiometricService {
         const response = await this.makeRequest(`${this.baseProxyUrl}/api/autoCapture`, {
             params: {
                 sHandle: this.deviceHandle,
-                id: this.pageId
+                // id: this.pageId
             }
         });
 
@@ -472,7 +473,7 @@ class BiometricService {
 
         const params = {
             sHandle: this.deviceHandle,
-            id: this.pageId,
+            // id: this.pageId,
             userID: options.userId,
             userSerialNo: options.userSerialNo || 0,
             selectTemplate: options.selectTemplate || 0,
@@ -499,7 +500,7 @@ class BiometricService {
 
         const params = {
             sHandle: this.deviceHandle,
-            id: this.pageId,
+            // id: this.pageId,
             userSerialNo: userSerialNo,
             extractEx: 1,
             qualityLevel: 60
@@ -524,7 +525,7 @@ class BiometricService {
 
         const params = {
             sHandle: this.deviceHandle,
-            id: this.pageId,
+            // id: this.pageId,
             extractEx: 1,
             qualityLevel: 60
         };
@@ -611,7 +612,7 @@ class BiometricService {
         const response = await this.makeRequest('/db/update', {
             params: {
                 sHandle: this.deviceHandle,
-                id: this.pageId,
+                // id: this.pageId,
                 userSerialNo: userSerialNo,
                 extractEx: 1,
                 qualityLevel: 60
@@ -642,6 +643,7 @@ class BiometricService {
             if (!sessionId) {
                 throw new Error('Unable to get session ID');
             }
+
 
             // Step 1: Build URL with session ID parameter
             const url = new URL(`${this.baseProxyUrl}/api/captureSingle`);
@@ -717,7 +719,7 @@ class BiometricService {
         try {
             await this.makeRequest(`${this.baseUrl}/api/sessionClear`, {
                 params: {
-                    id: this.pageId
+                    // id: this.pageId
                 }
             });
 

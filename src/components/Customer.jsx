@@ -155,7 +155,7 @@ const Customer = () => {
             setIsSendingAgreement(true);
             const token = localStorage.getItem('authToken');
             const response = await axios.post(
-                `${API_URL}/customers/generate-agreement`,
+                `${API_URL}/customers/generate-agreement-leegality`,
                 {
                     customer_id: customerId
                 },

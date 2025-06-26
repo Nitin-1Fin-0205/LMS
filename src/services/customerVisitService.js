@@ -7,11 +7,11 @@ class CustomerVisitService {
             const token = localStorage.getItem('authToken');
 
             const response = await axios.post(
-                `${API_URL}/biometrics/identify`,
+                `http://localhost:3000/biometrics/identify`,
                 {
                     template_data: templateData.templateData,
-                    quality: templateData.quality,
-                    match_threshold: 0.8
+                    // quality: templateData.quality,
+                    // match_threshold: 0.8
                 },
                 {
                     headers: {
