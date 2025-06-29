@@ -3,47 +3,33 @@ import { toast } from 'react-toastify';
 import BiometricService from '../services/BiometricService';
 
 export const useBiometricDevice = () => {
-    const [deviceManager, setDeviceManager] = useState(null);
     const [isDeviceInitialized, setIsDeviceInitialized] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
+    const [deviceInfo, setDeviceInfo] = useState(null);
 
     useEffect(() => {
-        initializeDevice();
-        return () => {
-            if (deviceManager) {
-                deviceManager.disconnect();
-            }
-        };
+        checkDeviceConnection();
     }, []);
 
-    const initializeDevice = async () => {
+    const checkDeviceConnection = async () => {
         try {
-            const serviceRunning = await BiometricService.checkServiceRunning();
-            if (serviceRunning) {
-                const result = await BiometricService.initializeDevice();
-                setDeviceManager(BiometricService);
-                setIsDeviceInitialized(true);
-                console.log('Biometric device initialized successfully');
-            } else {
-                throw new Error('BioMini WebAgent service not running');
+            const response = await fetch(BiometricService.baseProxyUrl + '/bio/device-info');
+            const data = await response.json();
+            const isConnected = data.success && Array.isArray(data.info) && data.info.length > 0;
+            setIsDeviceInitialized(isConnected);
+            setDeviceInfo(isConnected ? data.info[0] : null);
+            if (!isConnected) {
+                toast.error('No biometric device connected');
             }
         } catch (error) {
-            console.error('Failed to initialize biometric device:', error);
-            toast.error('Failed to initialize biometric device');
             setIsDeviceInitialized(false);
+            setDeviceInfo(null);
+            toast.error('Failed to check biometric device connection');
         }
     };
 
     const retryConnection = async () => {
-        try {
-            if (deviceManager) {
-                await deviceManager.disconnect();
-            }
-            await initializeDevice();
-        } catch (error) {
-            console.error('Retry connection failed:', error);
-            toast.error('Failed to reconnect biometric device');
-        }
+        await checkDeviceConnection();
     };
 
     const captureFingerprint = async () => {
@@ -51,26 +37,22 @@ export const useBiometricDevice = () => {
             toast.error('Biometric device not initialized');
             return null;
         }
-
         try {
             setIsScanning(true);
-            console.log('Starting fingerprint capture...');
-
             const result = await BiometricService.captureFingerprint();
-
-            if (result.success) {
-                console.log('Fingerprint captured successfully');
+            if (result && result.success) {
                 return {
                     templateData: result.template,
-                    quality: result.quality,
-                    image: result.image
+                    wsq: result.wsq,
+                    image: result.image,
                 };
             } else {
-                throw new Error('Failed to capture fingerprint');
+                toast.error(result && result.message ? result.message : 'Failed to capture fingerprint');
+                return null;
             }
         } catch (error) {
-            console.error('Fingerprint capture error:', error);
-            throw error;
+            toast.error(error.message || 'Fingerprint capture error');
+            return null;
         } finally {
             setIsScanning(false);
         }
@@ -79,6 +61,7 @@ export const useBiometricDevice = () => {
     return {
         isDeviceInitialized,
         isScanning,
+        deviceInfo,
         captureFingerprint,
         retryConnection
     };

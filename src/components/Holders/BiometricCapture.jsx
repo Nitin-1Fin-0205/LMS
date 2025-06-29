@@ -101,67 +101,43 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
         }
     };
 
-    const initializeDevice = async () => {
+    // Stateless device connection check
+    const checkDeviceConnection = async () => {
+        setScannerState(prev => ({ ...prev, isInitializing: true, error: null }));
         try {
+            // Fetch device info directly
+            const response = await fetch(BiometricService.baseProxyUrl + '/bio/device-info');
+            const data = await response.json();
+            const isConnected = data.success && Array.isArray(data.info) && data.info.length > 0;
             setScannerState(prev => ({
                 ...prev,
-                isInitializing: true,
-                error: null
-            }));
-
-            // Check if service is running
-            const serviceRunning = await BiometricService.checkServiceRunning();
-            setServiceStatus({
-                running: serviceRunning,
-                checked: true
-            });
-
-            if (!serviceRunning) {
-                throw new Error('BioMini WebAgent service is not running. Please verify the service is installed and running.');
-            }
-
-            // Initialize device
-            const result = await BiometricService.initializeDevice();
-
-            setScannerState({
-                isScanning: false,
-                isConnected: true,
+                isConnected,
                 isInitializing: false,
-                error: null,
-                deviceInfo: result.deviceInfo
-            });
-
-            // toast.success(`Fingerprint device connected: ${result.deviceInfo?.ScannerName}`);
+                error: isConnected ? null : 'No biometric device connected',
+                deviceInfo: isConnected ? data.info[0] : null
+            }));
         } catch (error) {
-            console.error('Failed to initialize device:', error);
-            setScannerState({
-                isScanning: false,
+            setScannerState(prev => ({
+                ...prev,
                 isConnected: false,
                 isInitializing: false,
                 error: error.message,
                 deviceInfo: null
-            });
-
-            // toast.error(`Failed to connect to fingerprint device: ${error.message}`);
+            }));
         }
     };
 
-    // Initialize device and fetch biometrics on component mount
+    // On mount, check device connection and fetch biometrics
     useEffect(() => {
-        initializeDevice();
-
-        // Fetch customer biometrics if customerId is provided
+        checkDeviceConnection();
         if (customerId) {
             fetchCustomerBiometrics();
         }
-
-        // Cleanup on component unmount
+        // Cleanup: abort capture
         return () => {
-            BiometricService.abortCapture()
-                .then(() => BiometricService.cleanupSession())
-                .catch(console.error);
+            BiometricService.abortCapture().catch(console.error);
         };
-    }, [customerId]); // Re-fetch when customerId changes
+    }, [customerId]);
 
     const getQualityClass = useCallback((quality) => {
         if (quality >= QUALITY_THRESHOLDS.excellent) return 'excellent';
@@ -177,14 +153,10 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                 return;
             }
         }
-
         try {
-            // Start capture process
             setScannerState(prev => ({ ...prev, isScanning: true }));
             setCaptureProgress(10);
             setRetryCount(0);
-
-            // Set progress to simulate feedback
             const progressInterval = setInterval(() => {
                 setCaptureProgress(prev => {
                     if (prev >= 90) {
@@ -194,17 +166,25 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                     return prev + 5;
                 });
             }, 300);
-
-            // Check current cookies before capture
-            console.log('Current cookies before capture:', document.cookie);
-
             const result = await BiometricService.captureFingerprint();
             clearInterval(progressInterval);
             setCaptureProgress(100);
 
-            // Check quality
-            if (result.quality < QUALITY_THRESHOLDS.poor) {
-                toast.warning(`Low quality fingerprint (${result.quality}%), please try again`);
+            // Get template quality from API
+            let quality = 0;
+            try {
+                const qualityResp = await BiometricService.getTemplateQuality(result.template);
+                if (qualityResp.success && qualityResp.result && typeof qualityResp.result.quality === 'number') {
+                    quality = qualityResp.result.quality;
+                } else {
+                    toast.warn('Could not determine fingerprint quality');
+                }
+            } catch (qerr) {
+                toast.warn('Could not determine fingerprint quality');
+            }
+
+            if (quality < QUALITY_THRESHOLDS.poor) {
+                toast.warning(`Low quality fingerprint (${quality}%), please try again`);
 
                 if (retryCount < 2) {
                     setRetryCount(count => count + 1);
@@ -213,14 +193,13 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                 }
             }
 
-            // Store captured fingerprint
             const updatedFingerprints = {
                 ...fingerprints,
                 [selectedFinger]: {
                     template: result.template,
                     image: result.image,
                     wsq: result.wsq,
-                    quality: result.quality,
+                    quality,
                     fingerName: FINGER_OPTIONS[selectedFinger],
                     timestamp: new Date().toISOString()
                 }
@@ -231,7 +210,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                 const token = localStorage.getItem('authToken');
 
                 // Send the fingerprint data to the backend
-                const response = await axios.post(
+                await axios.post(
                     `${API_URL}/biometrics/capture`,
                     {
                         customerId: Number(customerId),
@@ -239,7 +218,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                             template: result.template,
                             finger: selectedFinger,
                             fingerName: FINGER_OPTIONS[selectedFinger],
-                            quality: Number(result.quality),
+                            quality: Number(quality),
                             wsq: result.wsq,
                             templateFormat: 'SUPREMA',
                             deviceInfo: scannerState.deviceInfo || {}
@@ -254,10 +233,8 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                     }
                 );
 
-                console.log('Fingerprint stored in database:', response.data);
                 toast.success(`${FINGER_OPTIONS[selectedFinger]} captured successfully`);
             } catch (apiError) {
-                console.error('Failed to store fingerprint in database:', apiError);
                 toast.error(`Warning: Fingerprint captured but not stored in database: ${apiError.message}`);
             }
 
@@ -268,8 +245,6 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                 onUpdate(updatedFingerprints);
             }
 
-            // toast.success(`${FINGER_OPTIONS[selectedFinger]} captured successfully`);
-
             // If this was a required finger, select the next required finger automatically
             if (required.length > 0) {
                 const currentIndex = required.indexOf(selectedFinger);
@@ -279,7 +254,6 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
             }
 
         } catch (error) {
-            console.error('Capture failed:', error);
             toast.error(`Capture failed: ${error.message}`);
         } finally {
             setScannerState(prev => ({ ...prev, isScanning: false }));
@@ -293,52 +267,31 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
     };
 
     const renderServiceStatus = () => {
-        if (!serviceStatus.checked) {
-            return (
-                <div className="status-indicator checking">
-                    <FontAwesomeIcon icon={faSync} spin /> Checking biometric service...
-                </div>
-            );
-        }
-
-        if (!serviceStatus.running) {
-            return (
-                <div className="status-indicator error">
-                    <FontAwesomeIcon icon={faTimes} /> Biometric service not available
-                    <button className="error-retry-button" onClick={initializeDevice}>
-                        <FontAwesomeIcon icon={faSync} /> Retry
-                    </button>
-                </div>
-            );
-        }
-
         if (scannerState.isInitializing) {
             return (
                 <div className="status-indicator checking">
-                    <FontAwesomeIcon icon={faSync} spin /> Connecting to device...
+                    <FontAwesomeIcon icon={faSync} spin /> Checking device connection...
                 </div>
             );
         }
-
         if (scannerState.error) {
             return (
                 <div className="status-indicator error">
                     <FontAwesomeIcon icon={faExclamationTriangle} beatFade /> {scannerState.error}
-                    <button className="error-retry-button" onClick={initializeDevice}>
+                    <button className="error-retry-button" onClick={checkDeviceConnection}>
                         <FontAwesomeIcon icon={faSync} /> Retry
                     </button>
                 </div>
             );
         }
-
         if (scannerState.isConnected) {
+            console.log('Device connected:', scannerState)
             return (
                 <div className="status-indicator success">
-                    <FontAwesomeIcon icon={faCheck} bounce /> Device ready: {scannerState.deviceInfo?.ScannerName || "Fingerprint Scanner"}
+                    <FontAwesomeIcon icon={faCheck} bounce /> Device ready: {scannerState.deviceInfo?.Serial || scannerState.deviceInfo?.ID || 'Fingerprint Scanner'}
                 </div>
             );
         }
-
         return null;
     };
 
@@ -400,7 +353,7 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                                 {fingerprints[selectedFinger] ? (
                                     <div className="fingerprint-details">
                                         <div className={`quality-indicator ${getQualityClass(fingerprints[selectedFinger].quality)}`}>
-                                            Quality:{fingerprints[selectedFinger].quality}%
+                                            Quality &gt;= {fingerprints[selectedFinger].quality}%
                                         </div>
                                         <div className="timestamp">
                                             Captured: {new Date(fingerprints[selectedFinger].timestamp).toLocaleTimeString()}

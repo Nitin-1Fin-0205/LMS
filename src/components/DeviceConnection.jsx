@@ -7,9 +7,9 @@ const DeviceConnection = () => {
 
     const checkConnection = async () => {
         try {
-            setStatus({ ...status, checking: true });
-            const deviceStatus = await BiometricService.checkDeviceConnection();
-            setStatus({ connected: deviceStatus.isConnected, checking: false });
+            setStatus(prev => ({ ...prev, checking: true }));
+            const isConnected = await BiometricService.isDeviceConnected();
+            setStatus({ connected: isConnected, checking: false });
             setError(null);
         } catch (error) {
             setStatus({ connected: false, checking: false });

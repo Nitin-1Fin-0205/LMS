@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFingerprint, faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 import { useBiometricDevice } from '../../hooks/useBiometricDevice';
 
 const BiometricScanner = ({ onScanSuccess, onScanError }) => {
     const { isDeviceInitialized, isScanning, captureFingerprint, retryConnection } = useBiometricDevice();
+    const [isConnecting, setIsConnecting] = useState(false);
 
     const handleScan = async () => {
         try {
@@ -14,6 +15,15 @@ const BiometricScanner = ({ onScanSuccess, onScanError }) => {
             }
         } catch (error) {
             onScanError(error);
+        }
+    };
+
+    const handleRetry = async () => {
+        setIsConnecting(true);
+        try {
+            await retryConnection();
+        } finally {
+            setIsConnecting(false);
         }
     };
 
@@ -47,7 +57,9 @@ const BiometricScanner = ({ onScanSuccess, onScanError }) => {
                             ? 'Keep your finger steady on the scanner'
                             : isDeviceInitialized
                                 ? 'Place your finger on the biometric scanner'
-                                : 'Initializing biometric device...'
+                                : isConnecting
+                                    ? 'Connecting to biometric device...'
+                                    : 'Initializing biometric device...'
                         }
                     </p>
                     <div className="space-y-2">
@@ -73,11 +85,21 @@ const BiometricScanner = ({ onScanSuccess, onScanError }) => {
 
                         {!isDeviceInitialized && (
                             <button
-                                onClick={retryConnection}
-                                className="w-full py-2 px-3 rounded text-sm font-medium transition-all duration-200 bg-orange-600 text-white hover:bg-orange-700 cursor-pointer transform hover:scale-105"
+                                onClick={handleRetry}
+                                disabled={isConnecting}
+                                className={`w-full py-2 px-3 rounded text-sm font-medium transition-all duration-200 bg-orange-600 text-white hover:bg-orange-700 cursor-pointer transform hover:scale-105 ${isConnecting ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
-                                <FontAwesomeIcon icon={faArrowsRotate} className="mr-2 w-3 h-3" />
-                                Retry Connection
+                                {isConnecting ? (
+                                    <>
+                                        <FontAwesomeIcon icon={faArrowsRotate} className="mr-2 w-3 h-3 animate-spin" />
+                                        Connecting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <FontAwesomeIcon icon={faArrowsRotate} className="mr-2 w-3 h-3" />
+                                        Retry Connection
+                                    </>
+                                )}
                             </button>
                         )}
                     </div>
