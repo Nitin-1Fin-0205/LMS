@@ -2,34 +2,16 @@ import { VITE_WEBAGENT_PROXY_URL, VITE_WEBAGENT_URL } from "../assets/config";
 
 class BiometricService {
     constructor() {
-        this.baseUrl = VITE_WEBAGENT_URL || 'http://localhost:8084';
+        // this.baseProxyUrl = VITE_WEBAGENT_URL || 'http://localhost:8084';
         this.baseProxyUrl = VITE_WEBAGENT_PROXY_URL || 'http://localhost:4000';
-
-        // Debug the config values
-        console.log('this.baseUrl:', this.baseUrl);
-        console.log('this.baseProxyUrl:', this.baseProxyUrl);
-
-        // Remove the /api from URLs since it's already in the API endpoint
         this.apiPrefix = '';
-
         this.isInitialized = false;
         this.deviceHandle = null;
-        // this.pageId = Math.random().toString();
-        this.sessionCreated = false;
         this.debugMode = true;
         this.scannerInfos = null;
         this.selectedDeviceIndex = 0;
-
-        // Session management
-        this.sessionId = null;
-
-        // Restore session from storage if available
-        this.sessionId = sessionStorage.getItem('biometric_session_id');
-        this.sessionCreated = !!this.sessionId;
-
         this.logDebug('BiometricService initialized', {
-            baseUrl: this.baseUrl,
-            hasStoredSession: !!this.sessionId
+            baseProxyUrl: this.baseProxyUrl
         });
     }
 
@@ -39,184 +21,20 @@ class BiometricService {
             console.log(`BioMini WebAgent: ${message}`, data || '');
         }
     }
-    async makeRequest(endpoint, options = {}, iscredentials = false) {
+
+    // Check if device is connected (stateless, new API)
+    async isDeviceConnected() {
         try {
-            // Ensure we have a session for non-ping requests
-            if (!endpoint.includes('ping') && !endpoint.includes('createSessionID')) {
-                await this.ensureSession();
-
-                if (!this.sessionId) {
-                    throw new Error('Failed to create biometric session');
-                }
-            }
-
-            const url = `${endpoint}`;
-
-            // Convert params to URLSearchParams
-            const queryParams = new URLSearchParams();
-
-            // Add session ID as username parameter (what the biometric service expects)
-            if (this.sessionId && iscredentials) {
-                queryParams.append('username', this.sessionId);
-            }
-
-            // Add dummy parameter to prevent caching - exactly as in working URL
-            queryParams.append('dummy', Math.random().toString());
-
-            // Add each parameter individually to match exact format of working URL
-            if (options.params) {
-                Object.entries(options.params).forEach(([key, value]) => {
-                    queryParams.append(key, value);
-                });
-            }
-
-            // Build the full URL in the same format as the working one
-            const fullUrl = `${url}?${queryParams.toString()}`;
-            this.logDebug(`Request to ${fullUrl}`);
-            console.log('🔗 makeRequest URL:', fullUrl); // Debug log
-
-            // Use fetch with no extra parameters except method
-            const response = await fetch(fullUrl, {
-                method: options.method || 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                },
-                credentials: iscredentials ? 'include' : 'omit'
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error ${response.status}`);
-            }
-
+            const response = await fetch(`${this.baseProxyUrl}/bio/device-info`);
             const data = await response.json();
-            this.logDebug(`Response from ${endpoint}:`, data);
-            return data;
+            this.logDebug('Device info:', data);
+            return data.success && Array.isArray(data.info) && data.info.length > 0;
         } catch (error) {
-            this.logDebug(`Error in ${endpoint}:`, error);
-            throw new Error(`Biometric service error: ${error.message}`);
-        }
-    }    // Initialize a session ID
-    async createSession() {
-        try {
-            this.cleanupSession();
-            this.logDebug('Creating session ID');
-            const response = await fetch(`${this.baseUrl}/api/createSessionID?dummy=${Math.random()}`);
-            const data = await response.json();
-
-            if (data && data.sessionId) {
-                this.sessionId = data.sessionId;
-                sessionStorage.setItem('biometric_session_id', data.sessionId);
-
-                // Debug logs
-                console.log('✅ Session created:', data.sessionId);
-                console.log('✅ Stored in sessionStorage:', sessionStorage.getItem('biometric_session_id'));
-
-                document.cookie = `username=${data.sessionId}; path=/; SameSite=None; Secure`;
-
-                this.sessionCreated = true;
-                this.logDebug('Session created successfully with ID:', data.sessionId);
-                return true;
-            }
-
-            console.error('❌ Failed to create session:', data);
-            this.logDebug('Failed to create session', data);
-            return false;
-        } catch (error) {
-            console.error('❌ Session creation error:', error);
-            this.logDebug('Session creation error', error);
-            return false;
-        }
-    } async ensureSession() {
-        if (!this.sessionId || !this.sessionCreated) {
-            console.log('🔄 Creating new session...');
-            const success = await this.createSession();
-            if (!success) {
-                console.error('❌ Failed to ensure session');
-                return false;
-            }
-        }
-        console.log('✅ Session ensured:', this.sessionId);
-        return true;
-    }
-
-    // Clear session when needed
-    clearSession() {
-        this.sessionId = null;
-        this.sessionCreated = false;
-        sessionStorage.removeItem('biometric_session_id');
-        document.cookie = 'username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    }
-
-    // Get current session status
-    getSessionStatus() {
-        return {
-            hasSession: !!this.sessionId,
-            sessionId: this.sessionId,
-            created: this.sessionCreated
-        };
-    }    // Check if the service is running
-    async checkServiceRunning() {
-        try {
-            const response = await fetch(`${this.baseUrl}/api/ping?dummy=${Math.random()}`);
-            return response.ok;
-        } catch (error) {
-            this.logDebug('WebAgent service is not running or not accessible', error);
+            this.logDebug('Device info error:', error);
             return false;
         }
     }
 
-    // Initialize the device (similar to Init function)
-    async initializeDevice() {
-        try {
-            // Explicitly create session first - this is critical
-            // const sessionCreated = await this.createSession();
-            // if (!sessionCreated) {
-            //     throw new Error('Failed to create session for device initialization');
-            // }
-
-            this.logDebug('Current cookies before init:', document.cookie);
-
-            // Initialize device
-            const response = await this.makeRequest(`${this.baseUrl}/api/initDevice`);
-            this.logDebug('Init device response:', response);
-
-            // if (response.retValue !== 0) {
-            //     throw new Error(response.retString || 'Failed to initialize device');
-            // }
-
-            if (!response.ScannerInfos || response.ScannerInfos.length === 0) {
-                throw new Error('No biometric devices found');
-            }
-
-            // Store all scanner infos and set device handle
-            this.scannerInfos = response.ScannerInfos;
-            this.deviceHandle = response.ScannerInfos[this.selectedDeviceIndex].DeviceHandle;
-            this.isInitialized = true;
-
-            return {
-                success: true,
-                deviceInfo: response.ScannerInfos[this.selectedDeviceIndex]
-            };
-        } catch (error) {
-            this.isInitialized = false;
-            this.deviceHandle = null;
-            throw error;
-        }
-    }
-
-    // Uninitialize device
-    async uninitializeDevice() {
-        if (!this.isInitialized) return;
-
-        try {
-            await this.makeRequest(`${this.baseUrl}/api/uninitDevice`);
-            this.isInitialized = false;
-            this.deviceHandle = null;
-            this.scannerInfos = null;
-        } catch (error) {
-            console.error('Failed to uninitialize device:', error);
-        }
-    }
 
     // Get scanner status
     async getScannerStatus() {
@@ -224,7 +42,7 @@ class BiometricService {
             throw new Error('Device not initialized');
         }
 
-        const response = await this.makeRequest(`${this.baseUrl}/api/getScannerStatus`, {
+        const response = await this.makeRequest(`${this.baseProxyUrl}/api/getScannerStatus`, {
             params: {
                 sHandle: this.deviceHandle
             }
@@ -248,7 +66,7 @@ class BiometricService {
             await this.initializeDevice();
         }
 
-        const response = await this.makeRequest(`${this.baseUrl}/api/startCapturing`, {
+        const response = await this.makeRequest(`${this.baseProxyUrl}/api/startCapturing`, {
             params: {
                 sHandle: this.deviceHandle,
                 // id: this.pageId,
@@ -261,51 +79,37 @@ class BiometricService {
         }
 
         return true;
-    }    // Capture a single fingerprint
+    }
+
+    // Capture a single fingerprint (stateless, new API)
     async captureSingle() {
-        if (!this.isInitialized || !this.deviceHandle) {
-            await this.initializeDevice();
+        const deviceConnected = await this.isDeviceConnected();
+        if (!deviceConnected) {
+            throw new Error('No biometric device connected');
         }
-
         try {
-            // Force session creation if not available
-            if (!this.sessionId) {
-                console.log('No session ID, creating...');
-                await this.createSession();
-            }
-
-            // Get session ID from storage as backup
-            const sessionId = this.sessionId || sessionStorage.getItem('biometric_session_id');
-
-            if (!sessionId) {
-                throw new Error('Unable to get session ID');
-            }
-
-            // Build URL with session ID parameter
-            const url = new URL(`${this.baseProxyUrl}/api/captureSingle`);
-            url.searchParams.append('dummy', Math.random());
-            url.searchParams.append('sHandle', this.deviceHandle);
-            // url.searchParams.append('id', this.pageId);
-            url.searchParams.append('resetTimer', '30000');
-            url.searchParams.append('username', sessionId); // Add session ID as username parameter
-
-            console.log('🔗 Request URL:', url.toString());
-
-            const captureResponse = await fetch(url.toString(), {
-                method: 'GET',
-                credentials: 'include',
-                mode: 'cors'
+            const response = await fetch(`${this.baseProxyUrl}/bio/capture-fingerprint`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{}'
             });
-            const captureData = await captureResponse.json();
+            const data = await response.json();
+            this.logDebug('Capture fingerprint response:', data);
 
-            if (captureData.retValue !== 0) {
-                this.logDebug('Capture failed:', captureData);
-                throw new Error(captureData.retString || 'Capture failed');
+            if (!data.success) {
+                throw new Error(data.message || 'Fingerprint capture failed');
             }
 
-            return true;
+            return {
+                bmpBase64: data.bmpBase64,
+                tplBase64: data.tplBase64,
+                bmpPath: data.bmpPath,
+                tplPath: data.tplPath,
+                duration: data.duration,
+                timestamp: data.timestamp
+            };
         } catch (error) {
-            await this.abortCapture();
+            this.logDebug('Capture fingerprint error:', error);
             throw error;
         }
     }
@@ -335,7 +139,7 @@ class BiometricService {
         if (!this.deviceHandle) return;
 
         try {
-            await this.makeRequest(`${this.baseUrl}/api/abortCapture`, {
+            await this.makeRequest(`${this.baseProxyUrl}/api/abortCapture`, {
                 params: {
                     sHandle: this.deviceHandle,
                     resetTimer: 30000
@@ -417,80 +221,6 @@ class BiometricService {
         return true;
     }
 
-    // Get parameters
-    async getParameters() {
-        if (!this.isInitialized || !this.deviceHandle) {
-            throw new Error('Device not initialized');
-        }
-
-        const response = await this.makeRequest(`${this.baseUrl}/api/getParameters`, {
-            params: { sHandle: this.deviceHandle }
-        });
-
-        if (response.retValue !== 0) {
-            throw new Error(response.retString || 'Failed to get parameters');
-        }
-
-        return {
-            brightness: response.brightness,
-            sensitivity: response.sensitivity,
-            fastmode: response.fastmode === 1,
-            securitylevel: response.securitylevel,
-            timeout: response.timeout,
-            templateType: response.TemplateType,
-            fakeLevel: response.fakeLevel,
-            detectFakeAdvancedMode: response.detectFakeAdvancedMode === 1
-        };
-    }
-
-    // Set parameters
-    async setParameters(params) {
-        if (!this.isInitialized || !this.deviceHandle) {
-            throw new Error('Device not initialized');
-        }
-
-        const requestParams = {
-            sHandle: this.deviceHandle,
-            ...params
-        };
-
-        const response = await this.makeRequest(`${this.baseUrl}/api/setParameters`, { params: requestParams });
-
-        if (response.retValue !== 0) {
-            throw new Error(response.retString || 'Failed to set parameters');
-        }
-
-        return {
-            unsupportedVariables: response.unsupportedVariables
-        };
-    }
-
-    // Database operations: enroll template
-    async enroll(options) {
-        if (!this.isInitialized || !this.deviceHandle) {
-            throw new Error('Device not initialized');
-        }
-
-        const params = {
-            sHandle: this.deviceHandle,
-            // id: this.pageId,
-            userID: options.userId,
-            userSerialNo: options.userSerialNo || 0,
-            selectTemplate: options.selectTemplate || 0,
-            encrypt: options.encrypt || 0,
-            encryptKey: options.encryptKey || '',
-            extractEx: options.extractEx || 1,
-            qualityLevel: options.qualityLevel || 60
-        };
-
-        const response = await this.makeRequest('/db/enroll', { params });
-
-        if (response.retValue !== 0) {
-            throw new Error(response.retString || 'Failed to enroll');
-        }
-
-        return true;
-    }
 
     // Database operations: verify template
     async verify(userSerialNo) {
@@ -542,193 +272,58 @@ class BiometricService {
         };
     }
 
-    // Abort identification
-    async abortIdentify() {
-        try {
-            const response = await this.makeRequest('/db/abortIdentify');
-            return response.retValue === 0;
-        } catch (error) {
-            console.error('Failed to abort identify:', error);
-            return false;
-        }
-    }
-
-    // Query user data
-    async queryData() {
-        if (!this.isInitialized || !this.deviceHandle) {
-            throw new Error('Device not initialized');
-        }
-
-        const response = await this.makeRequest('/db/queryData', {
-            params: { sHandle: this.deviceHandle }
-        });
-
-        if (response.retValue !== 0) {
-            throw new Error(response.retString || 'Failed to query data');
-        }
-
-        return {
-            users: response.db
-        };
-    }
-
-    // Delete user template
-    async deleteTemplate(userSerialNo) {
-        if (!this.isInitialized || !this.deviceHandle) {
-            throw new Error('Device not initialized');
-        }
-
-        const response = await this.makeRequest('/db/delete', {
-            params: {
-                sHandle: this.deviceHandle,
-                userSerialNo: userSerialNo
-            }
-        });
-
-        if (response.retValue !== 0) {
-            throw new Error(response.retString || 'Failed to delete template');
-        }
-
-        return true;
-    }
-
-    // Delete all templates
-    async deleteAllTemplates() {
-        const response = await this.makeRequest('/db/deleteAll');
-
-        if (response.retValue !== 0) {
-            throw new Error(response.retString || 'Failed to delete all templates');
-        }
-
-        return true;
-    }
-
-    // Update template
-    async updateTemplate(userSerialNo) {
-        if (!this.isInitialized || !this.deviceHandle) {
-            throw new Error('Device not initialized');
-        }
-
-        const response = await this.makeRequest('/db/update', {
-            params: {
-                sHandle: this.deviceHandle,
-                // id: this.pageId,
-                userSerialNo: userSerialNo,
-                extractEx: 1,
-                qualityLevel: 60
-            }
-        });
-
-        if (response.retValue !== 0) {
-            throw new Error(response.retString || 'Failed to update template');
-        }
-
-        return true;
-    }    // Get full fingerprint image data with template and WSQ
+    // Capture full fingerprint image data with template and WSQ (stateless, new API)
     async captureFingerprint() {
+        const deviceConnected = await this.isDeviceConnected();
+        if (!deviceConnected) {
+            throw new Error('No biometric device connected');
+        }
         try {
-            if (!this.isInitialized || !this.deviceHandle) {
-                await this.initializeDevice();
-            }
-
-            // Force session creation if not available
-            if (!this.sessionId) {
-                console.log('No session ID, creating...');
-                await this.createSession();
-            }
-
-            // Get session ID from storage as backup
-            const sessionId = this.sessionId || sessionStorage.getItem('biometric_session_id');
-
-            if (!sessionId) {
-                throw new Error('Unable to get session ID');
-            }
-
-
-            // Step 1: Build URL with session ID parameter
-            const url = new URL(`${this.baseProxyUrl}/api/captureSingle`);
-            url.searchParams.append('dummy', Math.random());
-            url.searchParams.append('sHandle', this.deviceHandle);
-            url.searchParams.append('id', this.pageId);
-            url.searchParams.append('resetTimer', '30000');
-            url.searchParams.append('username', sessionId); // Add session ID as username parameter
-
-            console.log('🔗 CaptureFingerprint URL:', url.toString());
-
-            const captureResponse = await fetch(url.toString(), {
-                method: 'GET',
-                credentials: 'include',
-                mode: 'cors'
+            const response = await fetch(`${this.baseProxyUrl}/bio/capture-fingerprint`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{}'
             });
+            const data = await response.json();
+            this.logDebug('Capture fingerprint response:', data);
 
-            const captureData = await captureResponse.json();
-
-            console.log('Capture FingerPrint response:', captureData);
-
-            if (captureData.retValue != 0) {
-                this.logDebug('Capture failed:', captureData);
-                throw new Error(captureData.retString || 'Capture failed');
+            if (!data.success) {
+                throw new Error(data.message || 'Fingerprint capture failed');
             }
-            const thresholdQuality = 80;
-
-            // Step 2: Get the template data - use direct connection for this too
-            const templateResponse = await this.getTemplateData({
-                extractEx: 1,
-                qualityLevel: thresholdQuality,
-                encrypt: 0,
-                encryptKey: 1
-            }
-            )
-
-            console.log('Template response:', templateResponse);
-
-            if (templateResponse.retValue != 0) {
-                throw new Error(templateResponse.retString || 'Template extraction failed');
-            }
-
-
-            // Step 3: Get the image data in both formats (WSQ and BMP)
-            const wsqResponse = await this.getImageData(3, 0.75); // WSQ format
-            if (wsqResponse.retValue != 0) {
-                throw new Error(wsqResponse.retString || 'WSQ extraction failed');
-            }
-
-
-            const imgResponse = await this.getImageData(1, 0.75); // BMP format
-            if (imgResponse.retValue != 0) {
-                throw new Error(imgResponse.retString || 'Image extraction failed');
-            }
-
 
             return {
                 success: true,
-                template: templateResponse.templateBase64,
-                quality: templateResponse.quality || thresholdQuality,
-                wsq: wsqResponse.imageBase64,
-                image: imgResponse.imageBase64
+                template: data.tplBase64,
+                wsq: data.wsqBase64,
+                image: data.bmpBase64,
+                bmpPath: data.bmpPath,
+                tplPath: data.tplPath,
+                duration: data.duration,
+                timestamp: data.timestamp
             };
         } catch (error) {
-            console.error('Capture fingerprint error:', error);
-            await this.abortCapture();
+            this.logDebug('Capture fingerprint error:', error);
             throw error;
         }
-    }    // Clear session data
-    async cleanupSession() {
-        if (!this.sessionCreated) return;
+    }
 
+    // Get fingerprint template quality (stateless, new API)
+    async getTemplateQuality(templateBase64) {
         try {
-            await this.makeRequest(`${this.baseUrl}/api/sessionClear`, {
-                params: {
-                    // id: this.pageId
-                }
+            const response = await fetch(`${this.baseProxyUrl}/bio/quality`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ template: templateBase64 })
             });
-
-            // Use the new clearSession method
-            this.clearSession();
+            const data = await response.json();
+            this.logDebug('Template quality response:', data);
+            return data;
         } catch (error) {
-            console.error('Failed to clear session:', error);
+            this.logDebug('Template quality error:', error);
+            throw error;
         }
     }
+
 }
 
 export default new BiometricService();
