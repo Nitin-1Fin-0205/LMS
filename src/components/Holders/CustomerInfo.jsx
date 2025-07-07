@@ -216,7 +216,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
             }
         } catch (error) {
             console.error("Error fetching state list:", error);
-            toast.error("Failed to load state list");
+            // toast.error("Failed to load state list");
         } finally {
             setIsLoadingStates(false);
         }
@@ -1025,7 +1025,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                         correspondenceState: data?.correspondence_state || "",
                                         correspondenceStatecode: data?.correspondence_state_code || "",
                                     }));
-                                    toast.success("Customer details fetched from 1 Finance");
+                                    // toast.success("Customer details fetched from 1 Finance");
                                 }}
                             />
                         </div>

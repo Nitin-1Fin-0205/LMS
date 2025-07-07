@@ -83,7 +83,7 @@ const SurrenderLockerModal = ({
 
                             {/* Consent Checkboxes */}
                             <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                                <h4 className="text-sm font-semibold mb-2 text-gray-500 text-center">Admin Consent Required</h4>
+                                <h4 className="text-sm font-semibold mb-2 text-gray-500 text-center">Please select the below consent before proceed!</h4>
                                 <hr className="border-t border-gray-300 mb-4" />
                                 <div className="space-y-2">
                                     <label className="flex items-center text-sm text-gray-700 cursor-pointer">

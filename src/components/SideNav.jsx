@@ -51,9 +51,27 @@ const SideNav = ({ onToggle }) => {
         onToggle?.(newCollapsedState); // Notify parent of state change
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('authToken');
-        window.location.href = `${APP_LOGOUT_REDIRECT}`;
+    const handleLogout = async () => {
+        try {
+            // Get the auth token
+            const authToken = localStorage.getItem('authToken');
+
+            if (authToken) {
+                // Call the logout API
+                await fetch('https://newuat.account.onefin.app/api/user/logout-user', {
+                    method: 'POST',
+                    headers: {
+                        'accept': '*/*',
+                        'authorization': `Bearer ${authToken}`,
+                    },
+                });
+            }
+        } catch (error) {
+            console.error('Logout API call failed:', error);
+        } finally {
+            localStorage.removeItem('authToken');
+            window.location.href = `${APP_LOGOUT_REDIRECT}`;
+        }
     };
 
     const listItemSx = {
