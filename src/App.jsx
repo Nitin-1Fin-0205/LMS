@@ -7,6 +7,7 @@ import Customer from './components/Customer';
 import Forbidden from './components/pages/Forbidden';
 import UnauthorizedAccess from './components/pages/UnauthorizedAccess';
 import PrivateRoute from './components/auth/PrivateRoute';
+import Login from './components/Login';
 import './styles/App.css';
 import { ROUTES } from './constants/routes';
 import { ROLES } from './constants/roles';
@@ -65,12 +66,20 @@ const AppContent = () => {
         overflow: 'hidden'
       }}>
         <Routes>
-          <Route path="/" element={
-            <PrivateRoute>
-              <HomePage />
-            </PrivateRoute>
-          } />
+          {/* Public Routes */}
+          <Route path={ROUTES.LOGIN} element={<Login />} />
           <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedAccess />} />
+
+          {/* Protected Routes */}
+          <Route path="/" element={
+            token ? (
+              <PrivateRoute>
+                <HomePage />
+              </PrivateRoute>
+            ) : (
+              <Navigate to={ROUTES.LOGIN} replace />
+            )
+          } />
 
           <Route path="/*" element={
             <Routes>

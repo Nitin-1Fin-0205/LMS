@@ -1,4 +1,5 @@
 export const ROUTES = {
+    LOGIN: '/login',
     ADD_CUSTOMER: '/add-customer',
     ACCESS: '/access',
     FORBIDDEN: '/forbidden',
