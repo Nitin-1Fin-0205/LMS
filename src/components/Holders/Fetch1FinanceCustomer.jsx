@@ -141,8 +141,8 @@ const Fetch1FinanceCustomer = ({ onFetchSuccess }) => {
                         >
                             ×
                         </button>
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                            Fetch 1 Finance Customer
+                        <h3 className="text-lg font-semibold text-gray-600 mb-4">
+                            Fetch <span className="text-blue-600" >1 Finance</span> Customer Details
                         </h3>
                         {!isOtpSent ? (
                             <>
