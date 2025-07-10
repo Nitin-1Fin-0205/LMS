@@ -137,7 +137,8 @@ const Attachments = ({ customerId, holderType, onSuccess, onBack }) => {
             console.error('Upload error:', error);
             throw new Error(error.response?.data?.message || 'Failed to upload document');
         }
-    }; const handleFileUpload = async (event) => {
+    };
+    const handleFileUpload = async (event) => {
         try {
             const files = Array.from(event.target.files || []);
             if (files.length === 0) return;

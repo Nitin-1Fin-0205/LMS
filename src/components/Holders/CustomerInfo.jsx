@@ -12,6 +12,7 @@ import {
     faEnvelope,
     faSms,
     faDownload,
+    faRotateLeft
 } from "@fortawesome/free-solid-svg-icons";
 import { ValidationService } from "../../services/ValidationService";
 import { otpService } from "../../services/otpService";
@@ -980,7 +981,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                         <div className="flex items-center gap-2 mb-4">
                             <button
                                 type="button"
-                                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center gap-2"
+                                className="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600 transition-colors flex items-center gap-2"
                                 onClick={() => setIsDigilockerModalOpen(true)}
                             >
                                 <svg
@@ -1028,6 +1029,55 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                     // toast.success("Customer details fetched from 1 Finance");
                                 }}
                             />
+                            {/* Reset Form button */}
+                            <button
+                                type="button"
+                                className="px-4 py-2 bg-sky-500 text-white rounded hover:bg-sky-600 transition-colors flex items-center gap-2"
+                                onClick={() => {
+                                    setCustomerData({
+                                        customerId: null,
+                                        firstName: "",
+                                        middleName: "",
+                                        lastName: "",
+                                        fatherOrHusbandName: "",
+                                        dateOfBirth: "",
+                                        mobileNo: "",
+                                        emailId: "",
+                                        panNo: "",
+                                        aadharNo: "",
+                                        permanentAddressLine1: "",
+                                        permanentAddressLine2: "",
+                                        permanentAddressLine3: "",
+                                        permanentCity: "",
+                                        permanentState: "",
+                                        permanentStatecode: "",
+                                        correspondenceAddressLine1: "",
+                                        correspondenceAddressLine2: "",
+                                        correspondenceAddressLine3: "",
+                                        correspondenceCity: "",
+                                        correspondenceState: "",
+                                        correspondenceStatecode: "",
+                                    });
+                                    setIsMobileVerified(false);
+                                    setIsEmailVerified(false);
+                                    setOtpVerification({
+                                        mobileOtp: "",
+                                        emailOtp: "",
+                                        isMobileOtpSent: false,
+                                        isEmailOtpSent: false,
+                                    });
+                                    setFieldErrors({});
+                                    setIsSameAddress(false);
+                                    setIsPanImageFetching(false);
+                                    setIsPanFetching(false);
+                                    setIsSubmitting(false);
+                                    setRequestId(null);
+                                }}
+                            >
+                                <FontAwesomeIcon icon={faRotateLeft} />
+                                Reset Form
+                            </button>
+
                         </div>
                     </div>
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-2 lg:gap-4 mt-4 p-4">
