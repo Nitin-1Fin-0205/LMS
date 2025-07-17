@@ -22,7 +22,6 @@ const LockerDetails = () => {
     );
     const [nominees, setNominees] = useState([]);
     const [isNomineeModalOpen, setIsNomineeModalOpen] = useState(false);
-    const [showSurrenderButton, setShowSurrenderButton] = useState(false);
     // Locker data from child component
     const [currentLockerData, setCurrentLockerData] = useState(null);
     useEffect(() => {
@@ -80,8 +79,6 @@ const LockerDetails = () => {
             <LockerRentDetails
                 holderType="primaryHolder"
                 onLockerDataChange={handleLockerDataChange}
-                showSurrenderButton={showSurrenderButton}
-                setShowSurrenderButton={setShowSurrenderButton}
             />
             {/* Nominees Section */}
             <NomineeSection
