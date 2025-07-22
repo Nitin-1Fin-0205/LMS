@@ -263,7 +263,7 @@ export const useLockerManagement = (customerId = null) => {
                         });
                     } else {
                         setSubscriptionStatus({
-                            status: 'none',
+                            status: 'Not Available',
                             details: null,
                             hasActiveSubscription: false,
                             canCreateNew: true

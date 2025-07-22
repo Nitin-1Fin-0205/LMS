@@ -12,7 +12,8 @@ import {
     faEnvelope,
     faSms,
     faDownload,
-    faRotateLeft
+    faRotateLeft,
+    faInfoCircle
 } from "@fortawesome/free-solid-svg-icons";
 import { ValidationService } from "../../services/ValidationService";
 import { otpService } from "../../services/otpService";
@@ -89,6 +90,8 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
     });
     const [isPanFetching, setIsPanFetching] = useState(false);
     const [isPanImageFetching, setIsPanImageFetching] = useState(false);
+    const [isDigilockerFetching, setIsDigilockerFetching] = useState(false);
+    const [digilockerIdentifier, setDigilockerIdentifier] = useState("");
     const [showOtpModal, setShowOtpModal] = useState(false);
     const [otpType, setOtpType] = useState(null);
     const [resendTimer, setResendTimer] = useState({ email: 0, mobile: 0 });
@@ -438,6 +441,72 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                     toast.error(validation.error);
                 }
             }
+        }
+    };
+
+    const handleFetchDigilocker = async () => {
+        try {
+            if (!digilockerIdentifier) {
+                toast.error("Please enter phone number or email to fetch Digilocker details");
+                return;
+            }
+
+            setIsDigilockerFetching(true);
+
+            const token = localStorage.getItem("authToken");
+            const response = await fetch(`${API_URL}/customers/digilocker-details?identifier=${digilockerIdentifier}`, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "accept": "*/*",
+                },
+            });
+
+            const data = await response.json();
+            if (response?.status === 200 && data?.data) {
+                const customerInfo = data.data;
+                setCustomerData((prev) => {
+                    const updatedData = {
+                        ...prev,
+                        firstName: customerInfo?.first_name || "",
+                        middleName: customerInfo?.middle_name || "",
+                        lastName: customerInfo?.last_name || "",
+                        fatherOrHusbandName: customerInfo?.father_name || "",
+                        dateOfBirth: customerInfo?.dob || "",
+                        panNo: customerInfo?.pan || "",
+                        gender: customerInfo?.gender === "MALE" ? "Male" : customerInfo?.gender === "FEMALE" ? "Female" : customerInfo?.gender || "",
+                        aadharNo: customerInfo?.aadhaar?.replace(/x/g, "").replace(/X/g, "") || "",
+                        permanentAddressLine1: customerInfo?.permanent_address_line1 || "",
+                        permanentAddressLine2: customerInfo?.permanent_address_line2 || "",
+                        permanentAddressLine3: customerInfo?.permanent_address_line3 || "",
+                        permanentCity: customerInfo?.permanent_city || "",
+                        permanentState: customerInfo?.permanent_state || "",
+                        correspondenceAddressLine1: customerInfo?.current_address_line1 || "",
+                        correspondenceAddressLine2: customerInfo?.current_address_line2 || "",
+                        correspondenceAddressLine3: customerInfo?.current_address_line3 || "",
+                        correspondenceCity: customerInfo?.current_city || "",
+                        correspondenceState: customerInfo?.current_state || "",
+                    };
+                    handleCustomerInfoUpdate(updatedData);
+                    return updatedData;
+                });
+
+                // Check if addresses are the same and set checkbox accordingly
+                if (customerInfo?.permanent_address_line1 === customerInfo?.current_address_line1 &&
+                    customerInfo?.permanent_city === customerInfo?.current_city &&
+                    customerInfo?.permanent_state === customerInfo?.current_state) {
+                    setIsSameAddress(true);
+                }
+
+                toast.success("Digilocker customer details fetched successfully");
+            } else {
+                toast.error("Customer not found in Digilocker database");
+            }
+        } catch (error) {
+            console.error("Error fetching Digilocker details:", error);
+            toast.error("Failed to fetch Digilocker details");
+        } finally {
+            setIsDigilockerFetching(false);
         }
     };
 
@@ -1080,6 +1149,66 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
 
                         </div>
                     </div>
+
+                    {/* Digilocker Fetch Section - Outside Form Grid */}
+                    <div className="mx-4 mb-4 p-4 bg-gradient-to-r from-sky-50 to-sky-100 border-2 border-dashed border-sky-300 rounded-lg shadow-sm">
+                        <div className="flex flex-col space-y-3">
+                            <div className="flex items-center space-xxxx-2">
+                                <h3 className="text-lg font-semibold text-sky-700 mr-1">
+                                    Auto-fill from the Digilocker flow.
+                                </h3>
+                                <div className="relative group">
+                                    <FontAwesomeIcon
+                                        icon={faInfoCircle}
+                                        className="text-blue-500 w-4 h-4 cursor-help ml-2"
+                                    />
+                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 pointer-events-none">
+                                        Enter the phone number or email used during Digilocker flow to automatically populate customer details.
+                                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                                    </div>
+                                </div>
+                                <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium ml-2">
+                                    Quick Fill
+                                </span>
+                            </div>
+                            <div className="flex gap-3 items-end">
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Phone Number or Email
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={digilockerIdentifier}
+                                        onChange={(e) => setDigilockerIdentifier(e.target.value)}
+                                        className="w-full h-10 px-4 border-2 border-blue-200 rounded-lg text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder-gray-400"
+                                        placeholder="Enter phone number or email address"
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    className="px-3 py-1.75 mb-1  bg-blue-600 text-white border-none rounded-lg text-sm font-medium cursor-pointer hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md hover:shadow-lg transform hover:scale-100"
+                                    onClick={handleFetchDigilocker}
+                                    style={{
+                                        cursor: isDigilockerFetching || !digilockerIdentifier.trim() ? 'not-allowed' : 'pointer'
+                                    }}
+                                    disabled={isDigilockerFetching || !digilockerIdentifier.trim()}
+                                >
+                                    {isDigilockerFetching ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                            Fetching...
+                                        </>
+                                    ) : (
+                                        <>
+                                            {/* <FontAwesomeIcon icon={faDownload} className="w-4 h-4" /> */}
+                                            Fetch Existing Customer Details
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-2 lg:gap-4 mt-4 p-4">
                         {" "}
                         <div className="flex flex-col min-w-0">
