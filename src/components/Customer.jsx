@@ -50,7 +50,9 @@ const Customer = () => {
 
     const handleLockerDetails = () => {
         if (primaryHolder?.customerInfo?.customerId) {
-            navigate(ROUTES.LOCKER_DETAILS);
+            const customerId = primaryHolder.customerInfo.customerId;
+            const pan = primaryHolder.customerInfo.panNo;
+            navigate(`${ROUTES.LOCKER_DETAILS}?customer_id=${customerId}&pan=${pan}`);
         }
     }; const handlePanChange = (e) => {
         const pan = e.target.value.toUpperCase();
@@ -237,7 +239,7 @@ const Customer = () => {
                 <div className="flex items-end gap-2 flex-1">
                     <div className="flex-1 max-w-lg">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            PAN Number
+                            Existing Customer PAN Number
                         </label>
                         <input
                             type="text"
@@ -290,8 +292,8 @@ const Customer = () => {
                             </>
                         ) : (
                             <>
-                                <span>Fetch Customer</span>
-                                <FontAwesomeIcon icon={faDownload} className="text-xs" />
+                                <span>Get Existing Customer</span>
+                                {/* <FontAwesomeIcon icon={faDownload} className="text-xs" /> */}
                             </>
                         )}
                     </button>

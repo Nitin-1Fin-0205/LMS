@@ -12,6 +12,7 @@ const PaymentDetailsSection = ({
     isImmediateSubscription,
     isSaving,
     primaryHolder,
+    customerId,
     onPlanSelect,
     onSaveLockerDetails,
     onCreateSubscription,
@@ -85,7 +86,7 @@ const PaymentDetailsSection = ({
             )}
 
             {/* Subscription Management Section */}
-            {isLockerProperlySaved && primaryHolder?.customerInfo?.customerId && (
+            {isLockerProperlySaved && customerId && (
                 <div className="mt-6 pt-4 border-t border-gray-200">
                     <div className="space-y-4">
                         {/* Subscription Status */}

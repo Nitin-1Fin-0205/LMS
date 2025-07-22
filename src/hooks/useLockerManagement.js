@@ -11,11 +11,14 @@ import {
 import { otpService } from "../services/otpService";
 import { SUBSCRIPTION_STATUS, SubscriptionHelpers } from "../constants/subscriptionStatus";
 
-export const useLockerManagement = () => {
+export const useLockerManagement = (customerId = null) => {
     const dispatch = useDispatch();
     const primaryHolder = useSelector(
         (state) => state.customer.form.primaryHolder
     );
+
+    // Use provided customerId or fallback to Redux state
+    const effectiveCustomerId = customerId || primaryHolder?.customerInfo?.customerId;
 
     // Initial state
     const initialLockerDetails = {
@@ -101,9 +104,9 @@ export const useLockerManagement = () => {
         setShowCancelSubscriptionModal(false);
 
         // Refetch customer data
-        const customerId = primaryHolder?.customerInfo?.customerId;
-        if (customerId) {
-            await fetchLockerDetails(customerId);
+        const customerIdToUse = effectiveCustomerId;
+        if (customerIdToUse) {
+            await fetchLockerDetails(customerIdToUse);
         }
     };
 
@@ -204,7 +207,7 @@ export const useLockerManagement = () => {
         try {
             setIsLoadingPlans(true);
             const token = localStorage.getItem("authToken");
-            const customerId = primaryHolder?.customerInfo?.customerId;
+            const customerId = effectiveCustomerId;
 
             if (!customerId) {
                 console.error("Customer ID not found");
@@ -314,7 +317,7 @@ export const useLockerManagement = () => {
             }
 
             const lockerAssignmentData = {
-                customerId: primaryHolder?.customerInfo?.customerId,
+                customerId: effectiveCustomerId,
                 lockerId: lockerDetails.lockerId,
                 centerId: lockerDetails.center,
                 planId: lockerDetails.selectedPlan,
@@ -348,7 +351,7 @@ export const useLockerManagement = () => {
         try {
             setIsCreatingSubscription(true);
             const token = localStorage.getItem("authToken");
-            const customerId = primaryHolder?.customerInfo?.customerId;
+            const customerId = effectiveCustomerId;
 
             if (!customerId || !lockerDetails.selectedPlan || !lockerDetails.lockerId) {
                 toast.error("Missing required data for subscription creation");
@@ -397,7 +400,7 @@ export const useLockerManagement = () => {
         try {
             setIsCancellingSubscription(true);
             const token = localStorage.getItem("authToken");
-            const customerId = primaryHolder?.customerInfo?.customerId;
+            const customerId = effectiveCustomerId;
 
             if (!customerId || !subscriptionStatus?.hasActiveSubscription) {
                 toast.error("No active subscription found to cancel");
@@ -471,7 +474,7 @@ export const useLockerManagement = () => {
 
             const response = await dispatch(
                 initiateSurrenderLocker({
-                    customerId: primaryHolder?.customerInfo?.customerId,
+                    customerId: effectiveCustomerId,
                     lockerId: lockerDetails.lockerId,
                 })
             ).unwrap();
@@ -522,7 +525,7 @@ export const useLockerManagement = () => {
 
             await dispatch(
                 surrenderLocker({
-                    customerId: primaryHolder?.customerInfo?.customerId,
+                    customerId: effectiveCustomerId,
                     lockerId: lockerDetails.lockerId,
                 })
             ).unwrap();
@@ -544,7 +547,7 @@ export const useLockerManagement = () => {
         try {
             const response = await dispatch(
                 initiateSurrenderLocker({
-                    customerId: primaryHolder?.customerInfo?.customerId,
+                    customerId: effectiveCustomerId,
                     lockerId: lockerDetails.lockerId,
                 })
             ).unwrap();
@@ -576,11 +579,10 @@ export const useLockerManagement = () => {
     // Effects
     useEffect(() => {
         fetchCenters();
-        const customerId = primaryHolder?.customerInfo?.customerId;
-        if (customerId) {
-            fetchLockerDetails(customerId);
+        if (effectiveCustomerId) {
+            fetchLockerDetails(effectiveCustomerId);
         }
-    }, [primaryHolder?.customerInfo?.customerId]);
+    }, [effectiveCustomerId]);
 
     useEffect(() => {
         if (lockerDetails?.lockerId) {
