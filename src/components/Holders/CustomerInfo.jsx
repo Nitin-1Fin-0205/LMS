@@ -12,6 +12,7 @@ import {
     faEnvelope,
     faSms,
     faDownload,
+    faRotateLeft
 } from "@fortawesome/free-solid-svg-icons";
 import { ValidationService } from "../../services/ValidationService";
 import { otpService } from "../../services/otpService";
@@ -22,6 +23,7 @@ import {
 } from "../../store/slices/customerSlice";
 import { HOLDER_TYPES, HOLDER_SECTIONS } from "../../constants/holderConstants";
 import DigilockerModal from "./DigilockerModal";
+import Fetch1FinanceCustomer from "./Fetch1FinanceCustomer";
 
 const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
     const dispatch = useDispatch();
@@ -215,7 +217,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
             }
         } catch (error) {
             console.error("Error fetching state list:", error);
-            toast.error("Failed to load state list");
+            // toast.error("Failed to load state list");
         } finally {
             setIsLoadingStates(false);
         }
@@ -976,26 +978,107 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                         <h2 className="text-slate-700 text-xl font-semibold">
                             Customer Information
                         </h2>
-                        <button
-                            type="button"
-                            className="px-4 py-2 bg-green-600 text-white border-none rounded-md hover:bg-green-700 transition-colors duration-200 text-sm font-medium flex items-center gap-2"
-                            onClick={() => setIsDigilockerModalOpen(true)}
-                        >
-                            <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 144.000000 144.000000"
-                                fill="currentColor"
-                                className="flex-shrink-0"
+                        <div className="flex items-center gap-2 mb-4">
+                            <button
+                                type="button"
+                                className="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600 transition-colors flex items-center gap-2"
+                                onClick={() => setIsDigilockerModalOpen(true)}
                             >
-                                <g transform="translate(0.000000,144.000000) scale(0.050000,-0.050000)">
-                                    <path d="M1143 2840 c-621 -13 -563 41 -563 -524 l0 -419 -111 -101 c-138 -126 -207 -242 -222 -374 -11 -87 -26 -115 -108 -197 -306 -306 -99 -823 331 -825 l120 0 -7 -129 c-6 -117 -1 -135 44 -180 l51 -51 1048 0 1047 0 44 46 c43 46 43 51 43 901 l0 855 -603 -3 -602 -3 4 500 c2 275 -4 503 -13 507 -9 4 -235 3 -503 -3z m337 -120 c38 -23 48 -799 12 -825 -15 -11 -10 -23 13 -36 45 -27 45 -54 0 -65 -27 -7 -25 -10 9 -12 79 -4 72 -42 -8 -42 -83 0 -160 40 -263 137 -37 34 -104 73 -150 86 -46 13 -92 30 -103 38 -11 7 -67 11 -124 8 -132 -6 -131 -9 -137 354 -6 395 -30 373 396 374 179 1 339 -7 355 -17z m-387 -916 c45 -23 119 -84 164 -135 l82 -93 100 26 c194 49 458 -102 494 -283 8 -38 32 -71 65 -88 277 -144 266 -576 -18 -717 -123 -62 -1583 -64 -1701 -3 -263 136 -295 501 -61 690 59 47 82 81 82 119 0 384 451 659 793 484z m1654 -134 c47 -122 4 -1531 -46 -1501 -10 6 -24 3 -31 -8 -22 -37 -1863 -25 -1900 12 -115 114 -25 163 284 154 152 -4 308 -7 346 -5 39 2 185 4 326 5 147 1 241 9 220 18 -23 10 -12 12 31 5 56 -8 65 -4 55 22 -9 24 -4 29 19 21 17 -7 35 0 42 17 6 16 18 26 26 20 17 -10 121 99 121 127 0 9 17 32 39 52 55 50 97 350 57 404 -10 13 -42 69 -72 125 -66 124 -334 443 -409 488 -112 66 -68 74 413 74 400 0 469 -4 479 -30z" />
-                                    <path d="M942 1232 c-48 -51 -45 -108 8 -152 19 -15 23 -37 12 -67 -9 -23 -26 -72 -37 -108 l-22 -65 99 0 c111 0 108 -5 68 129 -27 88 -27 101 0 116 42 23 38 122 -7 162 -48 44 -68 42 -121 -15z" />
-                                    <path d="M1793 2395 l4 -445 521 -5 c287 -3 522 0 522 7 0 7 -25 32 -55 55 -30 24 -263 221 -519 438 -255 217 -466 395 -470 395 -3 0 -4 -200 -3 -445z m221 90 c156 -144 245 -219 251 -213 4 4 37 -20 72 -53 36 -32 74 -59 84 -59 11 0 19 -13 19 -30 0 -16 9 -30 20 -30 11 0 20 -10 20 -22 0 -15 -80 -19 -261 -13 -326 12 -337 21 -290 260 4 19 1 31 -6 27 -11 -7 -16 163 -6 183 9 17 45 -2 97 -50z" />
-                                </g>
-                            </svg>
-                            Digilocker
-                        </button>
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 144.000000 144.000000"
+                                    fill="currentColor"
+                                    className="flex-shrink-0"
+                                >
+                                    <g transform="translate(0.000000,144.000000) scale(0.050000,-0.050000)">
+                                        <path d="M1143 2840 c-621 -13 -563 41 -563 -524 l0 -419 -111 -101 c-138 -126 -207 -242 -222 -374 -11 -87 -26 -115 -108 -197 -306 -306 -99 -823 331 -825 l120 0 -7 -129 c-6 -117 -1 -135 44 -180 l51 -51 1048 0 1047 0 44 46 c43 46 43 51 43 901 l0 855 -603 -3 -602 -3 4 500 c2 275 -4 503 -13 507 -9 4 -235 3 -503 -3z m337 -120 c38 -23 48 -799 12 -825 -15 -11 -10 -23 13 -36 45 -27 45 -54 0 -65 -27 -7 -25 -10 9 -12 79 -4 72 -42 -8 -42 -83 0 -160 40 -263 137 -37 34 -104 73 -150 86 -46 13 -92 30 -103 38 -11 7 -67 11 -124 8 -132 -6 -131 -9 -137 354 -6 395 -30 373 396 374 179 1 339 -7 355 -17z m-387 -916 c45 -23 119 -84 164 -135 l82 -93 100 26 c194 49 458 -102 494 -283 8 -38 32 -71 65 -88 277 -144 266 -576 -18 -717 -123 -62 -1583 -64 -1701 -3 -263 136 -295 501 -61 690 59 47 82 81 82 119 0 384 451 659 793 484z m1654 -134 c47 -122 4 -1531 -46 -1501 -10 6 -24 3 -31 -8 -22 -37 -1863 -25 -1900 12 -115 114 -25 163 284 154 152 -4 308 -7 346 -5 39 2 185 4 326 5 147 1 241 9 220 18 -23 10 -12 12 31 5 56 -8 65 -4 55 22 -9 24 -4 29 19 21 17 -7 35 0 42 17 6 16 18 26 26 20 17 -10 121 99 121 127 0 9 17 32 39 52 55 50 97 350 57 404 -10 13 -42 69 -72 125 -66 124 -334 443 -409 488 -112 66 -68 74 413 74 400 0 469 -4 479 -30z" />
+                                        <path d="M942 1232 c-48 -51 -45 -108 8 -152 19 -15 23 -37 12 -67 -9 -23 -26 -72 -37 -108 l-22 -65 99 0 c111 0 108 -5 68 129 -27 88 -27 101 0 116 42 23 38 122 -7 162 -48 44 -68 42 -121 -15z" />
+                                        <path d="M1793 2395 l4 -445 521 -5 c287 -3 522 0 522 7 0 7 -25 32 -55 55 -30 24 -263 221 -519 438 -255 217 -466 395 -470 395 -3 0 -4 -200 -3 -445z m221 90 c156 -144 245 -219 251 -213 4 4 37 -20 72 -53 36 -32 74 -59 84 -59 11 0 19 -13 19 -30 0 -16 9 -30 20 -30 11 0 20 -10 20 -22 0 -15 -80 -19 -261 -13 -326 12 -337 21 -290 260 4 19 1 31 -6 27 -11 -7 -16 163 -6 183 9 17 45 -2 97 -50z" />
+                                    </g>
+                                </svg>
+                                Digilocker
+                            </button>
+                            <Fetch1FinanceCustomer
+                                onFetchSuccess={(data) => {
+                                    setCustomerData((prev) => ({
+                                        ...prev,
+                                        panNo: data?.pan || "",
+                                        firstName: data?.first_name || "",
+                                        middleName: data?.middle_name || "",
+                                        lastName: data?.last_name || "",
+                                        fatherOrHusbandName: data?.guardian || "",
+                                        dateOfBirth: data?.dob || "",
+                                        mobileNo: data?.mobile_number || "",
+                                        emailId: data?.email || "",
+                                        gender: data?.gender || "",
+                                        aadharNo: data?.aadhar || "",
+                                        permanentAddressLine1: data?.permanent_address_line1 || "",
+                                        permanentAddressLine2: data?.permanent_address_line2 || "",
+                                        permanentAddressLine3: data?.permanent_address_line3 || "",
+                                        permanentCity: data?.permanent_city || "",
+                                        permanentState: data?.permanent_state || "",
+                                        permanentStatecode: data?.permanent_state_code || "",
+                                        correspondenceAddressLine1: data?.correspondence_address_line1 || "",
+                                        correspondenceAddressLine2: data?.correspondence_address_line2 || "",
+                                        correspondenceAddressLine3: data?.correspondence_address_line3 || "",
+                                        correspondenceCity: data?.correspondence_city || "",
+                                        correspondenceState: data?.correspondence_state || "",
+                                        correspondenceStatecode: data?.correspondence_state_code || "",
+                                    }));
+                                    // toast.success("Customer details fetched from 1 Finance");
+                                }}
+                            />
+                            {/* Reset Form button */}
+                            <button
+                                type="button"
+                                className="px-4 py-2 bg-sky-500 text-white rounded hover:bg-sky-600 transition-colors flex items-center gap-2"
+                                onClick={() => {
+                                    setCustomerData({
+                                        customerId: null,
+                                        firstName: "",
+                                        middleName: "",
+                                        lastName: "",
+                                        fatherOrHusbandName: "",
+                                        dateOfBirth: "",
+                                        mobileNo: "",
+                                        emailId: "",
+                                        panNo: "",
+                                        aadharNo: "",
+                                        permanentAddressLine1: "",
+                                        permanentAddressLine2: "",
+                                        permanentAddressLine3: "",
+                                        permanentCity: "",
+                                        permanentState: "",
+                                        permanentStatecode: "",
+                                        correspondenceAddressLine1: "",
+                                        correspondenceAddressLine2: "",
+                                        correspondenceAddressLine3: "",
+                                        correspondenceCity: "",
+                                        correspondenceState: "",
+                                        correspondenceStatecode: "",
+                                    });
+                                    setIsMobileVerified(false);
+                                    setIsEmailVerified(false);
+                                    setOtpVerification({
+                                        mobileOtp: "",
+                                        emailOtp: "",
+                                        isMobileOtpSent: false,
+                                        isEmailOtpSent: false,
+                                    });
+                                    setFieldErrors({});
+                                    setIsSameAddress(false);
+                                    setIsPanImageFetching(false);
+                                    setIsPanFetching(false);
+                                    setIsSubmitting(false);
+                                    setRequestId(null);
+                                }}
+                            >
+                                <FontAwesomeIcon icon={faRotateLeft} />
+                                Reset Form
+                            </button>
+
+                        </div>
                     </div>
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-2 lg:gap-4 mt-4 p-4">
                         {" "}

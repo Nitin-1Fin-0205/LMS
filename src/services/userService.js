@@ -21,16 +21,16 @@ userApi.interceptors.request.use(
     }
 );
 
-userApi.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            localStorage.removeItem('authToken');
-            window.location.href = '/login';
-        }
-        return Promise.reject(error);
-    }
-);
+// userApi.interceptors.response.use(
+//     (response) => response,
+//     (error) => {
+//         if (error.response?.status === 401) {
+//             localStorage.removeItem('authToken');
+//             window.location.href = '/login';
+//         }
+//         return Promise.reject(error);
+//     }
+// );
 
 export const fetchUsers = async (page = 1, limit = 10, search = '') => {
     const params = { page, limit };

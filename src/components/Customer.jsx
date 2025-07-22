@@ -7,12 +7,13 @@ import '../styles/Customer.css';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faUserPlus, faVault, faFileAlt, faEye, faPhone, faEnvelope, faSpinner, faUpLong, faDownload, faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faUserPlus, faVault, faFileAlt, faEye, faPhone, faEnvelope, faSpinner, faUpLong, faDownload, faArrowsRotate, faFileContract } from '@fortawesome/free-solid-svg-icons';
 import { fetchCustomerByPan, resetForm, updateHolderSection } from '../store/slices/customerSlice';
 import { clearAllLockerData } from '../store/slices/lockerSlice';
 import { HOLDER_TYPES, HOLDER_SECTIONS } from '../constants/holderConstants';
 import { ValidationService } from '../services/ValidationService';
 import CustomerDetailsOverlay from './CustomerDetailsOverlay';
+import { ConfirmationModal } from './ui';
 
 const Customer = () => {
     const dispatch = useDispatch();
@@ -33,6 +34,7 @@ const Customer = () => {
     const [showDetailOverlay, setShowDetailOverlay] = useState(false);
     const [isSendingAgreement, setIsSendingAgreement] = useState(false);
     const [currentFetchedPan, setCurrentFetchedPan] = useState(null);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     const handlePrimaryHolder = () => {
         navigate(ROUTES.PRIMARY_HOLDER);
@@ -48,7 +50,9 @@ const Customer = () => {
 
     const handleLockerDetails = () => {
         if (primaryHolder?.customerInfo?.customerId) {
-            navigate(ROUTES.LOCKER_DETAILS);
+            const customerId = primaryHolder.customerInfo.customerId;
+            const pan = primaryHolder.customerInfo.panNo;
+            navigate(`${ROUTES.LOCKER_DETAILS}?customer_id=${customerId}&pan=${pan}`);
         }
     }; const handlePanChange = (e) => {
         const pan = e.target.value.toUpperCase();
@@ -151,6 +155,22 @@ const Customer = () => {
     };
 
     const handleSendAgreement = async (customerId) => {
+        // Check if agreement already exists
+        const hasExistingAgreement = primaryHolder?.customerInfo?.agreementLink || primaryHolder?.customerInfo?.agreementStatus === 'sent';
+
+        if (hasExistingAgreement) {
+            // Show confirmation modal for resending
+            setShowConfirmModal(true);
+            return;
+        }
+
+        // Proceed with sending agreement directly if no existing agreement
+        await sendAgreement(customerId);
+    };
+
+    const sendAgreement = async (customerId) => {
+        const hasExistingAgreement = primaryHolder?.customerInfo?.agreementLink;
+
         try {
             setIsSendingAgreement(true);
             const token = localStorage.getItem('authToken');
@@ -169,7 +189,9 @@ const Customer = () => {
             );
 
             if (response.status === 200 || response.status === 201) {
-                toast.success('Agreement sent successfully');
+                toast.success(hasExistingAgreement ? 'Agreement resent successfully' : 'Agreement sent successfully');
+                // Optionally refresh customer data to get new agreement link
+                // You might want to dispatch fetchCustomerByPan again here
             } else {
                 throw new Error('Failed to send agreement');
             }
@@ -178,7 +200,12 @@ const Customer = () => {
             toast.error(error.response?.data?.message || 'Failed to send agreement');
         } finally {
             setIsSendingAgreement(false);
+            setShowConfirmModal(false);
         }
+    };
+
+    const handleConfirmResendAgreement = () => {
+        sendAgreement(primaryHolder.customerInfo.customerId);
     };
 
     const handleSendPaymentLink = async (customerId) => {
@@ -212,7 +239,7 @@ const Customer = () => {
                 <div className="flex items-end gap-2 flex-1">
                     <div className="flex-1 max-w-lg">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            PAN Number
+                            Existing Customer PAN Number
                         </label>
                         <input
                             type="text"
@@ -265,8 +292,8 @@ const Customer = () => {
                             </>
                         ) : (
                             <>
-                                <span>Fetch Customer</span>
-                                <FontAwesomeIcon icon={faDownload} className="text-xs" />
+                                <span>Get Existing Customer</span>
+                                {/* <FontAwesomeIcon icon={faDownload} className="text-xs" /> */}
                             </>
                         )}
                     </button>
@@ -351,40 +378,52 @@ const Customer = () => {
                             >
                                 <FontAwesomeIcon icon={faEye} className="text-lg cursor-pointer" />
                             </button>
-                            <button
-                                className="flex items-center px-4 py-2 text-white rounded-md transition-all gap-2 text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-                                style={{
-                                    backgroundColor: 'var(--primary-green-background)',
-                                    transition: 'all 0.3s ease',
-                                    ':hover': {
-                                        backgroundColor: '#38a169'
-                                    }
-                                }}
-                                disabled={isSendingAgreement}
-                                onMouseOver={(e) => {
-                                    if (!isSendingAgreement) {
-                                        e.currentTarget.style.backgroundColor = '#38a169';
-                                    }
-                                }}
-                                onMouseOut={(e) => {
-                                    if (!isSendingAgreement) {
-                                        e.currentTarget.style.backgroundColor = 'var(--primary-green-background)';
-                                    }
-                                }}
-                                onClick={() => handleSendAgreement(primaryHolder.customerInfo.customerId)}
-                            >
-                                {isSendingAgreement ? (
-                                    <>
-                                        <FontAwesomeIcon icon={faSpinner} spin />
-                                        Sending...
-                                    </>
-                                ) : (
-                                    <>
-                                        <FontAwesomeIcon icon={faFileAlt} />
-                                        Send Agreement Link
-                                    </>
-                                )}
-                            </button>
+                            {primaryHolder?.customerInfo?.allowSendingAgreement && (
+                                <button
+                                    className="flex items-center px-4 py-2 text-white rounded-md transition-all gap-2 text-sm font-medium cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                                    style={{
+                                        backgroundColor: 'var(--primary-green-background)',
+                                        transition: 'all 0.3s ease',
+                                        ':hover': {
+                                            backgroundColor: '#38a169'
+                                        }
+                                    }}
+                                    disabled={isSendingAgreement}
+                                    onMouseOver={(e) => {
+                                        if (!isSendingAgreement) {
+                                            e.currentTarget.style.backgroundColor = '#38a169';
+                                        }
+                                    }}
+                                    onMouseOut={(e) => {
+                                        if (!isSendingAgreement) {
+                                            e.currentTarget.style.backgroundColor = 'var(--primary-green-background)';
+                                        }
+                                    }}
+                                    onClick={() => handleSendAgreement(primaryHolder.customerInfo.customerId)}
+                                >
+                                    {isSendingAgreement ? (
+                                        <>
+                                            <FontAwesomeIcon icon={faSpinner} spin />
+                                            Sending...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FontAwesomeIcon icon={faFileAlt} />
+                                            {primaryHolder?.customerInfo?.agreementStatus === 'signed' || primaryHolder?.customerInfo?.agreementStatus === 'sent' ? 'Resend Agreement' : 'Send Agreement Link'}
+                                        </>
+                                    )}
+                                </button>
+                            )}
+                            {primaryHolder?.customerInfo?.agreementLink && (
+                                <button
+                                    className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-all gap-2 text-sm font-medium cursor-pointer"
+                                    onClick={() => window.open(primaryHolder.customerInfo.agreementLink, '_blank')}
+                                    title="View Agreement"
+                                >
+                                    <FontAwesomeIcon icon={faFileContract} />
+                                    View Agreement
+                                </button>
+                            )}
                             {/* <button
                             className="flex items-center px-4 py-2 text-white rounded-md transition-all gap-2 text-sm font-medium cursor-pointer"
                             style={{
@@ -476,6 +515,19 @@ const Customer = () => {
                 show={showDetailOverlay}
                 onClose={toggleDetailOverlay}
                 customerId={primaryHolder?.customerInfo?.customerId}
+            />
+
+            {/* Confirmation Modal for Resending Agreement */}
+            <ConfirmationModal
+                show={showConfirmModal}
+                onClose={() => setShowConfirmModal(false)}
+                onConfirm={handleConfirmResendAgreement}
+                title="Resend Agreement"
+                message="A previous agreement exists and will be replaced if you proceed. Are you sure you want to resend the agreement?"
+                confirmText="Resend Agreement"
+                cancelText="Cancel"
+                confirmButtonStyle="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500"
+                isProcessing={isSendingAgreement}
             />
         </div>
     );

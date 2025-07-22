@@ -63,6 +63,7 @@ const PhotoCapture = ({ customerId }) => {
     const validateFile = (file) => {
         if (!file) return false;
         if (file.size > MAX_FILE_SIZE) {
+            toast.error('File size exceeds 2MB limit');
             return false;
         }
         if (!file.type.startsWith('image/')) {
@@ -130,7 +131,7 @@ const PhotoCapture = ({ customerId }) => {
                 setIsSaveEnabled(true);  // Enable save when new file uploaded
             };
             reader.readAsDataURL(file);
-            toast.success('Image uploaded successfully');
+            // toast.success('Image uploaded successfully');
         }
     };
     const handleDragEnter = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
@@ -147,7 +148,7 @@ const PhotoCapture = ({ customerId }) => {
                 setCapturedImage(imageDataUrl);
             };
             reader.readAsDataURL(file);
-            toast.success('Image uploaded successfully');
+            // toast.success('Image uploaded successfully');
         }
     };
 

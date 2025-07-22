@@ -187,6 +187,12 @@ const customerSlice = createSlice({
                     correspondenceCity: action.payload.correspondence_city,
                     correspondenceState: action.payload.correspondence_state,
                     correspondenceStatecode: action.payload.correspondence_state_code,
+                    allowSendingAgreement: action.payload.locker_id ? true : false,
+                    agreementLink: action.payload.agreement_link || '',
+                    agreementStatus: action.payload.agreement_status || '',
+                    agreementName: action.payload.agreement_name || '',
+                    agreementSource: action.payload.agreement_source || '',
+
                     // // Legacy address fields (for backward compatibility)
                     // address: action.payload.address,
                     // city: action.payload.city,

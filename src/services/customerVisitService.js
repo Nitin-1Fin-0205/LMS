@@ -95,11 +95,11 @@ class CustomerVisitService {
         }
     }
 
-    static async fetchCustomerVisitHistory(customerId) {
+    static async fetchCustomerVisitHistory(lockerId) {
         try {
             const token = localStorage.getItem('authToken');
             const response = await axios.get(
-                `${API_URL}/customers/visits/${customerId}?page=1&limit=10`,
+                `${API_URL}/customers/visits/${lockerId}?page=1&limit=10`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -139,6 +139,25 @@ class CustomerVisitService {
     static async recordVisit(visitData) {
         try {
             const token = localStorage.getItem('authToken');
+
+            // Validate required fields
+            const requiredFields = ['customer_id', 'locker_id', 'locker_number', 'visit_photo'];
+            for (const field of requiredFields) {
+                if (!visitData[field]) {
+                    throw new Error(`Missing required field: ${field}`);
+                }
+            }
+
+            // Validate photo format
+            if (visitData.visit_photo === 'data:,' || visitData.visit_photo.length < 50) {
+                throw new Error('Invalid photo data provided');
+            }
+
+            console.log('Recording visit with data:', {
+                ...visitData,
+                visit_photo: visitData.visit_photo ? `${visitData.visit_photo.substring(0, 50)}...` : 'No photo'
+            });
+
             const response = await axios.post(
                 `${API_URL}/customers/visits/record`,
                 visitData,
@@ -152,7 +171,7 @@ class CustomerVisitService {
             );
 
             if (response.data?.status_code === 200 || response.data?.status_code === 201) {
-                return { success: true };
+                return { success: true, data: response.data?.data };
             } else {
                 throw new Error(response.data?.message || 'Failed to record visit');
             }
