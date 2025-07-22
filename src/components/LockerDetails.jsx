@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import LockerRentDetails from "./Locker/LockerRentDetails";
@@ -10,29 +10,51 @@ import {
     fetchNominees,
     assignLocker,
 } from "../store/slices/lockerSlice";
+import { fetchCustomerById } from "../store/slices/customerSlice";
 import { API_URL } from "../assets/config";
 import { ROUTES } from "../constants/routes";
 
 const LockerDetails = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
+
     const lockerData = useSelector((state) => state.locker);
     const primaryHolder = useSelector(
         (state) => state.customer.form.primaryHolder
     );
+
+    // Extract customer_id from query parameters
+    const urlParams = new URLSearchParams(location.search);
+    const customerIdFromUrl = urlParams.get('customer_id');
+    const panFromUrl = urlParams.get('pan');
+
+    // Use only customerIdFromUrl - no Redux dependency
+    const customerId = customerIdFromUrl;
+
     const [nominees, setNominees] = useState([]);
     const [isNomineeModalOpen, setIsNomineeModalOpen] = useState(false);
-    // Locker data from child component
-    const [currentLockerData, setCurrentLockerData] = useState(null);
+
     useEffect(() => {
-        // Fetch nominees when component mounts
-        const customerId = primaryHolder?.customerInfo?.customerId;
+        // If we have customer_id in URL, fetch customer data to populate Redux
+        if (customerIdFromUrl) {
+            dispatch(fetchCustomerById({
+                customerId: customerIdFromUrl,
+                holderType: 'PRIMARY'
+            }));
+        }
+        
+        // If no customer_id in URL, redirect to customer page (locker details needs existing customer)
+        if (!customerIdFromUrl) {
+            navigate(ROUTES.CUSTOMER);
+            return;
+        }
+
+        // Fetch nominees when we have customer ID
         if (customerId) {
             fetchNomineesData(customerId);
-        } else {
-            navigate(ROUTES.CUSTOMER)
         }
-    }, [primaryHolder?.customerInfo?.customerId]);
+    }, [customerIdFromUrl, dispatch, navigate, customerId]);
 
     const fetchNomineesData = async (customerId) => {
         try {
@@ -64,21 +86,18 @@ const LockerDetails = () => {
     };
 
     // Handler for receiving locker data from LockerRentDetails
-    const handleLockerDataChange = (lockerData) => {
-        setCurrentLockerData(lockerData);
-    };
-
-
-    // const handleSubmit = () => {
-    //     // Add API call for submitting locker and rent details
-    //     navigate(-1);
+    // const handleLockerDataChange = (lockerData) => {
+    //     setCurrentLockerData(lockerData);
     // };
+
+
+
 
     return (
         <div className=" bg-white p-8 my-6 rounded-lg shadow-md max-w-7xl mx-auto">
             <LockerRentDetails
                 holderType="primaryHolder"
-                onLockerDataChange={handleLockerDataChange}
+                customerId={customerId}
             />
             {/* Nominees Section */}
             <NomineeSection

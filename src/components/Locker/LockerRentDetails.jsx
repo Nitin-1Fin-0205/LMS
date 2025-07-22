@@ -10,10 +10,7 @@ import AssignLocker from "./AssignLocker";
 import SurrenderLockerModal from "./SurrenderLockerModal";
 import ConfirmationModal from "../ui/ConfirmationModal";
 
-const LockerRentDetails = ({
-    holderType,
-    onLockerDataChange,
-}) => {
+const LockerRentDetails = ({ customerId = null }) => {
     const navigate = useNavigate();
     const {
         // State
@@ -71,14 +68,14 @@ const LockerRentDetails = ({
 
         // Primary holder
         primaryHolder
-    } = useLockerManagement();
+    } = useLockerManagement(customerId);
 
     // Notify parent of locker data changes
-    React.useEffect(() => {
-        if (onLockerDataChange) {
-            onLockerDataChange(lockerDetails);
-        }
-    }, [lockerDetails, onLockerDataChange]);
+    // React.useEffect(() => {
+    //     if (onLockerDataChange) {
+    //         onLockerDataChange(lockerDetails);
+    //     }
+    // }, [lockerDetails, onLockerDataChange]);
 
     // Show loading spinner while fetching locker details
     if (loading) {
@@ -138,6 +135,7 @@ const LockerRentDetails = ({
                     isImmediateSubscription={isImmediateSubscription}
                     isSaving={isSaving}
                     primaryHolder={primaryHolder}
+                    customerId={customerId}
                     onPlanSelect={handlePlanSelect}
                     onSaveLockerDetails={handleSaveLockerDetails}
                     onCreateSubscription={createSubscription}

@@ -64,7 +64,7 @@ const CustomerVisit = () => {
 
                         setCustomerData(updatedCustomerData);
                         setSelectedLocker(selectedLockerInfo);
-                        await fetchCustomerVisitHistory(matchResult.customerId);
+                        await fetchCustomerVisitHistory(selectedLockerInfo.locker_id);
                     } else {
                         toast.error("Customer details not found");
                     }
@@ -141,12 +141,12 @@ const CustomerVisit = () => {
         }
     };
 
-    const fetchCustomerVisitHistory = async (customerId) => {
-        if (!customerId) return;
+    const fetchCustomerVisitHistory = async (lockerId) => {
+        if (!lockerId) return;
 
         setHistoryLoading(true);
         try {
-            const history = await CustomerVisitService.fetchCustomerVisitHistory(customerId);
+            const history = await CustomerVisitService.fetchCustomerVisitHistory(lockerId);
             setVisitHistory(history);
         } catch (error) {
             console.error('Error fetching visit history:', error);
@@ -164,6 +164,12 @@ const CustomerVisit = () => {
         try {
             setLoading(true);
 
+            // Validate visit photo
+            if (!visitPhoto || visitPhoto === 'data:,' || visitPhoto.length < 50) {
+                toast.error('Please capture a valid photo before recording the visit');
+                return;
+            }
+
             const visitData = {
                 customer_id: customerData.customerId,
                 locker_id: customerData.lockerId,
@@ -177,9 +183,10 @@ const CustomerVisit = () => {
                 locker_center_id: customerData.lockerCenterId
             };
 
+            console.log('Visit data payload:', visitData);
             await CustomerVisitService.recordVisit(visitData);
             toast.success("Visit recorded successfully. You may now access the vault.");
-            await fetchCustomerVisitHistory(customerData.customerId);
+            await fetchCustomerVisitHistory(customerData.lockerId);
             setVisitPhoto(null);
             setShowPhotoModal(false);
         } catch (error) {
@@ -213,7 +220,7 @@ const CustomerVisit = () => {
 
             setCustomerData(updatedCustomerData);
             setSelectedLocker(selectedLockerInfo);
-            await fetchCustomerVisitHistory(customerData.customerId);
+            await fetchCustomerVisitHistory(selectedLockerInfo.locker_id);
 
             // toast.success(`Locker ${selectedLockerInfo.locker_number} selected successfully`);
         } catch (error) {

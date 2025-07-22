@@ -2,7 +2,8 @@ import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faUser, faCheck, faLock, faInfoCircle, faIdCard,
-    faPhone, faEnvelope, faMapMarkerAlt, faKey, faHashtag
+    faPhone, faEnvelope, faMapMarkerAlt, faKey, faHashtag,
+    faCity
 } from '@fortawesome/free-solid-svg-icons';
 
 const CustomerDetails = ({ customerData, onAccessVault, loading, selectedLocker }) => {
@@ -47,7 +48,7 @@ const CustomerDetails = ({ customerData, onAccessVault, loading, selectedLocker 
                             <img
                                 src={customerData.photo}
                                 alt="Customer"
-                                className="w-14 h-14 rounded-lg object-cover border border-gray-200"
+                                className="w-40 h-40 rounded-lg object-cover border border-gray-200"
                                 onError={(e) => {
                                     e.target.style.display = 'none';
                                     e.target.nextSibling.style.display = 'flex';
@@ -64,26 +65,37 @@ const CustomerDetails = ({ customerData, onAccessVault, loading, selectedLocker 
                                 {customerData.name || `${customerData.firstName} ${customerData.lastName}`}
                             </h3>
                             <span className={`px-2 py-1 rounded text-xs font-medium ${customerData.customerType === 'PRIMARY'
-                                    ? 'bg-blue-100 text-blue-700'
-                                    : 'bg-gray-100 text-gray-700'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-gray-300 text-gray-700'
                                 }`}>
                                 {customerData.customerType}
                             </span>
                             {selectedLocker && (
                                 <span className={`px-2 py-1 rounded text-xs font-medium ${selectedLocker.size === 'Small'
-                                        ? 'bg-green-100 text-green-700'
-                                        : selectedLocker.size === 'Medium'
-                                            ? 'bg-yellow-100 text-yellow-700'
-                                            : 'bg-purple-100 text-purple-700'
+                                    ? 'bg-green-100 text-green-700'
+                                    : selectedLocker.size === 'Medium'
+                                        ? 'bg-yellow-100 text-yellow-700'
+                                        : 'bg-purple-100 text-purple-700'
                                     }`}>
                                     {selectedLocker.size} Locker
                                 </span>
                             )}
                         </div>
                         <div className="text-sm text-gray-600 space-y-1">
-                            <p><span className="font-medium text-gray-400">Member ID:</span> {customerData.memberCode}</p>
                             <p><span className="font-medium text-gray-400">Customer ID:</span> {customerData.customerId}</p>
                             <p><span className="font-medium text-gray-400">PAN:</span> {customerData.panNo}</p>
+                            <p><span className="font-medium text-gray-400">DOB:</span>{customerData.dob ? new Date(customerData.dob).toLocaleDateString('en-GB') : 'N/A'}</p>
+                            {/* Access Button */}
+                            <div className="mt-4">
+                                <button
+                                    onClick={onAccessVault}
+                                    disabled={loading}
+                                    className="inline-flex items-center px-6 py-2 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm"
+                                >
+                                    <FontAwesomeIcon icon={faLock} className="mr-2 w-4 h-4" />
+                                    {loading ? 'Processing...' : 'Access Vault'}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -91,65 +103,81 @@ const CustomerDetails = ({ customerData, onAccessVault, loading, selectedLocker 
 
             {/* Details Section */}
             <div className="bg-white rounded-lg p-6 mb-6 border border-blue-200 shadow-xl shadow-blue-100/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-200/60 hover:-translate-y-1">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
                     {/* Locker Information */}
                     <div>
                         <div className="flex items-center mb-4">
-                            <div className="w-6 h-6 bg-blue-400 rounded-lg flex items-center justify-center mr-3">
+                            <div className="w-6 h-6 bg-green-600 rounded-lg flex items-center justify-center mr-3">
                                 <FontAwesomeIcon icon={faLock} className="text-white w-3 h-3" />
                             </div>
-                            <h4 className="text-lg font-semibold text-gray-900">Locker Details</h4>
+                            <h4 className="text-base font-semibold text-gray-900">Locker Details</h4>
                         </div>
                         <div className="space-y-3">
-                            <div className="flex items-center py-2 border-b border-gray-100">
-                                <FontAwesomeIcon icon={faHashtag} className="text-blue-600 w-3 h-3 mr-3" />
-                                <span className="text-sm font-medium text-gray-600 flex-1">Locker Number</span>
-                                <span className="font-semibold text-gray-900 text-sm">{customerData.lockerNo}</span>
+                            <div className="flex items-center py-2 border-b border-green-200 bg-green-50 px-3 rounded">
+                                <FontAwesomeIcon icon={faHashtag} className="text-green-600 w-3 h-3 mr-3" />
+                                <span className="text-sm font-medium text-green-600 flex-1">Number</span>
+                                <span className="font-bold text-green-700 text-base px-2 py-1 bg-green-100 rounded">{customerData.lockerNo}</span>
                             </div>
-                            <div className="flex items-center py-2 border-b border-gray-100">
-                                <FontAwesomeIcon icon={faKey} className="text-blue-600 w-3 h-3 mr-3" />
-                                <span className="text-sm font-medium text-gray-600 flex-1">Locker Key</span>
-                                <span className="font-semibold text-gray-900 text-sm">{customerData.lockerKey}</span>
+                            <div className="flex items-center py-2 border-b border-green-200 bg-green-50 px-3 rounded">
+                                <FontAwesomeIcon icon={faKey} className="text-green-600 w-3 h-3 mr-3" />
+                                <span className="text-sm font-medium text-green-600 flex-1">Key</span>
+                                <span className="font-bold text-green-700 text-base px-2 py-1 bg-green-100 rounded">{customerData.lockerKey}</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Contact Information */}
-                    <div>
-                        <div className="flex items-center mb-4">
-                            <div className="w-6 h-6 bg-blue-400 rounded-lg flex items-center justify-center mr-3">
-                                <FontAwesomeIcon icon={faIdCard} className="text-white w-4 h-4" />
+                    {/* Contact and Address Information Side by Side */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Contact Information */}
+                        <div>
+                            <div className="flex items-center mb-4">
+                                <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                                    <FontAwesomeIcon icon={faPhone} className="text-white w-3 h-3" />
+                                </div>
+                                <h4 className="text-base font-semibold text-gray-900">Contact Details</h4>
                             </div>
-                            <h4 className="text-lg font-semibold text-gray-900">Contact Details</h4>
+                            <div className="space-y-3">
+                                <div className="flex items-center py-2 border-b border-gray-100">
+                                    <FontAwesomeIcon icon={faPhone} className="text-blue-600 w-3 h-3 mr-3" />
+                                    <span className="text-sm font-medium text-gray-600 flex-1">Mobile</span>
+                                    <span className="font-semibold text-gray-900 text-sm">{customerData.mobile_number || customerData.mobileNo}</span>
+                                </div>
+                                <div className="flex items-center py-2 border-b border-gray-100">
+                                    <FontAwesomeIcon icon={faEnvelope} className="text-blue-600 w-3 h-3 mr-3" />
+                                    <span className="text-sm font-medium text-gray-600 flex-1">Email</span>
+                                    <span className="font-semibold text-gray-900 text-sm break-all">{customerData.email}</span>
+                                </div>
+                                <div className="flex items-center py-2">
+                                    <FontAwesomeIcon icon={faIdCard} className="text-blue-600 w-3 h-3 mr-3" />
+                                    <span className="text-sm font-medium text-gray-600 flex-1">Aadhar</span>
+                                    <span className="font-semibold text-gray-900 text-sm">{customerData.aadhar}</span>
+                                </div>
+                            </div>
                         </div>
-                        <div className="space-y-3">
-                            <div className="flex items-center space-x-3">
-                                <FontAwesomeIcon icon={faPhone} className="text-blue-600 w-3 h-3" />
-                                <span className="text-xs font-medium text-gray-500 min-w-[60px]">Phone:</span>
-                                <span className="text-sm text-gray-900">{customerData.mobileNo}</span>
+
+                        {/* Address Information */}
+                        <div>
+                            <div className="flex items-center mb-4">
+                                <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                                    <FontAwesomeIcon icon={faMapMarkerAlt} className="text-white w-3 h-3" />
+                                </div>
+                                <h4 className="text-base font-semibold text-gray-900">Address</h4>
                             </div>
-                            <div className="flex items-center space-x-3">
-                                <FontAwesomeIcon icon={faEnvelope} className="text-blue-600 w-3 h-3" />
-                                <span className="text-xs font-medium text-gray-500 min-w-[60px]">Email:</span>
-                                <span className="text-sm text-gray-900">{customerData.email}</span>
-                            </div>
-                            <div className="flex items-start space-x-3">
-                                <FontAwesomeIcon icon={faMapMarkerAlt} className="text-blue-600 w-3 h-3 mt-0.5" />
-                                <div className="flex-1">
-                                    <div className="text-sm text-gray-900 space-y-1">
-                                        <div className="flex">
-                                            <span className="text-xs font-medium text-gray-500 min-w-[60px]">Address:</span>
-                                            <span className="ml-2">{customerData.address}</span>
-                                        </div>
-                                        <div className="flex">
-                                            <span className="text-xs font-medium text-gray-500 min-w-[60px]">City:</span>
-                                            <span className="ml-2">{customerData.city}</span>
-                                        </div>
-                                        <div className="flex">
-                                            <span className="text-xs font-medium text-gray-500 min-w-[60px]">State:</span>
-                                            <span className="ml-2">{customerData.state}</span>
-                                        </div>
-                                    </div>
+                            <div className="space-y-3">
+                                <div className="flex items-center py-2 border-b border-gray-100">
+                                    <FontAwesomeIcon icon={faMapMarkerAlt} className="text-blue-600 w-3 h-3 mr-3" />
+                                    <span className="text-sm font-medium text-gray-600 flex-1">Address</span>
+                                    <span className="font-semibold text-gray-900 text-sm">{customerData.address || '-'}</span>
+                                </div>
+                                <div className="flex items-center py-2 border-b border-gray-100">
+                                    <FontAwesomeIcon icon={faCity} className="text-blue-600 w-3 h-3 mr-3" />
+                                    <span className="text-sm font-medium text-gray-600 flex-1">City</span>
+                                    <span className="font-semibold text-gray-900 text-sm">{customerData.city || customerData.permanent_city}</span>
+                                </div>
+                                <div className="flex items-center py-2">
+                                    <FontAwesomeIcon icon={faMapMarkerAlt} className="text-blue-600 w-3 h-3 mr-3" />
+                                    <span className="text-sm font-medium text-gray-600 flex-1">State</span>
+                                    <span className="font-semibold text-gray-900 text-sm">{customerData.state || customerData.permanent_state}</span>
                                 </div>
                             </div>
                         </div>
@@ -157,17 +185,7 @@ const CustomerDetails = ({ customerData, onAccessVault, loading, selectedLocker 
                 </div>
             </div>
 
-            {/* Access Button */}
-            <div className="text-center">
-                <button
-                    onClick={onAccessVault}
-                    disabled={loading}
-                    className="inline-flex items-center px-6 py-2.5 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm"
-                >
-                    <FontAwesomeIcon icon={faLock} className="mr-2 w-4 h-4" />
-                    {loading ? 'Processing...' : 'Access Vault'}
-                </button>
-            </div>
+
         </div>
     );
 };
