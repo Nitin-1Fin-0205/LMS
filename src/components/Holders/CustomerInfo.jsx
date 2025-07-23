@@ -471,77 +471,9 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                         firstName: customerInfo?.first_name || "",
                         middleName: customerInfo?.middle_name || "",
                         lastName: customerInfo?.last_name || "",
-                        fatherOrHusbandName: customerInfo?.father_name || "",
-                        dateOfBirth: customerInfo?.dob || "",
-                        panNo: customerInfo?.pan || "",
-                        gender: customerInfo?.gender === "MALE" ? "Male" : customerInfo?.gender === "FEMALE" ? "Female" : customerInfo?.gender || "",
-                        aadharNo: customerInfo?.aadhaar?.replace(/x/g, "").replace(/X/g, "") || "",
-                        permanentAddressLine1: customerInfo?.permanent_address_line1 || "",
-                        permanentAddressLine2: customerInfo?.permanent_address_line2 || "",
-                        permanentAddressLine3: customerInfo?.permanent_address_line3 || "",
-                        permanentCity: customerInfo?.permanent_city || "",
-                        permanentState: customerInfo?.permanent_state || "",
-                        correspondenceAddressLine1: customerInfo?.current_address_line1 || "",
-                        correspondenceAddressLine2: customerInfo?.current_address_line2 || "",
-                        correspondenceAddressLine3: customerInfo?.current_address_line3 || "",
-                        correspondenceCity: customerInfo?.current_city || "",
-                        correspondenceState: customerInfo?.current_state || "",
-                    };
-                    handleCustomerInfoUpdate(updatedData);
-                    return updatedData;
-                });
-
-                // Check if addresses are the same and set checkbox accordingly
-                if (customerInfo?.permanent_address_line1 === customerInfo?.current_address_line1 &&
-                    customerInfo?.permanent_city === customerInfo?.current_city &&
-                    customerInfo?.permanent_state === customerInfo?.current_state) {
-                    setIsSameAddress(true);
-                }
-
-                toast.success("Digilocker customer details fetched successfully");
-            } else {
-                toast.error("Customer not found in Digilocker database");
-            }
-        } catch (error) {
-            console.error("Error fetching Digilocker details:", error);
-            toast.error("Failed to fetch Digilocker details");
-        } finally {
-            setIsDigilockerFetching(false);
-        }
-    };
-
-    const handleFetchPan = async () => {
-        try {
-            if (!customerData.panNo) {
-                toast.error("Please enter PAN No to fetch details");
-                return;
-            }
-
-            setIsPanFetching(true);
-
-            const token = localStorage.getItem("authToken");
-            const response = await fetch(`${API_URL}/customers/fetch-existing-customer?pan=${customerData.panNo}`, {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "accept": "*/*",
-                },
-            });
-
-            const data = await response.json();
-            if (response?.status === 200 && data?.data) {
-                const customerInfo = data.data;
-                setCustomerData((prev) => {
-                    const updatedData = {
-                        ...prev,
-                        customerId: customerInfo?.customer_id || null,
-                        firstName: customerInfo?.first_name || "",
-                        middleName: customerInfo?.middle_name || "",
-                        lastName: customerInfo?.last_name || "",
                         fatherOrHusbandName: customerInfo?.guardian || "",
                         dateOfBirth: customerInfo?.dob || "",
-                        mobileNo: customerInfo?.mobile_number || "",
-                        emailId: customerInfo?.email || "",
+                        panNo: customerInfo?.pan || "",
                         gender: customerInfo?.gender || "",
                         aadharNo: customerInfo?.aadhar || "",
                         permanentAddressLine1: customerInfo?.permanent_address_line1 || "",
@@ -561,69 +493,141 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                     return updatedData;
                 });
 
-                // Set verification states if data exists
-                if (customerInfo?.mobile_number) {
-                    setIsMobileVerified(true);
-                }
-                if (customerInfo?.email) {
-                    setIsEmailVerified(true);
+                // Check if addresses are the same and set checkbox accordingly
+                if (customerInfo?.permanent_address_line1 === customerInfo?.current_address_line1 &&
+                    customerInfo?.permanent_city === customerInfo?.current_city &&
+                    customerInfo?.permanent_state === customerInfo?.current_state) {
+                    setIsSameAddress(true);
                 }
 
-                toast.success("Customer details fetched successfully");
+                toast.success("Existing customer details fetched successfully");
             } else {
-                toast.error("Customer not found with this PAN");
+                toast.error("Customer not found in Digilocker database");
             }
         } catch (error) {
-            console.error("Error fetching customer details:", error);
-            toast.error("Failed to fetch customer details");
+            console.error("Error fetching Digilocker details:", error);
+            toast.error("Failed to fetch Digilocker details");
         } finally {
-            setIsPanFetching(false);
+            setIsDigilockerFetching(false);
         }
     };
 
-    const handlePanImageUpload = async (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
+    // const handleFetchPan = async () => {
+    //     try {
+    //         if (!customerData.panNo) {
+    //             toast.error("Please enter PAN No to fetch details");
+    //             return;
+    //         }
 
-        try {
-            setIsPanImageFetching(true);
-            const formData = new FormData();
-            formData.append("panImage", file);
+    //         setIsPanFetching(true);
 
-            const token = localStorage.getItem("authToken");
-            const response = await fetch(`${API_URL}/customers/pan-ocr`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-                body: formData,
-            });
+    //         const token = localStorage.getItem("authToken");
+    //         const response = await fetch(`${API_URL}/customers/fetch-existing-customer?pan=${customerData.panNo}`, {
+    //             method: "GET",
+    //             headers: {
+    //                 "Authorization": `Bearer ${token}`,
+    //                 "accept": "*/*",
+    //             },
+    //         });
 
-            const data = await response.json();
-            if (response.ok) {
-                setCustomerData((prev) => {
-                    const updatedData = {
-                        ...prev,
-                        panNo: data?.panNo || "",
-                        firstName: data?.name?.split(" ")[0] || "",
-                        middleName: data?.name?.split(" ")[1] || "",
-                        lastName: data?.name?.split(" ")[2] || "",
-                        dateOfBirth: data?.dob || "",
-                    };
-                    handleCustomerInfoUpdate(updatedData);
-                    return updatedData;
-                });
-                toast.success("PAN details extracted successfully");
-            } else {
-                toast.error("Failed to extract PAN details");
-            }
-        } catch (error) {
-            console.error("Error uploading PAN image:", error);
-            toast.error("Failed to process PAN image");
-        } finally {
-            setIsPanImageFetching(false);
-        }
-    };
+    //         const data = await response.json();
+    //         if (response?.status === 200 && data?.data) {
+    //             const customerInfo = data.data;
+    //             setCustomerData((prev) => {
+    //                 const updatedData = {
+    //                     ...prev,
+    //                     customerId: customerInfo?.customer_id || null,
+    //                     firstName: customerInfo?.first_name || "",
+    //                     middleName: customerInfo?.middle_name || "",
+    //                     lastName: customerInfo?.last_name || "",
+    //                     fatherOrHusbandName: customerInfo?.guardian || "",
+    //                     dateOfBirth: customerInfo?.dob || "",
+    //                     mobileNo: customerInfo?.mobile_number || "",
+    //                     emailId: customerInfo?.email || "",
+    //                     gender: customerInfo?.gender || "",
+    //                     aadharNo: customerInfo?.aadhar || "",
+    //                     permanentAddressLine1: customerInfo?.permanent_address_line1 || "",
+    //                     permanentAddressLine2: customerInfo?.permanent_address_line2 || "",
+    //                     permanentAddressLine3: customerInfo?.permanent_address_line3 || "",
+    //                     permanentCity: customerInfo?.permanent_city || "",
+    //                     permanentState: customerInfo?.permanent_state || "",
+    //                     permanentStatecode: customerInfo?.permanent_state_code || "",
+    //                     correspondenceAddressLine1: customerInfo?.correspondence_address_line1 || "",
+    //                     correspondenceAddressLine2: customerInfo?.correspondence_address_line2 || "",
+    //                     correspondenceAddressLine3: customerInfo?.correspondence_address_line3 || "",
+    //                     correspondenceCity: customerInfo?.correspondence_city || "",
+    //                     correspondenceState: customerInfo?.correspondence_state || "",
+    //                     correspondenceStatecode: customerInfo?.correspondence_state_code || "",
+    //                 };
+    //                 handleCustomerInfoUpdate(updatedData);
+    //                 return updatedData;
+    //             });
+
+    //             // Set verification states if data exists
+    //             if (customerInfo?.mobile_number) {
+    //                 setIsMobileVerified(true);
+    //             }
+    //             if (customerInfo?.email) {
+    //                 setIsEmailVerified(true);
+    //             }
+
+    //             toast.success("Customer details fetched successfully");
+    //         } else {
+    //             toast.error("Customer not found with this PAN");
+    //         }
+    //     } catch (error) {
+    //         console.error("Error fetching customer details:", error);
+    //         toast.error("Failed to fetch customer details");
+    //     } finally {
+    //         setIsPanFetching(false);
+    //     }
+    // };
+
+    // const handlePanImageUpload = async (event) => {
+    //     const file = event.target.files[0];
+    //     if (!file) return;
+
+    //     try {
+    //         setIsPanImageFetching(true);
+    //         const formData = new FormData();
+    //         formData.append("panImage", file);
+
+    //         const token = localStorage.getItem("authToken");
+    //         const response = await fetch(`${API_URL}/customers/pan-ocr`, {
+    //             method: "POST",
+    //             headers: {
+    //                 Authorization: `Bearer ${token}`,
+    //             },
+    //             body: formData,
+    //         });
+
+    //         const data = await response.json();
+    //         if (response.ok) {
+    //             setCustomerData((prev) => {
+    //                 const updatedData = {
+    //                     ...prev,
+    //                     panNo: data?.panNo || "",
+    //                     firstName: data?.name?.split(" ")[0] || "",
+    //                     middleName: data?.name?.split(" ")[1] || "",
+    //                     lastName: data?.name?.split(" ")[2] || "",
+    //                     dateOfBirth: data?.dob || "",
+    //                 };
+    //                 handleCustomerInfoUpdate(updatedData);
+    //                 return updatedData;
+    //             });
+    //             toast.success("PAN details extracted successfully");
+    //         } else {
+    //             toast.error("Failed to extract PAN details");
+    //         }
+    //     } catch (error) {
+    //         console.error("Error uploading PAN image:", error);
+    //         toast.error("Failed to process PAN image");
+    //     } finally {
+    //         setIsPanImageFetching(false);
+    //     }
+    // };
+
+
     const handleMobileInput = (e) => {
         const value = e.target.value;
         // Only allow numbers
@@ -820,24 +824,25 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
         </div>
     );
 
-    const handleStateSelect = (e) => {
-        const selectedState = stateList.find(
-            (state) => state.state_code === parseInt(e.target.value)
-        );
-        if (selectedState) {
-            setCustomerData((prev) => ({
-                ...prev,
-                state: selectedState.state_name,
-                statecode: selectedState.state_code.toString(),
-            }));
-            // Update parent component
-            handleCustomerInfoUpdate({
-                ...customerData,
-                state: selectedState.state_name,
-                statecode: selectedState.state_code.toString(),
-            });
-        }
-    }; // Complete form submission handler
+    // const handleStateSelect = (e) => {
+    //     const selectedState = stateList.find(
+    //         (state) => state.state_code === parseInt(e.target.value)
+    //     );
+    //     if (selectedState) {
+    //         setCustomerData((prev) => ({
+    //             ...prev,
+    //             state: selectedState.state_name,
+    //             statecode: selectedState.state_code.toString(),
+    //         }));
+    //         // Update parent component
+    //         handleCustomerInfoUpdate({
+    //             ...customerData,
+    //             state: selectedState.state_name,
+    //             statecode: selectedState.state_code.toString(),
+    //         });
+    //     }
+    // }; // Complete form submission handler
+
     const handleSubmit = async () => {
         try {
             toast.dismiss();
@@ -1154,17 +1159,16 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                     <div className="mx-4 mb-4 p-4 bg-gradient-to-r from-sky-50 to-sky-100 border-2 border-dashed border-sky-300 rounded-lg shadow-sm">
                         <div className="flex flex-col space-y-3">
                             <div className="flex items-center space-xxxx-2">
-                                <h3 className="text-lg font-semibold text-sky-700 mr-1">
-                                    Auto-fill from the Digilocker flow.
+                                <h3 className="text-lg font-semibold text-sky-700 ">
+                                    Auto-fill customer details.
                                 </h3>
                                 <div className="relative group">
                                     <FontAwesomeIcon
                                         icon={faInfoCircle}
-                                        className="text-blue-500 w-4 h-4 cursor-help ml-2"
+                                        className="text-blue-500 w-4 h-4 cursor-help ml-1"
                                     />
-                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 pointer-events-none">
-                                        Enter the phone number or email used during Digilocker flow to automatically populate customer details.
-                                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-blue-400 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10 pointer-events-none">
+                                        Enter the PAN number, phone number or email of an existing customer to automatically populate their details.
                                     </div>
                                 </div>
                                 <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium ml-2">
@@ -1174,14 +1178,14 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                             <div className="flex gap-3 items-end">
                                 <div className="flex-1">
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Phone Number or Email
+                                        PAN, Phone Number or Email
                                     </label>
                                     <input
                                         type="text"
                                         value={digilockerIdentifier}
                                         onChange={(e) => setDigilockerIdentifier(e.target.value)}
                                         className="w-full h-10 px-4 border-2 border-blue-200 rounded-lg text-sm text-gray-700 bg-white transition-all duration-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder-gray-400"
-                                        placeholder="Enter phone number or email address"
+                                        placeholder="PAN Number, Phone Number or Email"
                                     />
                                 </div>
                                 <button
@@ -1227,7 +1231,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                     maxLength={10}
                                     required
                                 />
-                                <button
+                                {/* <button
                                     type="button"
                                     className="px-2 py-1 bg-blue-400 text-white border-none rounded text-sm  cursor-pointer hover:bg-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                     onClick={handleFetchPan}
@@ -1244,7 +1248,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                                             Fetch Details
                                         </>
                                     )}
-                                </button>
+                                </button> */}
                             </div>
                             {fieldErrors.panNo && (
                                 <div className="text-red-500 text-xs mt-1">
@@ -1796,6 +1800,7 @@ const CustomerInfo = ({ customerId, holderType, onSuccess, onBack }) => {
                         isOpen={isDigilockerModalOpen}
                         onClose={() => setIsDigilockerModalOpen(false)}
                         onSuccess={handleDigilockerSuccess}
+                        onIdentifierChange={(value) => setDigilockerIdentifier(value)}
                     />
                 </>
             )}

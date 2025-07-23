@@ -4,10 +4,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark, faEnvelope, faSms, faExternalLinkAlt, faUserCircle } from "@fortawesome/free-solid-svg-icons";
 import { API_URL } from "../../assets/config";
 
-const DigilockerModal = ({ isOpen, onClose, onSuccess }) => {
+const DigilockerModal = ({ isOpen, onClose, onSuccess, onIdentifierChange }) => {
     const [contactMethod, setContactMethod] = useState("mobile");
     const [contactValue, setContactValue] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSubmittingSent, setIsSubmittingSent] = useState(false);
+    const [isSubmittingOpen, setIsSubmittingOpen] = useState(false);
 
     const handleDigilockerKyc = async (notifyCustomer) => {
         try {
@@ -28,8 +29,6 @@ const DigilockerModal = ({ isOpen, onClose, onSuccess }) => {
                     return;
                 }
             }
-
-            setIsSubmitting(true);
 
             const token = localStorage.getItem("authToken");
             const response = await fetch(`${API_URL}/customers/digilocker-kyc`, {
@@ -73,15 +72,18 @@ const DigilockerModal = ({ isOpen, onClose, onSuccess }) => {
             console.error("Error initiating Digilocker KYC:", error);
             toast.error("Failed to initiate Digilocker KYC");
         } finally {
-            setIsSubmitting(false);
+            setIsSubmittingSent(false);
+            setIsSubmittingOpen(false);
         }
     };
 
     const handleSendLink = () => {
+        setIsSubmittingSent(true);
         handleDigilockerKyc(true); // notify_customer: true
     };
 
     const handleOpenHere = () => {
+        setIsSubmittingOpen(true);
         handleDigilockerKyc(false); // notify_customer: false
     };
 
@@ -97,9 +99,11 @@ const DigilockerModal = ({ isOpen, onClose, onSuccess }) => {
             // Only allow numbers for mobile
             if (value === "" || /^[0-9]+$/.test(value)) {
                 setContactValue(value.slice(0, 10));
+                onIdentifierChange(value.slice(0, 10));
             }
         } else {
             setContactValue(value);
+            onIdentifierChange(value);
         }
     };
 
@@ -198,16 +202,19 @@ const DigilockerModal = ({ isOpen, onClose, onSuccess }) => {
                     <button
                         onClick={handleClose}
                         className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors duration-200 font-medium"
-                        disabled={isSubmitting}
+                        disabled={isSubmittingSent || isSubmittingOpen}
+                        style={{ cursor: isSubmittingSent || isSubmittingOpen ? "not-allowed" : "pointer" }}
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSendLink}
-                        disabled={isSubmitting || !contactValue.trim()}
+                        disabled={isSubmittingSent || isSubmittingOpen || !contactValue.trim()}
+                        style={{ cursor: isSubmittingSent || isSubmittingOpen || !contactValue.trim() ? "not-allowed" : "pointer" }}
+                        title="Send the link to the customer"
                         className="flex-1 px-4 py-2 bg-blue-500 text-white border-none rounded-md hover:bg-blue-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                     >
-                        {isSubmitting ? (
+                        {isSubmittingSent ? (
                             <div className="flex items-center justify-center">
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                                 Sending...
@@ -221,10 +228,12 @@ const DigilockerModal = ({ isOpen, onClose, onSuccess }) => {
                     </button>
                     <button
                         onClick={handleOpenHere}
-                        disabled={isSubmitting || !contactValue.trim()}
+                        disabled={isSubmittingOpen || isSubmittingSent || !contactValue.trim()}
+                        style={{ cursor: isSubmittingSent || isSubmittingOpen || !contactValue.trim() ? "not-allowed" : "pointer" }}
+                        title="Open the link in a new tab"
                         className="flex-1 px-4 py-2 bg-green-600 text-white border-none rounded-md hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                     >
-                        {isSubmitting ? (
+                        {isSubmittingOpen ? (
                             <div className="flex items-center justify-center">
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                                 Opening...
