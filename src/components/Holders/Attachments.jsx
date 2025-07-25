@@ -549,13 +549,13 @@ const Attachments = ({ customerId, holderType, onSuccess, onBack }) => {
                                                 >
                                                     <FontAwesomeIcon icon={faEye} className="text-xs" />
                                                 </button>
-                                                <button
+                                                {/* <button
                                                     onClick={() => removeDocument(key, doc.id)}
                                                     title="Remove Document"
                                                     className="w-6 h-6 bg-red-100 hover:bg-red-200 text-red-600 rounded flex items-center justify-center transition-colors duration-200 cursor-pointer"
                                                 >
                                                     <FontAwesomeIcon icon={faTrashAlt} className="text-xs" />
-                                                </button>
+                                                </button> */}
                                             </div>
                                         </div>
                                     ))}

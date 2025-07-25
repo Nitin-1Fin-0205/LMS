@@ -6,6 +6,7 @@ import BiometricService from '../../services/BiometricService';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { API_URL } from '../../assets/config';
+import ConfirmationModal from '../ui/ConfirmationModal';
 
 const FINGER_OPTIONS = {
     'right-thumb': 'Right Thumb',
@@ -36,6 +37,8 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
     const [captureProgress, setCaptureProgress] = useState(0);
     const [retryCount, setRetryCount] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [pendingCapture, setPendingCapture] = useState(false);
 
     // Fetch customer's previously captured biometric records
     const fetchCustomerBiometrics = async () => {
@@ -149,10 +152,18 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
 
     const handleCapture = async () => {
         if (fingerprints[selectedFinger]) {
-            if (!window.confirm(`Overwrite existing ${FINGER_OPTIONS[selectedFinger]} fingerprint?`)) {
-                return;
-            }
+            setShowConfirmModal(true);
+            return;
         }
+        await performCapture();
+    };
+
+    const handleConfirmOverwrite = async () => {
+        setShowConfirmModal(false);
+        await performCapture();
+    };
+
+    const performCapture = async () => {
         try {
             setScannerState(prev => ({ ...prev, isScanning: true }));
             setCaptureProgress(10);
@@ -428,6 +439,18 @@ const BiometricCapture = ({ onUpdate, initialData, required = [], customerId }) 
                     )}
                 </>
             )}
+
+            <ConfirmationModal
+                show={showConfirmModal}
+                onClose={() => setShowConfirmModal(false)}
+                onConfirm={handleConfirmOverwrite}
+                title="Overwrite Existing Fingerprint"
+                message={`Are you sure you want to overwrite the existing ${FINGER_OPTIONS[selectedFinger]} fingerprint?`}
+                confirmText="Yes, Overwrite"
+                cancelText="Cancel"
+                confirmButtonStyle="bg-orange-600 hover:bg-orange-700 focus:ring-orange-500"
+                isProcessing={scannerState.isScanning}
+            />
         </div>
     );
 };
